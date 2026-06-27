@@ -4,28 +4,20 @@ import dashboardApi, { type DashboardStats } from "../../api/dashboardApi";
 const StatCard = ({
   label,
   value,
-  color = "gray",
 }: {
   label: string;
   value: string | number;
-  color?: "gray" | "green" | "red" | "blue";
-}) => {
-  const colorClasses = {
-    gray: "border-gray-200 bg-white",
-    green: "border-green-200 bg-green-50",
-    red: "border-red-200 bg-red-50",
-    blue: "border-blue-200 bg-blue-50",
-  };
+}) => (
+  <div className="border border-gray-300 rounded p-5">
+    <p className="text-sm text-gray-600">
+      {label}
+    </p>
 
-  return (
-    <div className={`rounded-2xl border ${colorClasses[color]} p-5`}>
-      <p className="text-xs uppercase tracking-wide text-gray-500 font-medium">
-        {label}
-      </p>
-      <p className="text-3xl font-bold text-gray-900 mt-3">{value}</p>
-    </div>
-  );
-};
+    <p className="mt-2 text-3xl font-bold">
+      {value}
+    </p>
+  </div>
+);
 
 export const OwnerDashboardPage = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -36,11 +28,13 @@ export const OwnerDashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
+
       const data = await dashboardApi.getOwnerStats();
       setStats(data);
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ?? "Không thể tải dữ liệu dashboard.",
+        err?.response?.data?.message ??
+          "Không thể tải dữ liệu dashboard."
       );
     } finally {
       setIsLoading(false);
@@ -58,45 +52,48 @@ export const OwnerDashboardPage = () => {
     }).format(amount ?? 0);
 
   const paidPct = stats
-    ? Math.round((stats.paidFeeRecords / (stats.totalFeeRecords || 1)) * 100)
+    ? Math.round(
+        (stats.paidFeeRecords / (stats.totalFeeRecords || 1)) * 100
+      )
     : 0;
+
   const unpaidPct = 100 - paidPct;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
+          <h1 className="text-3xl font-bold">
             Tổng quan trung tâm
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+
+          <p className="text-sm text-gray-600">
             Quản lý toàn bộ hoạt động của trung tâm
           </p>
         </div>
+
         <button
           onClick={loadStats}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
-      {/* Error Alert */}
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          ⚠️ {error}
+        <div className="border border-gray-300 rounded p-4 text-sm bg-gray-100">
+          {error}
         </div>
       )}
 
-      {/* Main KPIs */}
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 rounded-2xl bg-gray-100 animate-pulse"
+              className="h-24 border border-gray-300 rounded bg-gray-100 animate-pulse"
             />
           ))}
         </div>
@@ -105,186 +102,187 @@ export const OwnerDashboardPage = () => {
           <StatCard
             label="Tổng học sinh"
             value={stats.totalStudents}
-            color="blue"
           />
+
           <StatCard
             label="Tổng giáo viên"
             value={stats.totalTeachers}
-            color="gray"
           />
+
           <StatCard
             label="Tổng lớp học"
             value={stats.totalClasses}
-            color="gray"
           />
+
           <StatCard
             label="Tổng doanh thu"
             value={formatCurrency(stats.totalRevenue)}
-            color="green"
           />
         </div>
       ) : null}
 
-      {/* Fee Collection Progress */}
       {!isLoading && stats && (
-        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="border border-gray-300 rounded p-6">
+
           <div className="flex items-center justify-between mb-6">
+
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold">
                 Tiến độ thu học phí
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {stats.paidFeeRecords} / {stats.totalFeeRecords} hóa đơn đã
-                thanh toán
+
+              <p className="text-sm text-gray-600">
+                {stats.paidFeeRecords} / {stats.totalFeeRecords} hóa đơn đã thanh toán
               </p>
             </div>
+
             <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">{paidPct}%</p>
-              <p className="text-xs text-gray-500 mt-1">Hoàn thành</p>
+              <p className="text-3xl font-bold">
+                {paidPct}%
+              </p>
+
+              <p className="text-sm text-gray-600">
+                Hoàn thành
+              </p>
             </div>
+
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
+
             <div>
+
               <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium text-green-700">
-                  ✓ Đã thanh toán
-                </span>
-                <span className="font-medium text-gray-900">
-                  {stats.paidFeeRecords}
-                </span>
+                <span>Đã thanh toán</span>
+                <span>{stats.paidFeeRecords}</span>
               </div>
-              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+
+              <div className="w-full h-3 border border-gray-300 rounded overflow-hidden">
                 <div
-                  className="h-full bg-green-500 transition-all duration-700"
+                  className="h-full bg-gray-700"
                   style={{ width: `${paidPct}%` }}
                 />
               </div>
+
             </div>
 
             <div>
+
               <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium text-red-700">
-                  ✕ Chưa thanh toán
-                </span>
-                <span className="font-medium text-gray-900">
-                  {stats.unpaidFeeRecords}
-                </span>
+                <span>Chưa thanh toán</span>
+                <span>{stats.unpaidFeeRecords}</span>
               </div>
-              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+
+              <div className="w-full h-3 border border-gray-300 rounded overflow-hidden">
                 <div
-                  className="h-full bg-red-400 transition-all duration-700"
+                  className="h-full bg-gray-400"
                   style={{ width: `${unpaidPct}%` }}
                 />
               </div>
+
             </div>
+
           </div>
+
         </section>
       )}
 
-      {/* Quick Actions */}
       <section className="grid gap-4 md:grid-cols-2">
+
         <a
           href="/owner/students"
-          className="rounded-3xl border border-gray-200 bg-white p-6 hover:shadow-lg transition cursor-pointer"
+          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-4xl">👥</p>
-              <h3 className="text-lg font-semibold text-gray-900 mt-3">
-                Quản lý học sinh
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Xem danh sách, thêm/sửa học sinh
-              </p>
-            </div>
-            <span className="text-2xl">→</span>
-          </div>
+          <h3 className="font-semibold">
+            Quản lý học sinh
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Xem danh sách, thêm và chỉnh sửa học sinh.
+          </p>
         </a>
 
         <a
           href="/owner/teachers"
-          className="rounded-3xl border border-gray-200 bg-white p-6 hover:shadow-lg transition cursor-pointer"
+          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-4xl">🎓</p>
-              <h3 className="text-lg font-semibold text-gray-900 mt-3">
-                Quản lý giáo viên
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Xem danh sách, phân công lớp
-              </p>
-            </div>
-            <span className="text-2xl">→</span>
-          </div>
+          <h3 className="font-semibold">
+            Quản lý giáo viên
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Xem danh sách và phân công lớp.
+          </p>
         </a>
 
         <a
           href="/owner/classes"
-          className="rounded-3xl border border-gray-200 bg-white p-6 hover:shadow-lg transition cursor-pointer"
+          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-4xl">📚</p>
-              <h3 className="text-lg font-semibold text-gray-900 mt-3">
-                Quản lý lớp học
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Tạo lớp, xem lịch học, điểm danh
-              </p>
-            </div>
-            <span className="text-2xl">→</span>
-          </div>
+          <h3 className="font-semibold">
+            Quản lý lớp học
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Tạo lớp, xem lịch học và điểm danh.
+          </p>
         </a>
 
         <a
           href="/owner/fees"
-          className="rounded-3xl border border-gray-200 bg-white p-6 hover:shadow-lg transition cursor-pointer"
+          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
         >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-4xl">💰</p>
-              <h3 className="text-lg font-semibold text-gray-900 mt-3">
-                Quản lý học phí
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Thu học phí, xem hóa đơn nợ
-              </p>
-            </div>
-            <span className="text-2xl">→</span>
-          </div>
+          <h3 className="font-semibold">
+            Quản lý học phí
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Thu học phí và theo dõi các hóa đơn.
+          </p>
         </a>
+
       </section>
 
-      {/* Fee Details Cards */}
       {!isLoading && stats && (
+
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-3xl border border-green-200 bg-green-50 p-6">
-            <p className="text-sm font-medium text-green-700 uppercase tracking-wide">
+
+          <div className="border border-gray-300 rounded p-6">
+
+            <p className="text-sm text-gray-600">
               Học phí đã thu
             </p>
-            <p className="text-3xl font-bold text-gray-900 mt-3">
+
+            <p className="mt-2 text-3xl font-bold">
               {stats.paidFeeRecords}
             </p>
-            <p className="text-sm text-gray-600 mt-2">
-              Tổng {formatCurrency(stats.totalRevenue)} thu được
+
+            <p className="mt-2 text-sm text-gray-600">
+              {formatCurrency(stats.totalRevenue)}
             </p>
+
           </div>
 
-          <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-            <p className="text-sm font-medium text-red-700 uppercase tracking-wide">
+          <div className="border border-gray-300 rounded p-6">
+
+            <p className="text-sm text-gray-600">
               Học phí chưa thu
             </p>
-            <p className="text-3xl font-bold text-gray-900 mt-3">
+
+            <p className="mt-2 text-3xl font-bold">
               {stats.unpaidFeeRecords}
             </p>
-            <p className="text-sm text-gray-600 mt-2">
-              Cần theo dõi và thu tiếp
+
+            <p className="mt-2 text-sm text-gray-600">
+              Cần tiếp tục theo dõi và thu học phí.
             </p>
+
           </div>
+
         </section>
+
       )}
+
     </div>
   );
 };

@@ -125,21 +125,21 @@ const TeacherStudentsPage = () => {
         </div>
       ) : !selectedClass ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-          <div className="text-4xl mb-3">👥</div>
+          <div className="text-4xl mb-3"></div>
           <p className="text-gray-600">
             Không có lớp nào được gán cho giáo viên.
           </p>
         </div>
       ) : selectedClass.students.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-          <div className="text-4xl mb-3">📚</div>
+          <div className="text-4xl mb-3"></div>
           <p className="text-gray-600">
             Lớp {selectedClass.className} chưa có học sinh.
           </p>
         </div>
       ) : filteredStudents.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-          <div className="text-4xl mb-3">🔍</div>
+          <div className="text-4xl mb-3"></div>
           <p className="text-gray-600">Không tìm thấy học sinh phù hợp.</p>
         </div>
       ) : (
@@ -166,21 +166,21 @@ const TeacherStudentsPage = () => {
 
               <div className="space-y-2 text-sm text-gray-600 border-t border-gray-100 pt-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 min-w-fit">📱</span>
+                  <span className="text-gray-400 min-w-fit"></span>
                   <span>{student.phoneNumber}</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 min-w-fit">✉️</span>
+                  <span className="text-gray-400 min-w-fit"></span>
                   <span className="truncate">{student.email}</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 min-w-fit">🎂</span>
+                  <span className="text-gray-400 min-w-fit"></span>
                   <span>
                     {new Date(student.dateOfBirth).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 min-w-fit">📍</span>
+                  <span className="text-gray-400 min-w-fit"></span>
                   <span className="truncate text-xs">{student.address}</span>
                 </div>
               </div>

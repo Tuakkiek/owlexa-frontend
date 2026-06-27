@@ -188,7 +188,7 @@ const TeacherDashboardPage = () => {
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-2xl">📝</p>
+              <p className="text-2xl"></p>
               <h3 className="text-lg font-semibold text-gray-900 mt-3">
                 Điểm danh
               </h3>
@@ -206,7 +206,7 @@ const TeacherDashboardPage = () => {
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-2xl">👥</p>
+              <p className="text-2xl"></p>
               <h3 className="text-lg font-semibold text-gray-900 mt-3">
                 Danh sách học sinh
               </h3>
