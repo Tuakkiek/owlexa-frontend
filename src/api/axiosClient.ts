@@ -19,7 +19,7 @@ axiosClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const tenantId = getTenantFromSubdomain();
+    const tenantId = localStorage.getItem('tenantId') || getTenantFromSubdomain();
     if (tenantId && config.headers) {
       config.headers['X-Tenant-ID'] = tenantId;
     }

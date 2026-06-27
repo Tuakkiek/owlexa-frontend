@@ -6,11 +6,14 @@ import TeachersPage from "./pages/owner/TeachersPage";
 import StudentsPage from "./pages/owner/StudentsPage";
 import ClassesPage from "./pages/owner/ClassesPage";
 import FeesPage from "./pages/owner/FeesPage";
+import CentersPage from "./pages/owner/CentersPage";
+import CashiersPage from "./pages/owner/CashiersPage";
+import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import StudentDocumentsPage from "./pages/student/StudentDocumentsPage";
 import StudentEssayPage from "./pages/student/StudentEssayPage";
-import StudentMockTestsPage from "./pages/student/StudentMockTestsPage";
+import StudentTestsPage from "./pages/student/StudentTestsPage";
 import StudentTestTakingPage from "./pages/student/StudentTestTakingPage";
 import StudentTestResultsPage from "./pages/student/StudentTestResultsPage";
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
@@ -19,20 +22,12 @@ import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 import TeacherEssayRubricsPage from "./pages/teacher/TeacherEssayRubricsPage";
 import TeacherEssayReviewPage from "./pages/teacher/TeacherEssayReviewPage";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
-import OwnerMockTestsPage from "./pages/owner/OwnerMockTestsPage";
+import OwnerTestsPage from "./pages/owner/OwnerTestsPage";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
+import TeacherTestsPage from "./pages/teacher/TeacherTestsPage";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import CashierPaymentsPage from "./pages/cashier/CashierPaymentsPage";
-
-// Dummy Dashboard components for Phase 1 testing
-const DummyDashboard = ({ role }: { role: string }) => (
-  <div className="bg-white p-6 rounded shadow">
-    <h2 className="text-xl font-bold">{role} Dashboard Placeholder</h2>
-    <p className="mt-2 text-gray-600">
-      This is a placeholder for the {role} dashboard (Phase 2+).
-    </p>
-  </div>
-);
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
 function App() {
   return (
@@ -49,11 +44,16 @@ function App() {
           {/* OWNER Routes */}
           <Route element={<ProtectedRoute allowedRoles={["OWNER"]} />}>
             <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
+            <Route path="/owner/centers" element={<CentersPage />} />
             <Route path="/owner/teachers" element={<TeachersPage />} />
             <Route path="/owner/students" element={<StudentsPage />} />
+            <Route path="/owner/cashiers" element={<CashiersPage />} />
             <Route path="/owner/classes" element={<ClassesPage />} />
             <Route path="/owner/fees" element={<FeesPage />} />
-            <Route path="/owner/mock-tests" element={<OwnerMockTestsPage />} />
+            <Route path="/owner/fee-records/overdue" element={<FeesPage />} />
+            <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
+            <Route path="/owner/tests" element={<OwnerTestsPage />} />
+            <Route path="/owner/mock-tests" element={<Navigate to="/owner/tests" replace />} />
           </Route>
 
           {/* TEACHER Routes */}
@@ -76,6 +76,8 @@ function App() {
               path="/teacher/essays"
               element={<TeacherEssayReviewPage />}
             />
+            <Route path="/teacher/tests" element={<TeacherTestsPage />} />
+            <Route path="/teacher/mock-tests" element={<Navigate to="/teacher/tests" replace />} />
           </Route>
 
           {/* STUDENT Routes */}
@@ -95,25 +97,19 @@ function App() {
               element={<StudentEssayPage />}
             />
             <Route path="/student/essays" element={<StudentEssayPage />} />
-            <Route
-              path="/student/mock-tests"
-              element={<StudentMockTestsPage />}
-            />
-            <Route
-              path="/student/mock-tests/:attemptId/take"
-              element={<StudentTestTakingPage />}
-            />
-            <Route
-              path="/student/mock-tests/results/:attemptId"
-              element={<StudentTestResultsPage />}
-            />
+            <Route path="/student/tests" element={<StudentTestsPage />} />
+            <Route path="/student/mock-tests" element={<Navigate to="/student/tests" replace />} />
+            <Route path="/student/tests/:attemptId/take" element={<StudentTestTakingPage />} />
+            <Route path="/student/mock-tests/:attemptId/take" element={<Navigate to="/student/tests/:attemptId/take" replace />} />
+            <Route path="/student/tests/results/:attemptId" element={<StudentTestResultsPage />} />
+            <Route path="/student/mock-tests/results/:attemptId" element={<Navigate to="/student/tests/results/:attemptId" replace />} />
           </Route>
 
           {/* CASHIER Routes */}
           <Route element={<ProtectedRoute allowedRoles={["CASHIER"]} />}>
             <Route
               path="/cashier/dashboard"
-              element={<DummyDashboard role="CASHIER" />}
+              element={<Navigate to="/cashier/payments" replace />}
             />
             <Route path="/cashier/payments" element={<CashierPaymentsPage />} />
           </Route>
@@ -122,7 +118,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route
               path="/admin/dashboard"
-              element={<DummyDashboard role="ADMIN" />}
+              element={<AdminDashboardPage />}
             />
           </Route>
         </Route>

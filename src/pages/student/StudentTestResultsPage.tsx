@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import mocktestApi from "../../api/mocktestApi";
-import type { TestAttempt } from "../../types/mocktest";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import testApi from "../../api/testApi";
+import type { TestAttempt } from "../../types/tests";
 
 const StudentTestResultsPage = () => {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -9,44 +9,46 @@ const StudentTestResultsPage = () => {
 
   const [result, setResult] = useState<TestAttempt | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const loadResult = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      if (attemptId) {
-        const data = await mocktestApi.getTestResult(Number(attemptId));
-        setResult(data);
-      }
-    } catch (error) {
-      console.error("Failed to load result:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [attemptId]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    const loadResult = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        if (!attemptId) return;
+        setResult(await testApi.getTestResult(Number(attemptId)));
+      } catch (err: any) {
+        setError(err?.response?.data?.message ?? "Không thể tải kết quả.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadResult();
-  }, [loadResult]);
+  }, [attemptId]);
+
+  const percentage = useMemo(() => {
+    if (!result || !result.maxScore) return 0;
+    return Math.round((result.score / result.maxScore) * 100);
+  }, [result]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">Đang tải kết quả...</p>
+      <div className="flex h-screen items-center justify-center text-gray-600">
+        Đang tải kết quả...
       </div>
     );
   }
 
   if (!result) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">Không tìm thấy kết quả</p>
+      <div className="flex h-screen items-center justify-center text-gray-600">
+        {error || "Không tìm thấy kết quả."}
       </div>
     );
   }
 
-  const score = result.score;
-  const maxScore = result.maxScore;
-  const percentage = Math.round((score / maxScore) * 100);
   const scoreColor =
     percentage >= 80
       ? "text-green-600"
@@ -68,94 +70,78 @@ const StudentTestResultsPage = () => {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Kết quả thi thử
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">{result.testTitle}</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Kết quả thi thử</h1>
+          <p className="mt-1 text-sm text-gray-500">{result.testTitle}</p>
         </div>
         <button
-          onClick={() => navigate("/student/mock-tests")}
+          onClick={() => navigate("/student/tests")}
           className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
           ← Quay lại
         </button>
       </div>
 
-      {/* Score Card */}
-      <div
-        className={`rounded-3xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}
-      >
-        <p className="text-sm uppercase tracking-wide text-gray-600 font-medium mb-4">
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className={`rounded-3xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}>
+        <p className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-600">
           Điểm của bạn
         </p>
-        <div className={`text-6xl font-bold ${scoreColor} mb-4`}>
-          {score.toFixed(1)}
-        </div>
+        <div className={`mb-4 text-6xl font-bold ${scoreColor}`}>{result.score}</div>
         <p className="text-xl text-gray-600">
-          {percentage}% —{" "}
+          {percentage}% -{" "}
           {percentage >= 80
-            ? "✓ Xuất sắc"
+            ? "Xuất sắc"
             : percentage >= 60
-              ? "△ Chưa đạt"
-              : "✕ Cần cố gắng"}
+              ? "Đạt yêu cầu"
+              : "Cần cố gắng thêm"}
         </p>
       </div>
 
-      {/* Statistics */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-          <p className="text-3xl font-bold text-green-600">
-            {result.correctAnswers}
-          </p>
-          <p className="text-sm text-gray-600 mt-2">Câu trả lời đúng</p>
+          <p className="text-3xl font-bold text-green-600">{result.correctAnswers}</p>
+          <p className="mt-2 text-sm text-gray-600">Câu đúng</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
           <p className="text-3xl font-bold text-red-600">
             {result.totalQuestions - result.correctAnswers}
           </p>
-          <p className="text-sm text-gray-600 mt-2">Câu trả lời sai</p>
+          <p className="mt-2 text-sm text-gray-600">Câu sai</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
-          <p className="text-3xl font-bold text-gray-900">
-            {result.totalQuestions}
-          </p>
-          <p className="text-sm text-gray-600 mt-2">Tổng số câu</p>
+          <p className="text-3xl font-bold text-gray-900">{result.totalQuestions}</p>
+          <p className="mt-2 text-sm text-gray-600">Tổng số câu</p>
         </div>
       </div>
 
-      {/* Detailed Breakdown */}
       <section className="rounded-3xl border border-gray-200 bg-white p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
-          Chi tiết các câu hỏi
-        </h2>
+        <h2 className="mb-6 text-xl font-semibold text-gray-900">Chi tiết câu hỏi</h2>
 
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {result.answers.map((answer, idx) => (
-            <div
-              key={answer.questionId}
-              className="rounded-lg border border-gray-100 bg-gray-50 p-4"
-            >
-              <div className="flex items-start justify-between gap-4 mb-2">
+        <div className="max-h-96 space-y-3 overflow-y-auto">
+          {result.answers.map((answer, index) => (
+            <div key={answer.questionId} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+              <div className="mb-2 flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">Câu {idx + 1}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit...
+                  <p className="font-medium text-gray-900">Câu {index + 1}</p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {answer.questionText || "Không có nội dung câu hỏi"}
                   </p>
                 </div>
-                <div
-                  className={`text-right font-bold text-lg ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
-                >
+                <div className={`text-right text-lg font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}>
                   {answer.isCorrect ? "✓" : "✕"}
                 </div>
               </div>
 
-              <div className="space-y-1 text-sm mt-3 border-t border-gray-200 pt-3">
+              <div className="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm">
                 <p className="text-gray-600">
-                  Câu trả lời của bạn:{" "}
-                  <strong>{answer.studentAnswer || "(Bỏ trống)"}</strong>
+                  Câu trả lời của bạn: <strong>{answer.studentAnswer || "(Bỏ trống)"}</strong>
                 </p>
                 {!answer.isCorrect && (
                   <p className="text-green-600">
@@ -168,29 +154,24 @@ const StudentTestResultsPage = () => {
         </div>
       </section>
 
-      {/* Action Buttons */}
       <div className="flex gap-3">
         <button
-          onClick={() => navigate("/student/mock-tests")}
+          onClick={() => navigate("/student/tests")}
           className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
         >
           Danh sách đề thi
         </button>
         <button
-          onClick={() => navigate(`/student/mock-tests`)}
+          onClick={() => navigate("/student/tests")}
           className="flex-1 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white hover:bg-gray-900 transition"
         >
-          Làm bài thi khác
+          Làm bài khác
         </button>
       </div>
 
-      {/* Completion Date */}
       <div className="text-center text-sm text-gray-500">
         <p>
-          Hoàn thành lúc{" "}
-          {new Date(result.completedAt || result.startedAt).toLocaleString(
-            "vi-VN",
-          )}
+          Hoàn thành lúc {new Date(result.completedAt || result.startedAt).toLocaleString("vi-VN")}
         </p>
       </div>
     </div>

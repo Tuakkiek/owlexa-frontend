@@ -25,27 +25,6 @@ const DAY_NAMES = [
   "Chủ nhật",
 ];
 
-const DAY_COLORS: Record<number, string> = {
-  2: "bg-blue-50 border-blue-200 text-blue-700",
-  3: "bg-violet-50 border-violet-200 text-violet-700",
-  4: "bg-amber-50 border-amber-200 text-amber-700",
-  5: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  6: "bg-rose-50 border-rose-200 text-rose-700",
-  7: "bg-orange-50 border-orange-200 text-orange-700",
-  1: "bg-pink-50 border-pink-200 text-pink-700",
-};
-
-const SkeletonRow = () => (
-  <div className="animate-pulse flex items-center gap-4 p-4 rounded-xl bg-gray-50">
-    <div className="h-10 w-16 rounded-lg bg-gray-200" />
-    <div className="flex-1 space-y-2">
-      <div className="h-3 bg-gray-200 rounded w-1/3" />
-      <div className="h-3 bg-gray-200 rounded w-1/4" />
-    </div>
-    <div className="h-3 bg-gray-200 rounded w-20" />
-  </div>
-);
-
 export const StudentSchedulePage = () => {
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,81 +52,67 @@ export const StudentSchedulePage = () => {
     acc[s.dayOfWeek].push(s);
     return acc;
   }, {});
+  
   const sortedDays = Object.keys(grouped)
     .map(Number)
     .sort((a, b) => a - b);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4 border-b pb-2">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Thời khoá biểu</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Lịch học của bạn theo tuần
-          </p>
+          <h1 className="text-xl font-bold">Thời khoá biểu</h1>
+          <p className="text-xs text-gray-500">Lịch học của bạn theo tuần</p>
         </div>
-        <button
-          onClick={load}
+        <button 
+          onClick={load} 
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 disabled:opacity-50 transition"
+          className="border border-black px-3 py-1 text-sm disabled:opacity-50"
         >
-          <span className={isLoading ? "animate-spin" : ""}>↻</span>
           Làm mới
         </button>
       </div>
 
+      {/* Error State */}
       {error && (
-        <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 text-rose-700 text-sm">
-          ⚠️ {error}
+        <div className="border border-red-500 p-2 text-red-600 mb-4 text-sm">
+          Lỗi: {error}
         </div>
       )}
 
+      {/* Loading & Content State */}
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <SkeletonRow key={i} />
-          ))}
-        </div>
+        <div className="text-sm">Đang tải dữ liệu...</div>
       ) : schedules.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <div className="text-5xl mb-3">📅</div>
-          <p className="font-medium">Bạn chưa được đăng ký vào lớp nào.</p>
+        <div className="text-sm border p-4 text-center text-gray-500">
+          Bạn chưa được đăng ký vào lớp nào.
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {sortedDays.map((day) => (
-            <div key={day}>
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <div key={day} className="border p-2">
+              <h2 className="font-bold text-sm mb-2 border-b pb-1">
                 {DAY_NAMES[day] ?? `Ngày ${day}`}
               </h2>
               <div className="space-y-2">
                 {grouped[day]
                   .sort((a, b) => a.startTime.localeCompare(b.startTime))
                   .map((s) => (
-                    <div
-                      key={s.id}
-                      className={`flex items-center gap-4 p-4 rounded-xl border ${DAY_COLORS[day] ?? "bg-gray-50 border-gray-200 text-gray-700"}`}
-                    >
-                      <div className="text-center min-w-[56px]">
-                        <p className="text-xs font-medium opacity-70">
-                          {s.startTime.slice(0, 5)}
-                        </p>
-                        <p className="text-[10px] opacity-50">—</p>
-                        <p className="text-xs font-medium opacity-70">
-                          {s.endTime.slice(0, 5)}
-                        </p>
+                    <div key={s.id} className="text-sm border-b last:border-0 pb-1 last:pb-0">
+                      <div>
+                        <strong>
+                          {s.startTime.slice(0, 5)} - {s.endTime.slice(0, 5)}
+                        </strong>
+                        {" : "}
+                        <span>{s.className}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{s.className}</p>
-                        <p className="text-xs opacity-70">
-                          👩‍🏫 {s.teacherUserFullName} · 🏫 Phòng {s.room}
-                        </p>
+                      <div className="text-xs text-gray-600">
+                        Giáo viên: {s.teacherUserFullName} | Phòng: {s.room}
+                        {!s.isActive && (
+                          <span className="ml-2 text-red-500">(Tạm dừng)</span>
+                        )}
                       </div>
-                      {!s.isActive && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
-                          Tạm dừng
-                        </span>
-                      )}
                     </div>
                   ))}
               </div>

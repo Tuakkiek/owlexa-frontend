@@ -1,14 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { classApi } from "../../api/classApi";
 import essayApi from "../../api/essayApi";
+import type { ClassResponse } from "../../types/class";
 import type { EssaySubmission } from "../../types/essay";
 
-interface ClassOption {
-  id: number;
-  className: string;
-}
-
 const TeacherEssayReviewPage = () => {
-  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [essays, setEssays] = useState<EssaySubmission[]>([]);
   const [, setIsLoading] = useState(true);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
@@ -19,22 +16,15 @@ const TeacherEssayReviewPage = () => {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Mock classes - in real app would fetch from API
-      const mockClasses: ClassOption[] = [
-        { id: 1, className: "VSTEP A1" },
-        { id: 2, className: "VSTEP B1" },
-        { id: 3, className: "VSTEP B2" },
-      ];
-      setClasses(mockClasses);
-      if (mockClasses.length > 0 && !selectedClassId) {
-        setSelectedClassId(mockClasses[0].id);
-      }
+      const teacherClasses = await classApi.findMyClasses();
+      setClasses(teacherClasses);
+      setSelectedClassId((current) => current ?? teacherClasses[0]?.id ?? null);
     } catch (error) {
       console.error("Failed to load classes:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClassId]);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -116,7 +106,7 @@ const TeacherEssayReviewPage = () => {
                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
-            {cls.className}
+            {cls.name}
           </button>
         ))}
       </div>

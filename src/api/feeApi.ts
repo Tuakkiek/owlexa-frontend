@@ -23,4 +23,9 @@ export const feeApi = {
     const response = await axiosClient.get('/student/payments/me');
     return response.data?.data || response.data;
   },
+
+  getOwnerPayments: async (): Promise<PaymentResponse[]> => {
+    const response = await axiosClient.get('/owner/payments');
+    return response.data?.data || response.data;
+  },
 };

@@ -9,6 +9,11 @@ export const classApi = {
     return response.data?.data || response.data;
   },
 
+  findMyClasses: async (): Promise<ClassResponse[]> => {
+    const response = await axiosClient.get("/teacher/classes/me");
+    return response.data?.data || response.data;
+  },
+
   create: async (request: ClassRequest): Promise<ClassResponse> => {
     const response = await axiosClient.post(BASE_URL, request);
     return response.data?.data || response.data;

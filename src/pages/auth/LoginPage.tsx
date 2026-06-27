@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useAuthStore } from "../../store/authStore";
-import { useNavigate, Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
+import { useAuthStore } from "../../store/authStore";
 import { detectDeviceInfo } from "../../utils/device";
 
 const LoginPage = () => {
@@ -34,8 +34,8 @@ const LoginPage = () => {
     }
   }
 
-  const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
     setError("");
 
     if (!phoneNumber.trim() || !password) {
@@ -79,11 +79,10 @@ const LoginPage = () => {
           break;
       }
     } catch (err: any) {
-      console.error("Login failed", err);
-      const msg =
+      const message =
         err.response?.data?.message ||
         "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.";
-      setError(msg);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +91,10 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8">
-        <div className="mb-8">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-lg font-semibold text-white">
+            O
+          </div>
           <h1 className="text-2xl font-semibold text-gray-900">Đăng nhập</h1>
           <p className="mt-1 text-sm text-gray-500">Owlexa Management System</p>
         </div>
@@ -111,7 +113,7 @@ const LoginPage = () => {
             <input
               type="tel"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(event) => setPhoneNumber(event.target.value)}
               placeholder="0901234567"
               autoComplete="username"
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
@@ -126,14 +128,13 @@ const LoginPage = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 text-sm text-gray-900 outline-none focus:border-black"
               />
-
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((current) => !current)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-900"
               >
                 {showPassword ? "Ẩn" : "Hiện"}
@@ -146,7 +147,7 @@ const LoginPage = () => {
             disabled={isLoading}
             className="w-full rounded-md bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? "Đang đăng nhập..." : "Đang nhập"}
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 

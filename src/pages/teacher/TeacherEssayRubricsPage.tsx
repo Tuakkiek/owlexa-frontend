@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import axiosClient from "../../api/axiosClient";
+import type { ClassResponse } from "../../types/class";
 
 interface EssayRubric {
   id: number;
@@ -21,13 +22,8 @@ interface RubricCriterion {
   maxScore: number;
 }
 
-interface ClassOption {
-  id: number;
-  className: string;
-}
-
 const TeacherEssayRubricsPage = () => {
-  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [rubrics, setRubrics] = useState<EssayRubric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
@@ -42,7 +38,7 @@ const TeacherEssayRubricsPage = () => {
     try {
       setIsLoading(true);
       const [classesRes, rubricsRes] = await Promise.all([
-        axiosClient.get<ClassOption[]>("/teacher/classes"),
+        axiosClient.get<ClassResponse[]>("/teacher/classes/me"),
         axiosClient.get<EssayRubric[]>("/teacher/essay-rubrics/me"),
       ]);
       setClasses(classesRes.data ?? []);
@@ -145,7 +141,7 @@ const TeacherEssayRubricsPage = () => {
                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
-            {cls.className}
+            {cls.name}
           </button>
         ))}
       </div>

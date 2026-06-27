@@ -1,25 +1,53 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import dashboardApi, { type DashboardStats } from "../../api/dashboardApi";
+import { useAuthStore } from "../../store/authStore";
 
-const StatCard = ({
-  label,
-  value,
-}: {
+interface StatCardProps {
   label: string;
   value: string | number;
-}) => (
-  <div className="border border-gray-300 rounded p-5">
-    <p className="text-sm text-gray-600">
-      {label}
-    </p>
+  helper?: string;
+}
 
-    <p className="mt-2 text-3xl font-bold">
-      {value}
-    </p>
+const StatCard = ({ label, value, helper }: StatCardProps) => (
+  <div className="border p-4 bg-white">
+    <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
+    <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
+    {helper && <p className="mt-1 text-xs text-gray-400">{helper}</p>}
   </div>
 );
 
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount ?? 0);
+
+const quickLinks = [
+  {
+    title: "Quản lý học sinh",
+    description: "Thêm, cập nhật và theo dõi danh sách học sinh.",
+    to: "/owner/students",
+  },
+  {
+    title: "Quản lý giáo viên",
+    description: "Tạo tài khoản giáo viên và xem danh sách giảng dạy.",
+    to: "/owner/teachers",
+  },
+  {
+    title: "Lớp học",
+    description: "Thiết lập lớp, trình độ VSTEP và học phí hàng tháng.",
+    to: "/owner/classes",
+  },
+  {
+    title: "Học phí quá hạn",
+    description: "Theo dõi các khoản chưa thu và ghi nhận thanh toán tiền mặt.",
+    to: "/owner/fee-records/overdue",
+  },
+];
+
 export const OwnerDashboardPage = () => {
+  const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +56,9 @@ export const OwnerDashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      const data = await dashboardApi.getOwnerStats();
-      setStats(data);
+      setStats(await dashboardApi.getOwnerStats());
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ??
-          "Không thể tải dữ liệu dashboard."
-      );
+      setError(err?.response?.data?.message ?? "Không thể tải dữ liệu dashboard.");
     } finally {
       setIsLoading(false);
     }
@@ -45,244 +68,94 @@ export const OwnerDashboardPage = () => {
     loadStats();
   }, [loadStats]);
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount ?? 0);
-
-  const paidPct = stats
-    ? Math.round(
-        (stats.paidFeeRecords / (stats.totalFeeRecords || 1)) * 100
-      )
+  const paidPercent = stats?.totalFeeRecords
+    ? Math.round((stats.paidFeeRecords / stats.totalFeeRecords) * 100)
     : 0;
 
-  const unpaidPct = 100 - paidPct;
+  const displayName = user?.fullName?.split(" ").slice(-1)[0] || user?.fullName || "Owner";
 
   return (
-    <div className="space-y-8">
-
-      <div className="flex items-center justify-between">
+    <div className="p-4 space-y-6 text-sm">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
         <div>
-          <h1 className="text-3xl font-bold">
-            Tổng quan trung tâm
-          </h1>
-
-          <p className="text-sm text-gray-600">
-            Quản lý toàn bộ hoạt động của trung tâm
-          </p>
+          <h1 className="text-xl font-bold text-gray-900">Chào {displayName}</h1>
+          <p className="text-xs text-gray-500">Tổng quan hoạt động của trung tâm hôm nay.</p>
         </div>
-
         <button
           onClick={loadStats}
           disabled={isLoading}
-          className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+          className="border border-black px-3 py-1 text-xs disabled:opacity-50 bg-white"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
+      {/* Error State */}
       {error && (
-        <div className="border border-gray-300 rounded p-4 text-sm bg-gray-100">
-          {error}
+        <div className="border border-red-500 p-2 text-red-600 text-xs">
+          Lỗi: {error}
         </div>
       )}
 
+      {/* Content State */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-24 border border-gray-300 rounded bg-gray-100 animate-pulse"
-            />
-          ))}
-        </div>
+        <div className="text-xs text-gray-500">Đang tải dữ liệu tổng quan...</div>
       ) : stats ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Tổng học sinh"
-            value={stats.totalStudents}
-          />
+        <>
+          {/* Stats Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard label="Học sinh" value={stats.totalStudents.toLocaleString("vi-VN")} />
+            <StatCard label="Giáo viên" value={stats.totalTeachers.toLocaleString("vi-VN")} />
+            <StatCard label="Lớp học" value={stats.totalClasses.toLocaleString("vi-VN")} />
+            <StatCard
+              label="Học phí đã thu"
+              value={stats.paidFeeRecords.toLocaleString("vi-VN")}
+              helper={`${paidPercent}% trên tổng số hóa đơn`}
+            />
+            <StatCard label="Học phí chưa thu" value={stats.unpaidFeeRecords.toLocaleString("vi-VN")} />
+            <StatCard label="Tổng doanh thu" value={formatCurrency(stats.totalRevenue)} />
+          </div>
 
-          <StatCard
-            label="Tổng giáo viên"
-            value={stats.totalTeachers}
-          />
-
-          <StatCard
-            label="Tổng lớp học"
-            value={stats.totalClasses}
-          />
-
-          <StatCard
-            label="Tổng doanh thu"
-            value={formatCurrency(stats.totalRevenue)}
-          />
-        </div>
+          {/* Progress Section */}
+          <section className="border p-4 bg-white">
+            <div className="flex justify-between items-center border-b pb-2 mb-3">
+              <div>
+                <h2 className="font-bold text-gray-900">Tiến độ thu học phí</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {stats.paidFeeRecords} / {stats.totalFeeRecords} hóa đơn đã thanh toán.
+                </p>
+              </div>
+              <div className="text-xl font-bold text-gray-900">{paidPercent}%</div>
+            </div>
+            
+            {/* Flat Progress Bar */}
+            <div className="h-2 bg-gray-100 border">
+              <div className="h-full bg-black" style={{ width: `${paidPercent}%` }} />
+            </div>
+            
+            <div className="mt-3 flex gap-4 text-xs text-gray-500 border-t border-dashed pt-2">
+              <span>Đã thu: {stats.paidFeeRecords}</span>
+              <span>Chưa thu: {stats.unpaidFeeRecords}</span>
+              <span>Tổng số: {stats.totalFeeRecords}</span>
+            </div>
+          </section>
+        </>
       ) : null}
 
-      {!isLoading && stats && (
-        <section className="border border-gray-300 rounded p-6">
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div>
-              <h2 className="text-xl font-semibold">
-                Tiến độ thu học phí
-              </h2>
-
-              <p className="text-sm text-gray-600">
-                {stats.paidFeeRecords} / {stats.totalFeeRecords} hóa đơn đã thanh toán
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-3xl font-bold">
-                {paidPct}%
-              </p>
-
-              <p className="text-sm text-gray-600">
-                Hoàn thành
-              </p>
-            </div>
-
-          </div>
-
-          <div className="space-y-5">
-
-            <div>
-
-              <div className="flex justify-between text-sm mb-2">
-                <span>Đã thanh toán</span>
-                <span>{stats.paidFeeRecords}</span>
-              </div>
-
-              <div className="w-full h-3 border border-gray-300 rounded overflow-hidden">
-                <div
-                  className="h-full bg-gray-700"
-                  style={{ width: `${paidPct}%` }}
-                />
-              </div>
-
-            </div>
-
-            <div>
-
-              <div className="flex justify-between text-sm mb-2">
-                <span>Chưa thanh toán</span>
-                <span>{stats.unpaidFeeRecords}</span>
-              </div>
-
-              <div className="w-full h-3 border border-gray-300 rounded overflow-hidden">
-                <div
-                  className="h-full bg-gray-400"
-                  style={{ width: `${unpaidPct}%` }}
-                />
-              </div>
-
-            </div>
-
-          </div>
-
-        </section>
-      )}
-
+      {/* Quick Links Section */}
       <section className="grid gap-4 md:grid-cols-2">
-
-        <a
-          href="/owner/students"
-          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
-        >
-          <h3 className="font-semibold">
-            Quản lý học sinh
-          </h3>
-
-          <p className="mt-2 text-sm text-gray-600">
-            Xem danh sách, thêm và chỉnh sửa học sinh.
-          </p>
-        </a>
-
-        <a
-          href="/owner/teachers"
-          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
-        >
-          <h3 className="font-semibold">
-            Quản lý giáo viên
-          </h3>
-
-          <p className="mt-2 text-sm text-gray-600">
-            Xem danh sách và phân công lớp.
-          </p>
-        </a>
-
-        <a
-          href="/owner/classes"
-          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
-        >
-          <h3 className="font-semibold">
-            Quản lý lớp học
-          </h3>
-
-          <p className="mt-2 text-sm text-gray-600">
-            Tạo lớp, xem lịch học và điểm danh.
-          </p>
-        </a>
-
-        <a
-          href="/owner/fees"
-          className="border border-gray-300 rounded p-6 hover:bg-gray-100"
-        >
-          <h3 className="font-semibold">
-            Quản lý học phí
-          </h3>
-
-          <p className="mt-2 text-sm text-gray-600">
-            Thu học phí và theo dõi các hóa đơn.
-          </p>
-        </a>
-
+        {quickLinks.map((link) => (
+          <Link
+            key={link.to}
+            to={link.to}
+            className="border p-4 bg-white block hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-bold text-gray-900">{link.title}</h3>
+            <p className="mt-1 text-xs text-gray-500">{link.description}</p>
+          </Link>
+        ))}
       </section>
-
-      {!isLoading && stats && (
-
-        <section className="grid gap-4 md:grid-cols-2">
-
-          <div className="border border-gray-300 rounded p-6">
-
-            <p className="text-sm text-gray-600">
-              Học phí đã thu
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {stats.paidFeeRecords}
-            </p>
-
-            <p className="mt-2 text-sm text-gray-600">
-              {formatCurrency(stats.totalRevenue)}
-            </p>
-
-          </div>
-
-          <div className="border border-gray-300 rounded p-6">
-
-            <p className="text-sm text-gray-600">
-              Học phí chưa thu
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {stats.unpaidFeeRecords}
-            </p>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Cần tiếp tục theo dõi và thu học phí.
-            </p>
-
-          </div>
-
-        </section>
-
-      )}
-
     </div>
   );
 };
