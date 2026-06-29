@@ -2,11 +2,11 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
+import { applyAuthFromResponse } from "../../auth/authService";
 import { useAuthStore } from "../../store/authStore";
 import { detectDeviceInfo } from "../../utils/device";
 
 const LoginPage = () => {
-  const setAuth = useAuthStore((state) => state.setAuth);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
@@ -53,13 +53,7 @@ const LoginPage = () => {
         deviceType: deviceInfo.deviceType,
       });
 
-      setAuth(response.accessToken, {
-        phoneNumber: response.phoneNumber,
-        email: response.email,
-        fullName: response.fullName,
-        roleName: response.roleName,
-        centerName: response.centerName,
-      });
+      applyAuthFromResponse(response);
 
       switch (response.roleName) {
         case "ADMIN":

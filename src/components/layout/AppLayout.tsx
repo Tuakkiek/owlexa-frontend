@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
+import { clearAuthState } from "../../auth/authService";
 import { useAuthStore } from "../../store/authStore";
 
 type RoleName = "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER";
@@ -51,7 +52,7 @@ const roleLabels: Record<RoleName, string> = {
 };
 
 const AppLayout = () => {
-  const { user, clearAuth } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const links = user ? sidebarLinks[user.roleName] : [];
@@ -62,7 +63,7 @@ const AppLayout = () => {
     } catch {
       // Clearing local state is enough if the session has already expired.
     } finally {
-      clearAuth();
+      clearAuthState();
       localStorage.removeItem("tenantId");
       navigate("/login");
     }

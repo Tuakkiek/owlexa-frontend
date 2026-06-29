@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import {
+  applyAuthFromResponse,
+  clearAuthState,
+  getAccessToken,
+} from '../auth/authService';
 import { getTenantFromSubdomain } from '../utils/tenant';
 import type { AuthResponse } from '../types/auth';
 
@@ -14,7 +18,7 @@ const axiosClient = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken = useAuthStore.getState().accessToken;
+    const accessToken = getAccessToken();
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -79,15 +83,10 @@ axiosClient.interceptors.response.use(
         // We only extract what's needed for UserInfo. 
         // If the backend returns AuthResponse directly without `data` wrapper, it would be just `data`.
         // Let's assume standard response (we will adjust if backend wraps it).
-        const authData = 'data' in data ? (data as any).data : data;
+        const authData: AuthResponse =
+          'data' in data ? (data as { data: AuthResponse }).data : data;
 
-        useAuthStore.getState().setAuth(authData.accessToken, {
-          email: authData.email,
-          phoneNumber: authData.phoneNumber,
-          fullName: authData.fullName,
-          roleName: authData.roleName,
-          centerName: authData.centerName
-        });
+        applyAuthFromResponse(authData);
 
         axiosClient.defaults.headers.common['Authorization'] = `Bearer ${authData.accessToken}`;
         originalRequest.headers.Authorization = `Bearer ${authData.accessToken}`;
@@ -97,7 +96,7 @@ axiosClient.interceptors.response.use(
         return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
-        useAuthStore.getState().clearAuth();
+        clearAuthState();
         // optionally redirect to login
         window.location.href = '/login';
         return Promise.reject(refreshError);

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { AUTH_STORAGE_KEY, AUTH_STORAGE_VERSION } from "../auth/constants";
+import { createAuthPersistStorage } from "../auth/authStorage";
 import type { UserInfo } from "../types/auth";
 
 interface AuthState {
@@ -22,8 +24,9 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: null, user: null, isAuthenticated: false }),
     }),
     {
-      name: "owlexa-auth-store",
-      storage: createJSONStorage(() => localStorage),
+      name: AUTH_STORAGE_KEY,
+      version: AUTH_STORAGE_VERSION,
+      storage: createJSONStorage(() => createAuthPersistStorage()),
     }
   )
 );
