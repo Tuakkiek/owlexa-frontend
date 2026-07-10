@@ -1,26 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import axiosClient from "../../api/axiosClient";
-
-interface ScheduleItem {
-  id: number;
-  classId: number;
-  className: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  room: string;
-  isActive: boolean;
-}
-
-const DAY_NAMES = [
-  "Chủ nhật",
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-];
+import { scheduleApi } from "../../api/scheduleApi";
+import type { ScheduleResponse } from "../../types/schedule";
+import { DAY_LABELS } from "../../types/schedule";
 
 const SkeletonRow = () => (
   <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 animate-pulse">
@@ -34,7 +15,7 @@ const SkeletonRow = () => (
 );
 
 export default function TeacherSchedulePage() {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,8 +23,8 @@ export default function TeacherSchedulePage() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await axiosClient.get<ScheduleItem[]>("/teacher/schedules/me");
-      setSchedules(res.data ?? []);
+      const data = await scheduleApi.findMySchedulesAsTeacher();
+      setSchedules(data);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Không thể tải lịch dạy.");
     } finally {
@@ -57,7 +38,7 @@ export default function TeacherSchedulePage() {
 
   const grouped = useMemo(
     () =>
-      schedules.reduce<Record<number, ScheduleItem[]>>((acc, item) => {
+      schedules.reduce<Record<number, ScheduleResponse[]>>((acc, item) => {
         if (!acc[item.dayOfWeek]) {
           acc[item.dayOfWeek] = [];
         }
@@ -68,7 +49,10 @@ export default function TeacherSchedulePage() {
   );
 
   const sortedDays = useMemo(
-    () => Object.keys(grouped).map(Number).sort((a, b) => a - b),
+    () =>
+      Object.keys(grouped)
+        .map(Number)
+        .sort((a, b) => a - b),
     [grouped],
   );
 
@@ -81,7 +65,9 @@ export default function TeacherSchedulePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Lịch dạy của tôi</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Lịch dạy của tôi
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
             Thời khóa biểu theo tuần, lấy trực tiếp từ backend
           </p>
@@ -118,7 +104,9 @@ export default function TeacherSchedulePage() {
             Buổi đang hoạt động
           </p>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {isLoading ? "..." : schedules.filter((schedule) => schedule.isActive).length}
+            {isLoading
+              ? "..."
+              : schedules.filter((schedule) => schedule.isActive).length}
           </p>
         </div>
       </div>
@@ -144,7 +132,7 @@ export default function TeacherSchedulePage() {
           {sortedDays.map((day) => (
             <section key={day}>
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                {DAY_NAMES[day]}
+                {DAY_LABELS[day]}
               </h2>
               <div className="space-y-2">
                 {grouped[day]

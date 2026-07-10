@@ -22,10 +22,13 @@ interface AttendanceRow {
   note: string;
 }
 
-export default function TeacherAttendancePage() {
+export default function OwnerAttendancePage() {
   const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [classes, setClasses] = useState<TeacherClassStudents[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
+    null,
+  );
+  const [selectedTeacherId, setSelectedTeacherId] = useState<number | null>(
     null,
   );
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -41,15 +44,20 @@ export default function TeacherAttendancePage() {
       setIsLoading(true);
       setError("");
       const [scheduleData, classData] = await Promise.all([
-        scheduleApi.findMySchedulesAsTeacher(),
-        classApi.findMyClassesWithStudentsAsTeacher(),
+        scheduleApi.findAllForOwner(),
+        classApi.findAllClassesWithStudentsForOwner(),
       ]);
 
       setSchedules(scheduleData);
       setClasses(classData);
-      setSelectedScheduleId(
-        (current) => current ?? scheduleData[0]?.id ?? null,
-      );
+
+      if (scheduleData.length > 0) {
+        setSelectedScheduleId(scheduleData[0].id);
+        setSelectedTeacherId(scheduleData[0].teacherUserId);
+      } else {
+        setSelectedScheduleId(null);
+        setSelectedTeacherId(null);
+      }
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu điểm danh.",
@@ -63,14 +71,49 @@ export default function TeacherAttendancePage() {
     loadInitialData();
   }, [loadInitialData]);
 
-  const selectedSchedule = useMemo(
+  // Filtered schedules based on selected teacher
+  const filteredSchedules = useMemo(
     () =>
-      schedules.find((schedule) => schedule.id === selectedScheduleId) ?? null,
+      selectedTeacherId !== null
+        ? schedules.filter((s) => s.teacherUserId === selectedTeacherId)
+        : schedules,
+    [schedules, selectedTeacherId],
+  );
+
+  // When teacher changes, pick the first matching schedule
+  useEffect(() => {
+    if (selectedTeacherId !== null) {
+      const match = schedules.find(
+        (s) => s.teacherUserId === selectedTeacherId,
+      );
+      if (match) {
+        setSelectedScheduleId(match.id);
+      }
+    }
+  }, [selectedTeacherId, schedules]);
+
+  // Auto-select first schedule when filtered list changes
+  useEffect(() => {
+    if (filteredSchedules.length > 0) {
+      const stillExists = filteredSchedules.some(
+        (s) => s.id === selectedScheduleId,
+      );
+      if (!stillExists) {
+        setSelectedScheduleId(filteredSchedules[0].id);
+      }
+    } else {
+      setSelectedScheduleId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredSchedules]);
+
+  const selectedSchedule = useMemo(
+    () => schedules.find((s) => s.id === selectedScheduleId) ?? null,
     [schedules, selectedScheduleId],
   );
 
   const selectedClass = useMemo(
-    () => classes.find((item) => item.id === selectedSchedule?.classId) ?? null,
+    () => classes.find((c) => c.id === selectedSchedule?.classId) ?? null,
     [classes, selectedSchedule?.classId],
   );
 
@@ -174,13 +217,30 @@ export default function TeacherAttendancePage() {
     ? (DAY_LABELS[selectedSchedule.dayOfWeek] ?? "Không rõ")
     : "";
 
+  // Unique teachers from schedules for filter dropdown
+  const teachers = useMemo(() => {
+    const map = new Map<number, { id: number; name: string; phone: string }>();
+    schedules.forEach((s) => {
+      if (!map.has(s.teacherUserId)) {
+        map.set(s.teacherUserId, {
+          id: s.teacherUserId,
+          name: s.teacherUserFullName,
+          phone: s.teacherPhoneNumber,
+        });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [schedules]);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Chọn buổi học, nạp danh sách học sinh và lưu trạng thái điểm danh ngay
-          tại đây.
+          Theo dõi và cập nhật điểm danh cho tất cả các buổi học trong trung
+          tâm.
         </p>
       </div>
 
@@ -196,25 +256,47 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      <div className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
+      {/* Filters: Teacher + Schedule + Date */}
+      <div className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.5fr_1fr_0.8fr]">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Giáo viên
+          </label>
+          <select
+            value={selectedTeacherId ?? ""}
+            onChange={(e) =>
+              setSelectedTeacherId(
+                e.target.value ? Number(e.target.value) : null,
+              )
+            }
+            className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-black"
+          >
+            <option value="">Tất cả giáo viên</option>
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
             Buổi học
           </label>
           <select
             value={selectedScheduleId ?? ""}
-            onChange={(event) =>
-              setSelectedScheduleId(Number(event.target.value))
-            }
+            onChange={(e) => setSelectedScheduleId(Number(e.target.value))}
             className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-black"
           >
             <option value="" disabled>
               Chọn buổi học
             </option>
-            {schedules.map((schedule) => (
+            {filteredSchedules.map((schedule) => (
               <option key={schedule.id} value={schedule.id}>
                 {DAY_LABELS[schedule.dayOfWeek]} · {schedule.className} ·{" "}
-                {schedule.startTime.slice(0, 5)}-{schedule.endTime.slice(0, 5)}
+                {schedule.startTime.slice(0, 5)}-{schedule.endTime.slice(0, 5)}{" "}
+                · {schedule.teacherUserFullName}
               </option>
             ))}
           </select>
@@ -224,7 +306,7 @@ export default function TeacherAttendancePage() {
           label="Ngày điểm danh"
           type="date"
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(e) => setDate(e.target.value)}
         />
 
         <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
@@ -236,6 +318,8 @@ export default function TeacherAttendancePage() {
               <>
                 {currentDayName} · {selectedSchedule.className}
                 <br />
+                {selectedSchedule.teacherUserFullName}
+                <br />
                 Phòng {selectedSchedule.room} ·{" "}
                 {selectedSchedule.startTime.slice(0, 5)}-
                 {selectedSchedule.endTime.slice(0, 5)}
@@ -245,20 +329,11 @@ export default function TeacherAttendancePage() {
             )}
           </div>
         </div>
-
-        <Button
-          onClick={loadAttendance}
-          isLoading={isLoadingAttendance}
-          variant="secondary"
-          className="self-end"
-          disabled={!selectedScheduleId}
-        >
-          Tải danh sách
-        </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["PRESENT", "ABSENT", "EXCUSED"] as AttendanceStatus[]).map(
+      {/* Summary cards */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        {(["PRESENT", "ABSENT", "LATE", "EXCUSED"] as AttendanceStatus[]).map(
           (status) => (
             <div
               key={status}
@@ -275,6 +350,7 @@ export default function TeacherAttendancePage() {
         )}
       </div>
 
+      {/* Student list */}
       {isLoading || isLoadingAttendance ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -325,35 +401,38 @@ export default function TeacherAttendancePage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {(["PRESENT", "ABSENT", "EXCUSED"] as AttendanceStatus[]).map(
-                    (status) => {
-                      const active = row.status === status;
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() =>
-                            updateRow(row.studentUserId, { status })
-                          }
-                          className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
-                            active
-                              ? STATUS_META[status].className
-                              : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-                          }`}
-                        >
-                          {STATUS_META[status].label}
-                        </button>
-                      );
-                    },
-                  )}
+                  {(
+                    [
+                      "PRESENT",
+                      "ABSENT",
+                      "LATE",
+                      "EXCUSED",
+                    ] as AttendanceStatus[]
+                  ).map((status) => {
+                    const active = row.status === status;
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => updateRow(row.studentUserId, { status })}
+                        className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
+                          active
+                            ? STATUS_META[status].className
+                            : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {STATUS_META[status].label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div>
                   <input
                     type="text"
                     value={row.note}
-                    onChange={(event) =>
-                      updateRow(row.studentUserId, { note: event.target.value })
+                    onChange={(e) =>
+                      updateRow(row.studentUserId, { note: e.target.value })
                     }
                     placeholder="Ghi chú thêm..."
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"

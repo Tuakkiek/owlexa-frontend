@@ -1,17 +1,22 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Input } from '../../components/ui/Input';
-import { ClassForm } from './components/ClassForm';
-import { classApi } from '../../api/classApi';
-import type { ClassResponse, ClassRequest } from '../../types/class';
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
+import { Input } from "../../components/ui/Input";
+import { ClassForm } from "./components/ClassForm";
+import { ClassDetailDrawer } from "./components/ClassDetailDrawer";
+import { classApi } from "../../api/classApi";
+import { formatCurrency } from "../../utils/money";
+import type { ClassResponse, ClassRequest } from "../../types/class";
 
 export const ClassesPage = () => {
   const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClass, setSelectedClass] = useState<ClassResponse | null>(
+    null,
+  );
 
-  // Modals state
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassResponse | null>(null);
 
@@ -20,8 +25,8 @@ export const ClassesPage = () => {
       setIsLoading(true);
       const data = await classApi.findAll();
       setClasses(data);
-    } catch (error) {
-      console.error('Failed to load classes:', error);
+    } catch {
+      // silent
     } finally {
       setIsLoading(false);
     }
@@ -31,12 +36,13 @@ export const ClassesPage = () => {
     loadClasses();
   }, [loadClasses]);
 
-  const filteredClasses = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!searchQuery) return classes;
-    const lowerQ = searchQuery.toLowerCase();
-    return classes.filter(c => 
-      c.name.toLowerCase().includes(lowerQ) || 
-      c.vstepLevel.toLowerCase().includes(lowerQ)
+    const q = searchQuery.toLowerCase();
+    return classes.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.vstepLevel.toLowerCase().includes(q),
     );
   }, [classes, searchQuery]);
 
@@ -54,82 +60,144 @@ export const ClassesPage = () => {
     }
   };
 
-  const handleDelete = async (classId: number) => {
-    if (window.confirm('Are you sure you want to delete this class?')) {
-      await classApi.delete(classId);
-      loadClasses();
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  const handleDelete = async (cls: ClassResponse) => {
+    if (!window.confirm(`Xóa lớp "${cls.name}"?`)) return;
+    await classApi.delete(cls.id);
+    loadClasses();
   };
 
   return (
     <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
-      {/* Header gọn gàng, sử dụng đường kẻ mỏng phân cách */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-neutral-200 space-y-4 sm:space-y-0">
-        <h1 className="text-xl font-medium tracking-tight">Class Management</h1>
-        <Button 
+        <div>
+          <h1 className="text-xl font-medium tracking-tight">Lớp học</h1>
+          <p className="text-xs text-neutral-400 mt-1">
+            Quản lý lớp học, lịch học, ghi danh và học phí.
+          </p>
+        </div>
+        <Button
           onClick={() => setIsAddModalOpen(true)}
           className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm transition-colors"
         >
-          Create Class
+          + Tạo lớp mới
         </Button>
       </div>
 
-      {/* Thanh tìm kiếm tinh giản, bỏ nền xám */}
+      {/* Search */}
       <div className="max-w-md w-full">
-        <Input 
+        <Input
           label=""
-          placeholder="Search by name or level..."
+          placeholder="Tìm theo tên lớp hoặc cấp độ..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      
-      {/* Khu vực bảng dữ liệu - loại bỏ đổ bóng và bo góc quá đà */}
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+            Tổng lớp
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+            {classes.length}
+          </p>
+        </div>
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+            Đang hoạt động
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+            {classes.filter((c) => c.isActive).length}
+          </p>
+        </div>
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+            Tổng học sinh
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+            {classes.reduce((s, c) => s + c.maxStudents, 0)}
+          </p>
+        </div>
+      </div>
+
+      {/* Table */}
       <div className="w-full overflow-x-auto">
         {isLoading ? (
-          <div className="py-12 text-center text-sm text-neutral-400">Loading classes...</div>
-        ) : filteredClasses.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-400">No classes found.</div>
+          <div className="py-12 text-center text-sm text-neutral-400">
+            Đang tải lớp học...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center text-sm text-neutral-400">
+            Không tìm thấy lớp học nào.
+          </div>
         ) : (
-          <table className="min-w-full text-left text-sm border-collapse">
+          <table className="min-w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-neutral-200 text-neutral-400 font-normal">
-                <th className="pb-3 pr-4 font-normal">Class Name</th>
-                <th className="pb-3 px-4 font-normal">Level</th>
-                <th className="pb-3 px-4 font-normal text-right">Max Students</th>
-                <th className="pb-3 px-4 font-normal text-right">Monthly Fee</th>
-                <th className="pb-3 px-4 font-normal text-center">Status</th>
-                <th className="pb-3 pl-4 text-right font-normal">Actions</th>
+              <tr className="border-b border-neutral-200 text-neutral-400 text-xs uppercase tracking-wide">
+                <th className="pb-3 pr-4 text-left font-medium">Tên lớp</th>
+                <th className="pb-3 px-4 text-left font-medium">Cấp độ</th>
+                <th className="pb-3 px-4 text-right font-medium">
+                  Sĩ số tối đa
+                </th>
+                <th className="pb-3 px-4 text-right font-medium">
+                  Học phí/tháng
+                </th>
+                <th className="pb-3 px-4 text-center font-medium">
+                  Trạng thái
+                </th>
+                <th className="pb-3 pl-4 text-right font-medium">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {filteredClasses.map((cls) => (
-                <tr key={cls.id} className="hover:bg-neutral-50/50 transition-colors">
-                  <td className="py-4 pr-4 font-normal text-neutral-900">{cls.name}</td>
-                  <td className="py-4 px-4 text-neutral-500">{cls.vstepLevel}</td>
-                  <td className="py-4 px-4 text-neutral-500 text-right">{cls.maxStudents}</td>
-                  <td className="py-4 px-4 text-neutral-900 text-right">{formatCurrency(cls.monthFee)}</td>
+              {filtered.map((cls) => (
+                <tr
+                  key={cls.id}
+                  className="hover:bg-neutral-50/50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedClass(cls)}
+                >
+                  <td className="py-4 pr-4 font-semibold text-neutral-900">
+                    {cls.name}
+                  </td>
+                  <td className="py-4 px-4 text-neutral-600">
+                    {cls.vstepLevel}
+                  </td>
+                  <td className="py-4 px-4 text-neutral-600 text-right">
+                    {cls.maxStudents}
+                  </td>
+                  <td className="py-4 px-4 text-neutral-900 text-right font-medium">
+                    {formatCurrency(cls.monthFee)}
+                  </td>
                   <td className="py-4 px-4 text-center">
-                    <span className="text-xs uppercase tracking-wider text-neutral-600">
-                      {cls.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        cls.isActive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {cls.isActive ? "Đang hoạt động" : "Tạm dừng"}
                     </span>
                   </td>
-                  <td className="py-4 pl-4 text-right text-xs space-x-4">
+                  <td
+                    className="py-4 pl-4 text-right text-xs space-x-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
-                      onClick={() => setEditingClass(cls)}
                       className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      onClick={() => {
+                        setEditingClass(cls);
+                        setIsAddModalOpen(true);
+                      }}
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
-                      onClick={() => handleDelete(cls.id)}
-                      className="text-neutral-400 hover:text-neutral-900 underline underline-offset-4"
+                      className="text-neutral-400 hover:text-red-700 underline underline-offset-4"
+                      onClick={() => handleDelete(cls)}
                     >
-                      Delete
+                      Xóa
                     </button>
                   </td>
                 </tr>
@@ -139,36 +207,42 @@ export const ClassesPage = () => {
         )}
       </div>
 
-      {/* Modals giữ nguyên logic xử lý */}
+      {/* Create/Edit Modal */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title="Create New Class"
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingClass(null);
+        }}
+        title={editingClass ? "Chỉnh sửa lớp học" : "Tạo lớp học mới"}
       >
         <ClassForm
-          onSubmit={handleCreate}
-          onCancel={() => setIsAddModalOpen(false)}
+          initialData={
+            editingClass
+              ? {
+                  name: editingClass.name,
+                  vstepLevel: editingClass.vstepLevel,
+                  maxStudent: editingClass.maxStudents,
+                  monthlyFee: editingClass.monthFee,
+                }
+              : undefined
+          }
+          onSubmit={editingClass ? handleUpdate : handleCreate}
+          onCancel={() => {
+            setIsAddModalOpen(false);
+            setEditingClass(null);
+          }}
         />
       </Modal>
 
-      <Modal
-        isOpen={!!editingClass}
-        onClose={() => setEditingClass(null)}
-        title="Edit Class"
-      >
-        {editingClass && (
-          <ClassForm
-            initialData={{
-              name: editingClass.name,
-              vstepLevel: editingClass.vstepLevel,
-              maxStudent: editingClass.maxStudents,
-              monthlyFee: editingClass.monthFee,
-            }}
-            onSubmit={handleUpdate}
-            onCancel={() => setEditingClass(null)}
-          />
-        )}
-      </Modal>
+      {/* Detail Drawer */}
+      {selectedClass && (
+        <ClassDetailDrawer
+          cls={selectedClass}
+          onClose={() => setSelectedClass(null)}
+          onRefresh={loadClasses}
+        />
+      )}
     </div>
   );
 };

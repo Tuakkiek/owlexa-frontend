@@ -1,26 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import axiosClient from "../../api/axiosClient";
+import { classApi } from "../../api/classApi";
+import essayApi from "../../api/essayApi";
 import type { ClassResponse } from "../../types/class";
-
-interface EssayRubric {
-  id: number;
-  classId: number;
-  className: string;
-  title: string;
-  description: string;
-  maxScore: number;
-  criteria: RubricCriterion[];
-  createdAt: string;
-  isActive: boolean;
-}
-
-interface RubricCriterion {
-  id: number;
-  name: string;
-  description: string;
-  weight: number;
-  maxScore: number;
-}
+import type { EssayRubric } from "../../types/essay";
 
 const TeacherEssayRubricsPage = () => {
   const [classes, setClasses] = useState<ClassResponse[]>([]);
@@ -37,14 +19,14 @@ const TeacherEssayRubricsPage = () => {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [classesRes, rubricsRes] = await Promise.all([
-        axiosClient.get<ClassResponse[]>("/teacher/classes/me"),
-        axiosClient.get<EssayRubric[]>("/teacher/essay-rubrics/me"),
+      const [classesData, rubricsData] = await Promise.all([
+        classApi.findMyClasses(),
+        essayApi.findMyRubricsAsTeacher(),
       ]);
-      setClasses(classesRes.data ?? []);
-      setRubrics(rubricsRes.data ?? []);
-      if (classesRes.data && classesRes.data.length > 0 && !selectedClassId) {
-        setSelectedClassId(classesRes.data[0].id);
+      setClasses(classesData);
+      setRubrics(rubricsData);
+      if (classesData.length > 0 && !selectedClassId) {
+        setSelectedClassId(classesData[0].id);
       }
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -70,7 +52,7 @@ const TeacherEssayRubricsPage = () => {
     }
 
     try {
-      await axiosClient.post("/teacher/essay-rubrics", {
+      await essayApi.createRubric({
         classId: selectedClassId,
         ...formData,
         criteria: [

@@ -1,42 +1,52 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { Button } from '../../../components/ui/Button';
-import type { BulkStudentRequest, BulkStudentResult } from '../../../types/student';
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { Button } from "../../../components/ui/Button";
+import type {
+  BulkStudentRequest,
+  BulkStudentResult,
+} from "../../../types/student";
 
 interface BulkAddStudentFormProps {
   onSubmit: (data: BulkStudentRequest) => Promise<BulkStudentResult[]>;
   onCancel: () => void;
 }
 
-export const BulkAddStudentForm = ({ onSubmit, onCancel }: BulkAddStudentFormProps) => {
-  const [textData, setTextData] = useState('');
+export const BulkAddStudentForm = ({
+  onSubmit,
+  onCancel,
+}: BulkAddStudentFormProps) => {
+  const [textData, setTextData] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [results, setResults] = useState<BulkStudentResult[] | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     if (!textData.trim()) {
-      setError('Please enter some data');
+      setError("Please enter some data");
       return;
     }
 
-    const lines = textData.split('\n').filter((line) => line.trim() !== '');
+    const lines = textData.split("\n").filter((line) => line.trim() !== "");
     const students = lines.map((line) => {
       // Assuming format: Phone, Name, Email
-      const parts = line.split(',').map((p) => p.trim());
+      const parts = line.split(",").map((p) => p.trim());
       return {
-        phoneNumber: parts[0] || '',
-        fullName: parts[1] || '',
-        email: parts[2] || '',
+        phoneNumber: parts[0] || "",
+        fullName: parts[1] || "",
+        email: parts[2] || "",
       };
     });
 
-    const invalid = students.find(t => !t.phoneNumber || !t.fullName || !t.email);
+    const invalid = students.find(
+      (t) => !t.phoneNumber || !t.fullName || !t.email,
+    );
     if (invalid) {
-      setError('Each line must contain Phone, Name, and Email separated by commas.');
+      setError(
+        "Each line must contain Phone, Name, and Email separated by commas.",
+      );
       return;
     }
 
@@ -45,36 +55,51 @@ export const BulkAddStudentForm = ({ onSubmit, onCancel }: BulkAddStudentFormPro
       const res = await onSubmit({ students });
       setResults(res);
     } catch (err) {
-      setError('Failed to bulk add students. Please try again.');
+      setError("Failed to bulk add students. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   if (results) {
+    const statusLabel: Record<string, string> = {
+      CREATED: "Đã tạo",
+      ALREADY_IN_CENTER: "Đã có trong trung tâm",
+      INVALID_INPUT: "Dữ liệu không hợp lệ",
+    };
+    const isError = (s: string) => s !== "CREATED";
+
     return (
       <div className="space-y-4">
         <div className="bg-green-50 p-4 rounded text-green-800">
-          Successfully processed {results.length} students.
+          Đã xử lý {results.length} học sinh.
         </div>
         <div className="max-h-64 overflow-y-auto border rounded divide-y">
           {results.map((r, i) => (
             <div key={i} className="p-3 flex justify-between">
               <div>
                 <p className="font-medium">{r.phoneNumber}</p>
-                {r.message && <p className="text-sm text-red-500">{r.message}</p>}
+                <p
+                  className={`text-sm ${isError(r.status) ? "text-red-500" : "text-green-600"}`}
+                >
+                  {statusLabel[r.status] || r.status}
+                </p>
               </div>
               {r.temporaryPassword && (
                 <div className="text-right">
-                  <span className="text-xs text-gray-500 block">Temp Password:</span>
-                  <code className="bg-gray-100 px-2 py-1 rounded text-sm">{r.temporaryPassword}</code>
+                  <span className="text-xs text-gray-500 block">
+                    Mật khẩu tạm:
+                  </span>
+                  <code className="bg-gray-100 px-2 py-1 rounded text-sm">
+                    {r.temporaryPassword}
+                  </code>
                 </div>
               )}
             </div>
           ))}
         </div>
         <div className="flex justify-end pt-4">
-          <Button onClick={onCancel}>Close</Button>
+          <Button onClick={onCancel}>Đóng</Button>
         </div>
       </div>
     );
@@ -96,7 +121,9 @@ export const BulkAddStudentForm = ({ onSubmit, onCancel }: BulkAddStudentFormPro
           onChange={(e) => setTextData(e.target.value)}
           placeholder="0912345678, Nguyen Van A, a@example.com&#10;0987654321, Tran Thi B, b@example.com"
         />
-        {error && <span className="text-xs text-red-500 mt-1 block">{error}</span>}
+        {error && (
+          <span className="text-xs text-red-500 mt-1 block">{error}</span>
+        )}
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">

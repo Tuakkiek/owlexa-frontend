@@ -6,22 +6,22 @@ const BASE_URL = '/owner/students';
 export const studentApi = {
   findAll: async (): Promise<StudentResponse[]> => {
     const response = await axiosClient.get(BASE_URL);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   create: async (request: StudentRequest): Promise<StudentResponse> => {
     const response = await axiosClient.post(BASE_URL, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   bulkCreate: async (request: BulkStudentRequest): Promise<BulkStudentResult[]> => {
     const response = await axiosClient.post(`${BASE_URL}/bulk`, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   update: async (studentId: number, request: StudentRequest): Promise<StudentResponse> => {
     const response = await axiosClient.put(`${BASE_URL}/${studentId}`, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   delete: async (studentId: number): Promise<void> => {

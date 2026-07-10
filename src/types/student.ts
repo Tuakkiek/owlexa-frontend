@@ -25,6 +25,5 @@ export interface BulkStudentRequest {
 export interface BulkStudentResult {
   phoneNumber: string;
   temporaryPassword?: string;
-  success: boolean;
-  message?: string;
+  status: string;
 }

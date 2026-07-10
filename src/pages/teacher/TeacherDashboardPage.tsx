@@ -1,32 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import axiosClient from "../../api/axiosClient";
+import { scheduleApi } from "../../api/scheduleApi";
 import { useAuthStore } from "../../store/authStore";
-
-interface TeacherScheduleItem {
-  id: number;
-  classId: number;
-  className: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  room: string;
-  isActive: boolean;
-}
-
-const DAY_NAMES = [
-  "Chủ nhật",
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-];
+import type { ScheduleResponse } from "../../types/schedule";
+import { DAY_LABELS } from "../../types/schedule";
 
 export default function TeacherDashboardPage() {
   const user = useAuthStore((state) => state.user);
-  const [schedules, setSchedules] = useState<TeacherScheduleItem[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +15,8 @@ export default function TeacherDashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await axiosClient.get<TeacherScheduleItem[]>(
-        "/teacher/schedules/me",
-      );
-      setSchedules(res.data ?? []);
+      const data = await scheduleApi.findMySchedulesAsTeacher();
+      setSchedules(data);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu giáo viên.",
@@ -53,7 +32,7 @@ export default function TeacherDashboardPage() {
 
   const grouped = useMemo(
     () =>
-      schedules.reduce<Record<number, TeacherScheduleItem[]>>((acc, item) => {
+      schedules.reduce<Record<number, ScheduleResponse[]>>((acc, item) => {
         if (!acc[item.dayOfWeek]) acc[item.dayOfWeek] = [];
         acc[item.dayOfWeek].push(item);
         return acc;
@@ -172,7 +151,7 @@ export default function TeacherDashboardPage() {
               {sortedDays.map((day) => (
                 <div key={day}>
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {DAY_NAMES[day]}
+                    {DAY_LABELS[day]}
                   </h3>
                   <div className="space-y-2">
                     {grouped[day]

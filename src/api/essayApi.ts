@@ -2,10 +2,38 @@ import axiosClient from "./axiosClient";
 import type {
   EssaySubmission,
   EssayGradingResult,
+  EssayRubric,
 } from "../types/essay";
 
 const essayApi = {
-  // Student: Submit essay for grading
+  // ── Teacher: Rubric management ──
+  findMyRubricsAsTeacher: async (): Promise<EssayRubric[]> => {
+    const res = await axiosClient.get<EssayRubric[]>(
+      "/teacher/essay-rubrics/me",
+    );
+    return res.data ?? [];
+  },
+
+  createRubric: async (request: {
+    classId: number;
+    title: string;
+    description: string;
+    maxScore: number;
+    criteria: Array<{
+      name: string;
+      description: string;
+      weight: number;
+      maxScore: number;
+    }>;
+  }): Promise<EssayRubric> => {
+    const res = await axiosClient.post<EssayRubric>(
+      "/teacher/essay-rubrics",
+      request,
+    );
+    return res.data;
+  },
+
+  // ── Student: Submit essay ──
   submitEssay: async (
     rubricId: number,
     content: string,

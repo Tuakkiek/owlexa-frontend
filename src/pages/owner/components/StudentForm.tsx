@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import type { FormEvent } from 'react';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import type { StudentRequest } from '../../../types/student';
+import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import type { StudentRequest } from "../../../types/student";
 
 interface StudentFormProps {
-  initialData?: StudentRequest;
+  initialData?: Partial<StudentRequest>;
   onSubmit: (data: StudentRequest) => Promise<void>;
   onCancel: () => void;
 }
 
 export const StudentForm = ({ initialData, onSubmit, onCancel }: StudentFormProps) => {
   const [formData, setFormData] = useState<StudentRequest>({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
+    fullName: "",
+    email: "",
+    phoneNumber: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -22,18 +22,24 @@ export const StudentForm = ({ initialData, onSubmit, onCancel }: StudentFormProp
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        fullName: initialData.fullName ?? "",
+        email: initialData.email ?? "",
+        phoneNumber: initialData.phoneNumber ?? "",
+      });
     }
   }, [initialData]);
 
   const validate = (): boolean => {
     const newErrors: Partial<StudentRequest> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.fullName.trim()) newErrors.fullName = "Họ tên không được để trống";
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Email không hợp lệ";
+    }
     if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = 'Phone number is required';
+      newErrors.phoneNumber = "Số điện thoại không được để trống";
     } else if (!/^0\d{9}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Phone number must be a valid VN number (10 digits starting with 0)';
+      newErrors.phoneNumber = "SĐT phải gồm 10 chữ số, bắt đầu bằng 0 (VD: 0912345678)";
     }
 
     setErrors(newErrors);
@@ -55,36 +61,36 @@ export const StudentForm = ({ initialData, onSubmit, onCancel }: StudentFormProp
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="Full Name"
+        label="Họ tên"
         value={formData.fullName}
         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
         error={errors.fullName}
-        placeholder="Enter student's full name"
+        placeholder="VD: Trần Thị B"
       />
-      
+
       <Input
-        label="Email"
+        label="Email (tùy chọn)"
         type="email"
         value={formData.email}
         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         error={errors.email}
-        placeholder="Enter email address"
+        placeholder="VD: transtb@email.com"
       />
 
       <Input
-        label="Phone Number"
+        label="Số điện thoại"
         value={formData.phoneNumber}
         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
         error={errors.phoneNumber}
         placeholder="0912345678"
       />
 
-      <div className="flex justify-end space-x-2 pt-4">
+      <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          {initialData ? 'Update Student' : 'Add Student'}
+          {initialData ? "Cập nhật" : "Thêm học sinh"}
         </Button>
       </div>
     </form>

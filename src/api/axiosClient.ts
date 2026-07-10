@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import {
   applyAuthFromResponse,
   clearAuthState,
@@ -6,6 +6,24 @@ import {
 } from '../auth/authService';
 import { getTenantFromSubdomain } from '../utils/tenant';
 import type { AuthResponse } from '../types/auth';
+
+const REFRESH_TOKEN_KEY = 'owlexa-refresh-token';
+
+// Write refresh token to localStorage as durable fallback (backup nếu cookie không hoạt động)
+function setRefreshTokenCookie(token: string): void {
+  try {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 7);
+    document.cookie = `refreshToken=${token}; path=/auth; expires=${expires.toUTCString()}; SameSite=Lax`;
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } catch {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  }
+}
+
+function getStoredRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081',
@@ -72,19 +90,25 @@ axiosClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post<{ data: AuthResponse }>(
-          `${axiosClient.defaults.baseURL}/auth/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
+        const storedRefreshToken = getStoredRefreshToken();
+        const res: AxiosResponse<{ refreshToken: string; auth: AuthResponse }> =
+          await axios.post(
+            `${axiosClient.defaults.baseURL}/auth/refresh-token`,
+            {},
+            {
+              withCredentials: true,
+              headers: storedRefreshToken
+                ? { 'X-Stored-Refresh-Token': storedRefreshToken }
+                : {},
+            }
+          );
 
+        const authData: AuthResponse = res.data.auth ?? (res.data as unknown as AuthResponse);
+        const newRefreshToken: string = res.data.refreshToken ?? '';
 
-
-        // We only extract what's needed for UserInfo. 
-        // If the backend returns AuthResponse directly without `data` wrapper, it would be just `data`.
-        // Let's assume standard response (we will adjust if backend wraps it).
-        const authData: AuthResponse =
-          'data' in data ? (data as { data: AuthResponse }).data : data;
+        if (newRefreshToken) {
+          setRefreshTokenCookie(newRefreshToken);
+        }
 
         applyAuthFromResponse(authData);
 

@@ -6,12 +6,12 @@ const BASE_URL = "/owner/cashiers";
 export const cashierApi = {
   findAll: async (): Promise<CashierResponse[]> => {
     const response = await axiosClient.get(BASE_URL);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   create: async (request: CashierRequest): Promise<CashierResponse> => {
     const response = await axiosClient.post(BASE_URL, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   update: async (
@@ -19,7 +19,7 @@ export const cashierApi = {
     request: CashierRequest,
   ): Promise<CashierResponse> => {
     const response = await axiosClient.put(`${BASE_URL}/${cashierId}`, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   delete: async (cashierId: number): Promise<void> => {
