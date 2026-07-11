@@ -1,13 +1,13 @@
-import axios, { type AxiosResponse } from 'axios';
+import axios, { type AxiosResponse } from "axios";
 import {
   applyAuthFromResponse,
   clearAuthState,
   getAccessToken,
-} from '../auth/authService';
-import { getTenantFromSubdomain } from '../utils/tenant';
-import type { AuthResponse } from '../types/auth';
+} from "../auth/authService";
+import type { AuthResponse } from "../types/auth";
+import { useAuthStore } from "../store/authStore";
 
-const REFRESH_TOKEN_KEY = 'owlexa-refresh-token';
+const REFRESH_TOKEN_KEY = "owlexa-refresh-token";
 
 // Write refresh token to localStorage as durable fallback (backup nếu cookie không hoạt động)
 function setRefreshTokenCookie(token: string): void {
@@ -26,9 +26,9 @@ function getStoredRefreshToken(): string | null {
 }
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081',
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8081",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   withCredentials: true, // Important for sending/receiving HttpOnly cookies
 });
@@ -41,14 +41,17 @@ axiosClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    const tenantId = localStorage.getItem('tenantId') || getTenantFromSubdomain();
-    if (tenantId && config.headers) {
-      config.headers['X-Tenant-ID'] = tenantId;
+    // Tenant ID resolved from the authenticated user's stored center.
+    // The backend JwtFilter resolves this automatically from the session;
+    // the header is sent here for forward compatibility with multi-center users.
+    const centerId = useAuthStore.getState().user?.centerId;
+    if (centerId != null && config.headers) {
+      config.headers["X-Tenant-ID"] = String(centerId);
     }
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor
@@ -98,13 +101,14 @@ axiosClient.interceptors.response.use(
             {
               withCredentials: true,
               headers: storedRefreshToken
-                ? { 'X-Stored-Refresh-Token': storedRefreshToken }
+                ? { "X-Stored-Refresh-Token": storedRefreshToken }
                 : {},
-            }
+            },
           );
 
-        const authData: AuthResponse = res.data.auth ?? (res.data as unknown as AuthResponse);
-        const newRefreshToken: string = res.data.refreshToken ?? '';
+        const authData: AuthResponse =
+          res.data.auth ?? (res.data as unknown as AuthResponse);
+        const newRefreshToken: string = res.data.refreshToken ?? "";
 
         if (newRefreshToken) {
           setRefreshTokenCookie(newRefreshToken);
@@ -112,17 +116,18 @@ axiosClient.interceptors.response.use(
 
         applyAuthFromResponse(authData);
 
-        axiosClient.defaults.headers.common['Authorization'] = `Bearer ${authData.accessToken}`;
+        axiosClient.defaults.headers.common["Authorization"] =
+          `Bearer ${authData.accessToken}`;
         originalRequest.headers.Authorization = `Bearer ${authData.accessToken}`;
-        
+
         processQueue(null, authData.accessToken);
-        
+
         return axiosClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
         clearAuthState();
         // optionally redirect to login
-        window.location.href = '/login';
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -130,7 +135,7 @@ axiosClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosClient;

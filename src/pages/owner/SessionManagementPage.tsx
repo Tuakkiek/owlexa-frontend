@@ -83,7 +83,6 @@ const SessionManagementPage = () => {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Quản lý phiên đăng nhập"
-        description="Xem và hủy các phiên đăng nhập đang hoạt động."
       >
         <button
           onClick={loadSessions}
