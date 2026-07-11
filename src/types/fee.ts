@@ -1,4 +1,6 @@
-export type FeeStatus = 'PENDING' | 'PARTIAL' | 'PAID';
+export type FeeStatus = "UNPAID" | "PARTIAL" | "PAID";
+
+export type Money = string;
 
 export interface FeeRecordResponse {
   id: number;
@@ -8,8 +10,8 @@ export interface FeeRecordResponse {
   centerId: number;
   classId: number;
   className: string;
-  amount: number;
-  paidAmount: number;
+  amount: Money;
+  paidAmount: Money;
   month: string;
   dueDate: string;
   status: FeeStatus;
@@ -17,7 +19,7 @@ export interface FeeRecordResponse {
 }
 
 export interface CashPaymentRequest {
-  amount: number;
+  amount: Money;
   note?: string;
 }
 
@@ -29,14 +31,14 @@ export interface PaymentResponse {
   studentUserId: number;
   studentPhoneNumber: string;
   studentFullName: string;
-  amount: number;
-  method: string;
+  amount: Money;
+  method: "CASH" | "SEPAY";
   sepayRef?: string;
   note?: string;
   collectedByUserId: number;
   createdAt: string;
-  feeRecordAmount: number;
-  feeRecordPaidAmount: number;
-  feeRecordRemainingAmount: number;
+  feeRecordAmount: Money;
+  feeRecordPaidAmount: Money;
+  feeRecordRemainingAmount: Money;
   feeRecordStatus: FeeStatus;
 }

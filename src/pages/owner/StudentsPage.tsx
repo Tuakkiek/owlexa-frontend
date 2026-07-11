@@ -1,18 +1,19 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Input } from '../../components/ui/Input';
-import { StudentForm } from './components/StudentForm';
-import { BulkAddStudentForm } from './components/BulkAddStudentForm';
-import { studentApi } from '../../api/studentApi';
-import type { StudentResponse, StudentRequest, BulkStudentRequest, BulkStudentResult } from '../../types/student';
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
+import { Input } from "../../components/ui/Input";
+import { StudentForm } from "./components/StudentForm";
+import { BulkAddStudentForm } from "./components/BulkAddStudentForm";
+import { studentApi } from "../../api/studentApi";
+import type { StudentResponse, StudentRequest, BulkStudentRequest, BulkStudentResult } from "../../types/student";
 
 export const StudentsPage = () => {
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
-  // Modals state
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null);
@@ -20,10 +21,11 @@ export const StudentsPage = () => {
   const loadStudents = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError("");
       const data = await studentApi.findAll();
       setStudents(data);
-    } catch (error) {
-      console.error('Failed to load students:', error);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách học sinh.");
     } finally {
       setIsLoading(false);
     }
@@ -33,14 +35,15 @@ export const StudentsPage = () => {
     loadStudents();
   }, [loadStudents]);
 
-  const filteredStudents = useMemo(() => {
-    if (!searchQuery) return students;
-    const lowerQ = searchQuery.toLowerCase();
-    return students.filter(s => 
-      s.fullName.toLowerCase().includes(lowerQ) || 
-      s.phoneNumber.includes(lowerQ)
+  const filtered = useMemo(() => {
+    if (!search) return students;
+    const q = search.toLowerCase();
+    return students.filter(
+      (s) =>
+        s.fullName.toLowerCase().includes(q) ||
+        s.phoneNumber.includes(search),
     );
-  }, [students, searchQuery]);
+  }, [students, search]);
 
   const handleCreate = async (data: StudentRequest) => {
     await studentApi.create(data);
@@ -56,11 +59,10 @@ export const StudentsPage = () => {
     }
   };
 
-  const handleDelete = async (studentId: number) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      await studentApi.delete(studentId);
-      loadStudents();
-    }
+  const handleDelete = async (student: StudentResponse) => {
+    if (!window.confirm(`Xóa học sinh "${student.fullName}"?`)) return;
+    await studentApi.delete(student.userId);
+    loadStudents();
   };
 
   const handleBulkCreate = async (data: BulkStudentRequest): Promise<BulkStudentResult[]> => {
@@ -71,72 +73,93 @@ export const StudentsPage = () => {
 
   return (
     <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
-      {/* Header phẳng, tiêu đề mỏng và cụm nút bấm đơn sắc */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-neutral-200 space-y-4 sm:space-y-0">
-        <h1 className="text-xl font-medium tracking-tight">Student Management</h1>
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <Button 
-            variant="secondary" 
+        <div>
+          <h1 className="text-xl font-medium tracking-tight">Học sinh</h1>
+          <p className="text-xs text-neutral-400 mt-1">
+            Quản lý tài khoản và thông tin học sinh của trung tâm.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
             onClick={() => setIsBulkAddModalOpen(true)}
-            className="border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 rounded-none px-4 py-2 text-sm transition-colors"
+            className="border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 rounded-none px-4 py-2 text-sm"
           >
-            Bulk Add
+            Nhập nhiều
           </Button>
-          <Button 
+          <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm transition-colors"
+            className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm"
           >
-            Add Student
+            + Thêm học sinh
           </Button>
         </div>
       </div>
 
-      {/* Thanh tìm kiếm dọn sạch nền xám thừa */}
-      <div className="max-w-md w-full pt-2">
-        <Input 
+      {error && (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">Tổng học sinh</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">{students.length}</p>
+        </div>
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">Đang hiển thị</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">{filtered.length}</p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="max-w-sm">
+        <Input
           label=""
-          placeholder="Search by name or phone..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm theo tên hoặc SĐT..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      
-      {/* Khu vực danh sách - Loại bỏ shadow, bo góc và nền xám của table header */}
-      <div className="w-full overflow-x-auto pt-2">
+
+      {/* Table */}
+      <div className="w-full overflow-x-auto">
         {isLoading ? (
-          <div className="py-12 text-center text-sm text-neutral-400">Loading students...</div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-400">No students found.</div>
+          <div className="py-12 text-center text-sm text-neutral-400">Đang tải học sinh...</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center text-sm text-neutral-400">
+            {search ? "Không tìm thấy học sinh phù hợp." : "Chưa có học sinh nào."}
+          </div>
         ) : (
-          <table className="min-w-full text-left text-sm border-collapse">
+          <table className="min-w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-neutral-200 text-neutral-400">
-                <th className="pb-3 pr-4 font-normal">Name</th>
-                <th className="pb-3 px-4 font-normal">Phone</th>
-                <th className="pb-3 pl-4 text-right font-normal">Actions</th>
+              <tr className="border-b border-neutral-200 text-neutral-400 text-xs uppercase tracking-wide">
+                <th className="pb-3 pr-4 text-left font-medium">Họ tên</th>
+                <th className="pb-3 px-4 text-left font-medium">Số điện thoại</th>
+                <th className="pb-3 pl-4 text-right font-medium">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {filteredStudents.map((student) => (
+              {filtered.map((student) => (
                 <tr key={student.userId} className="hover:bg-neutral-50/50 transition-colors">
-                  <td className="py-4 pr-4 font-normal text-neutral-900">
-                    {student.fullName}
-                  </td>
-                  <td className="py-4 px-4 text-neutral-500">
-                    {student.phoneNumber}
-                  </td>
+                  <td className="py-4 pr-4 font-semibold text-neutral-900">{student.fullName}</td>
+                  <td className="py-4 px-4 text-neutral-600">{student.phoneNumber}</td>
                   <td className="py-4 pl-4 text-right text-xs space-x-4">
                     <button
-                      onClick={() => setEditingStudent(student)}
                       className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      onClick={() => setEditingStudent(student)}
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
-                      onClick={() => handleDelete(student.userId)}
-                      className="text-neutral-400 hover:text-neutral-900 underline underline-offset-4"
+                      className="text-neutral-400 hover:text-red-700 underline underline-offset-4"
+                      onClick={() => handleDelete(student)}
                     >
-                      Delete
+                      Xóa
                     </button>
                   </td>
                 </tr>
@@ -146,11 +169,11 @@ export const StudentsPage = () => {
         )}
       </div>
 
-      {/* Giữ nguyên cấu trúc Modals để bảo toàn logic xử lý form */}
+      {/* Add Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Student"
+        title="Thêm học sinh mới"
       >
         <StudentForm
           onSubmit={handleCreate}
@@ -158,17 +181,18 @@ export const StudentsPage = () => {
         />
       </Modal>
 
+      {/* Edit Modal */}
       <Modal
         isOpen={!!editingStudent}
         onClose={() => setEditingStudent(null)}
-        title="Edit Student"
+        title="Chỉnh sửa học sinh"
       >
         {editingStudent && (
           <StudentForm
             initialData={{
               fullName: editingStudent.fullName,
               phoneNumber: editingStudent.phoneNumber,
-              email: '', 
+              email: "",
             }}
             onSubmit={handleUpdate}
             onCancel={() => setEditingStudent(null)}
@@ -176,10 +200,11 @@ export const StudentsPage = () => {
         )}
       </Modal>
 
+      {/* Bulk Add Modal */}
       <Modal
         isOpen={isBulkAddModalOpen}
         onClose={() => setIsBulkAddModalOpen(false)}
-        title="Bulk Add Students"
+        title="Nhập nhiều học sinh"
       >
         <BulkAddStudentForm
           onSubmit={handleBulkCreate}

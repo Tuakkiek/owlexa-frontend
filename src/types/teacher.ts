@@ -10,6 +10,24 @@ export interface TeacherResponse {
   phoneNumber: string;
   centerId: number;
   temporaryPassword?: string;
+  salary?: string | null;
+  currency?: string | null;
+}
+
+export interface TeacherSalaryRequest {
+  salary: string;
+  currency?: string;
+}
+
+export interface TeacherSalaryResponse {
+  teacherUserId: number;
+  centerId: number;
+  teacherFullName: string;
+  teacherPhoneNumber: string;
+  salary: string | null;
+  currency: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface BulkTeacherItem {
@@ -25,6 +43,5 @@ export interface BulkTeacherRequest {
 export interface BulkTeacherResult {
   phoneNumber: string;
   temporaryPassword?: string;
-  success: boolean;
-  message?: string;
+  status: string;
 }

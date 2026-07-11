@@ -19,26 +19,33 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Học sinh", path: "/owner/students" },
     { name: "Thu ngân", path: "/owner/cashiers" },
     { name: "Lớp học", path: "/owner/classes" },
-    { name: "Học phí quá hạn", path: "/owner/fee-records/overdue" },
+    { name: "Điểm danh", path: "/owner/attendance" },
+    { name: "Học phí", path: "/owner/fee-records/overdue" },
     { name: "Thanh toán", path: "/owner/payments" },
     { name: "Đề thi", path: "/owner/tests" },
+    { name: "Phiên đăng nhập", path: "/owner/sessions" },
   ],
   TEACHER: [
     { name: "Dashboard", path: "/teacher/dashboard" },
     { name: "Schedule", path: "/teacher/schedule" },
     { name: "Attendance", path: "/teacher/attendance" },
     { name: "Students", path: "/teacher/students" },
+    { name: "Essay Rubrics", path: "/teacher/essay-rubrics" },
+    { name: "Essay Review", path: "/teacher/essays" },
     { name: "Mock Tests", path: "/teacher/tests" },
   ],
   STUDENT: [
     { name: "Dashboard", path: "/student/dashboard" },
     { name: "Schedule", path: "/student/schedule" },
     { name: "Fees", path: "/student/fees" },
+    { name: "Essays", path: "/student/essays" },
+    { name: "Mock Tests", path: "/student/tests" },
     { name: "Documents", path: "/student/documents" },
   ],
   CASHIER: [
     { name: "Dashboard", path: "/cashier/dashboard" },
-    { name: "Payments", path: "/cashier/payments" },
+    { name: "Thu học phí", path: "/cashier/payments" },
+    { name: "Lịch sử", path: "/cashier/payment-history" },
   ],
   ADMIN: [{ name: "Dashboard", path: "/admin/dashboard" }],
 };
@@ -91,7 +98,9 @@ const AppLayout = () => {
             O
           </div>
           <div className="min-w-0">
-            <div className="font-semibold leading-tight text-gray-900">Owlexa</div>
+            <div className="font-semibold leading-tight text-gray-900">
+              Owlexa
+            </div>
             <div className="text-xs text-gray-500">Quản lý trung tâm</div>
           </div>
         </div>
@@ -125,7 +134,9 @@ const AppLayout = () => {
               <div className="truncate text-sm font-medium text-gray-900">
                 {user?.fullName || user?.phoneNumber || user?.email}
               </div>
-              <div className="truncate text-xs text-gray-500">{user?.phoneNumber || user?.email}</div>
+              <div className="truncate text-xs text-gray-500">
+                {user?.phoneNumber || user?.email}
+              </div>
             </div>
           </div>
           <button
@@ -146,8 +157,18 @@ const AppLayout = () => {
               className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
             <div className="text-sm font-semibold text-gray-900">

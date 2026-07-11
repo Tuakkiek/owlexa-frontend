@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Input } from "../../components/ui/Input";
 import { feeApi } from "../../api/feeApi";
 import type { PaymentResponse } from "../../types/fee";
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+import { formatMoney, parseMoney } from "../../utils/money";
 
 export const OwnerPaymentsPage = () => {
   const [payments, setPayments] = useState<PaymentResponse[]>([]);
@@ -39,7 +37,10 @@ export const OwnerPaymentsPage = () => {
     );
   }, [payments, query]);
 
-  const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = filteredPayments.reduce(
+    (sum, payment) => sum + parseMoney(payment.amount),
+    0,
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -70,7 +71,7 @@ export const OwnerPaymentsPage = () => {
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-5 sm:col-span-2">
           <p className="text-sm text-gray-500">Tổng tiền trong danh sách</p>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(totalAmount)}</p>
+          <p className="mt-2 text-2xl font-semibold text-gray-900">{formatMoney(String(totalAmount))}</p>
         </div>
       </div>
 
@@ -109,7 +110,7 @@ export const OwnerPaymentsPage = () => {
                   <td className="px-5 py-4 text-gray-600">{payment.method}</td>
                   <td className="px-5 py-4 text-gray-600">{payment.note || "-"}</td>
                   <td className="px-5 py-4 text-right font-medium text-gray-900">
-                    {formatCurrency(payment.amount)}
+                    {formatMoney(payment.amount)}
                   </td>
                   <td className="px-5 py-4 text-right text-gray-600">
                     {new Date(payment.createdAt).toLocaleString("vi-VN")}

@@ -6,12 +6,17 @@ const BASE_URL = "/owner/centers";
 export const centerApi = {
   findAll: async (): Promise<CenterResponse[]> => {
     const response = await axiosClient.get(BASE_URL);
-    return response.data?.data || response.data;
+    return response.data;
+  },
+
+  findById: async (centerId: number): Promise<CenterResponse> => {
+    const response = await axiosClient.get(`${BASE_URL}/${centerId}`);
+    return response.data;
   },
 
   create: async (request: CenterRequest): Promise<CenterResponse> => {
     const response = await axiosClient.post(BASE_URL, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   update: async (
@@ -19,7 +24,7 @@ export const centerApi = {
     request: CenterRequest,
   ): Promise<CenterResponse> => {
     const response = await axiosClient.put(`${BASE_URL}/${centerId}`, request);
-    return response.data?.data || response.data;
+    return response.data;
   },
 
   delete: async (centerId: number): Promise<void> => {

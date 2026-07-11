@@ -309,10 +309,7 @@ export default function OwnerTestsPage() {
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Đề thi thử</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Tạo đề thi, quản lý câu hỏi và xem chi tiết lượt làm bài của học
-            viên.
-          </p>
+          
         </div>
         <div className="flex gap-2">
           <Button

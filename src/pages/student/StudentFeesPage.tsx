@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { feeApi } from "../../api/feeApi";
 import type { FeeRecordResponse, PaymentResponse } from "../../types/fee";
+import { formatMoney, remainingBalance } from "../../utils/money";
 
 const StudentFeesPage = () => {
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
@@ -51,13 +52,6 @@ const StudentFeesPage = () => {
     return () => clearInterval(interval);
   }, [isPolling]);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(val);
-  };
-
   const unpaidFees = useMemo(
     () => fees.filter((f) => f.status !== "PAID"),
     [fees],
@@ -73,7 +67,9 @@ const StudentFeesPage = () => {
       <div className="flex justify-between items-center border-b pb-2">
         <div>
           <h1 className="text-xl font-bold">Học phí & Thanh toán</h1>
-          <p className="text-xs text-gray-500">Xem hóa đơn, lịch sử và thanh toán trực tuyến</p>
+          <p className="text-xs text-gray-500">
+            Xem hóa đơn, lịch sử và thanh toán trực tuyến
+          </p>
         </div>
         <button
           onClick={loadData}
@@ -92,32 +88,36 @@ const StudentFeesPage = () => {
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {unpaidFees.map((record) => {
-              const remaining = record.amount - record.paidAmount;
+              const remaining = remainingBalance(record);
 
               return (
                 <div key={record.id} className="border p-3">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="text-xs uppercase text-gray-500">{record.className}</p>
+                      <p className="text-xs uppercase text-gray-500">
+                        {record.className}
+                      </p>
                       <h3 className="font-bold">{record.month}</h3>
                     </div>
                     <span className="text-xs border px-1.5 py-0.5">
-                      {record.status === "PARTIAL" ? "Đã trả một phần" : "Chưa trả"}
+                      {record.status === "PARTIAL"
+                        ? "Đã trả một phần"
+                        : "Chưa trả"}
                     </span>
                   </div>
 
                   <div className="space-y-1 border-t border-dashed pt-2 mb-3">
                     <div className="flex justify-between">
                       <span>Tổng học phí:</span>
-                      <span>{formatCurrency(record.amount)}</span>
+                      <span>{formatMoney(record.amount)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Đã thanh toán:</span>
-                      <span>{formatCurrency(record.paidAmount)}</span>
+                      <span>{formatMoney(record.paidAmount)}</span>
                     </div>
                     <div className="flex justify-between font-bold border-t pt-1">
                       <span>Còn nợ:</span>
-                      <span>{formatCurrency(remaining)}</span>
+                      <span>{formatMoney(String(remaining))}</span>
                     </div>
                   </div>
 
@@ -143,10 +143,12 @@ const StudentFeesPage = () => {
                         Quét QR để thanh toán
                       </p>
                       <div className="flex justify-center border p-2 bg-white w-40 h-40 mx-auto items-center">
-                        <span className="text-xs text-gray-400">QR Code Sepay</span>
+                        <span className="text-xs text-gray-400">
+                          QR Code Sepay
+                        </span>
                       </div>
                       <p className="text-xs text-center mt-2">
-                        Chuyển khoản: {formatCurrency(remaining)}
+                        Chuyển khoản: {formatMoney(String(remaining))}
                       </p>
                       <button
                         onClick={() => {
@@ -176,7 +178,9 @@ const StudentFeesPage = () => {
               <div key={record.id} className="border p-3">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="text-xs uppercase text-gray-500">{record.className}</p>
+                    <p className="text-xs uppercase text-gray-500">
+                      {record.className}
+                    </p>
                     <h3 className="font-bold">{record.month}</h3>
                   </div>
                   <span className="text-xs border border-black px-1.5 py-0.5">
@@ -187,11 +191,11 @@ const StudentFeesPage = () => {
                 <div className="space-y-1 border-t border-dashed pt-2">
                   <div className="flex justify-between">
                     <span>Tổng học phí:</span>
-                    <span>{formatCurrency(record.amount)}</span>
+                    <span>{formatMoney(record.amount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Đã thanh toán:</span>
-                    <span>{formatCurrency(record.paidAmount)}</span>
+                    <span>{formatMoney(record.paidAmount)}</span>
                   </div>
                 </div>
 
@@ -210,7 +214,10 @@ const StudentFeesPage = () => {
           <h2 className="font-bold mb-3 border-b pb-1">Lịch sử thanh toán</h2>
           <div className="space-y-2">
             {payments.map((payment) => (
-              <div key={payment.id} className="border-b pb-2 last:border-0 last:pb-0 flex justify-between items-center">
+              <div
+                key={payment.id}
+                className="border-b pb-2 last:border-0 last:pb-0 flex justify-between items-center"
+              >
                 <div>
                   <p className="font-medium">
                     {new Date(payment.createdAt).toLocaleDateString("vi-VN")}
@@ -219,9 +226,7 @@ const StudentFeesPage = () => {
                     {payment.method} {payment.note && `| ${payment.note}`}
                   </p>
                 </div>
-                <div className="font-bold">
-                  {formatCurrency(payment.amount)}
-                </div>
+                <div className="font-bold">{formatMoney(payment.amount)}</div>
               </div>
             ))}
           </div>

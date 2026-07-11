@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import { applyAuthFromResponse } from "../../auth/authService";
 import { useAuthStore } from "../../store/authStore";
@@ -144,6 +144,16 @@ const LoginPage = () => {
             {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
+
+        <div className="mt-6 border-t border-gray-200 pt-4 text-center text-sm text-gray-500">
+          Chưa có tài khoản?{" "}
+          <Link
+            to="/register/student"
+            className="font-medium text-black hover:underline"
+          >
+            Đăng ký
+          </Link>
+        </div>
 
         <div className="mt-8 border-t border-gray-200 pt-4 text-center text-xs text-gray-500">
           © 2026 Owlexa

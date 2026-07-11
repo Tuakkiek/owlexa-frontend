@@ -12,6 +12,26 @@ export interface EssaySubmission {
   createdAt: string;
 }
 
+export interface RubricCriterion {
+  id: number;
+  name: string;
+  description: string;
+  weight: number;
+  maxScore: number;
+}
+
+export interface EssayRubric {
+  id: number;
+  classId: number;
+  className: string;
+  title: string;
+  description: string;
+  maxScore: number;
+  criteria: RubricCriterion[];
+  createdAt: string;
+  isActive: boolean;
+}
+
 export interface EssayGradingResult {
   id: number;
   submissionId: number;

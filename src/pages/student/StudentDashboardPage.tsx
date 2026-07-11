@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { feeApi } from "../../api/feeApi";
-import axiosClient from "../../api/axiosClient";
+import { scheduleApi } from "../../api/scheduleApi";
 import type { FeeRecordResponse } from "../../types/fee";
-import type { ScheduleItem } from "./StudentSchedulePage";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-    value,
-  );
+import type { ScheduleResponse } from "../../types/schedule";
+import { formatMoney, remainingBalance } from "../../utils/money";
 
 const DashboardCard = ({
   title,
@@ -28,7 +24,7 @@ const DashboardCard = ({
 
 const StudentDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +34,13 @@ const StudentDashboardPage = () => {
       setIsLoading(true);
       setError(null);
 
-      const [scheduleResponse, feeResponse] = await Promise.all([
-        axiosClient.get<ScheduleItem[]>("/student/schedules/me"),
+      const [scheduleData, feeData] = await Promise.all([
+        scheduleApi.findMySchedulesAsStudent(),
         feeApi.getMyFees(),
       ]);
 
-      setSchedules(scheduleResponse.data ?? []);
-      setFees(feeResponse ?? []);
+      setSchedules(scheduleData);
+      setFees(feeData);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu học sinh.",
@@ -66,7 +62,7 @@ const StudentDashboardPage = () => {
   const totalOwed = useMemo(
     () =>
       unpaidFees.reduce(
-        (sum, item) => sum + Math.max(item.amount - item.paidAmount, 0),
+        (sum, item) => sum + Math.max(remainingBalance(item), 0),
         0,
       ),
     [unpaidFees],
@@ -94,7 +90,8 @@ const StudentDashboardPage = () => {
               {user?.fullName || "Học sinh"}
             </h1>
             <p className="mt-1 text-xs text-gray-500">
-              Đây là bảng điều khiển dành cho học sinh. Xem lịch học, học phí và tài liệu nhanh.
+              Đây là bảng điều khiển dành cho học sinh. Xem lịch học, học phí và
+              tài liệu nhanh.
             </p>
           </div>
           <div className="grid gap-2 grid-cols-3">
@@ -105,14 +102,10 @@ const StudentDashboardPage = () => {
             />
             <DashboardCard
               title="Chưa trả"
-              value={isLoading ? "..." : formatCurrency(totalOwed)}
+              value={isLoading ? "..." : formatMoney(String(totalOwed))}
               description={`${unpaidFees.length} hóa đơn`}
             />
-            <DashboardCard
-              title="Tài liệu"
-              value="—"
-              description="Danh sách"
-            />
+            <DashboardCard title="Tài liệu" value="—" description="Danh sách" />
           </div>
         </div>
       </div>
@@ -138,7 +131,7 @@ const StudentDashboardPage = () => {
               {isLoading ? "Đang tải..." : "Cập nhật"}
             </button>
           </div>
-          
+
           <div className="space-y-3">
             {isLoading ? (
               <div className="text-xs text-gray-500">Đang tải lịch học...</div>
@@ -161,7 +154,8 @@ const StudentDashboardPage = () => {
                     <div className="text-right text-xs text-gray-500">
                       <p className="font-medium">{session.dayOfWeek}. ngày</p>
                       <p>
-                        {session.startTime.slice(0, 5)} - {session.endTime.slice(0, 5)}
+                        {session.startTime.slice(0, 5)} -{" "}
+                        {session.endTime.slice(0, 5)}
                       </p>
                     </div>
                   </div>
@@ -193,10 +187,12 @@ const StudentDashboardPage = () => {
             ) : (
               unpaidFees.slice(0, 3).map((item) => (
                 <div key={item.id} className="border p-3">
-                  <p className="text-xs uppercase text-gray-500">{item.className}</p>
+                  <p className="text-xs uppercase text-gray-500">
+                    {item.className}
+                  </p>
                   <div className="mt-1 flex items-center justify-between gap-4">
                     <p className="font-bold text-gray-900">
-                      Còn nợ: {formatCurrency(item.amount - item.paidAmount)}
+                      Còn nợ: {formatMoney(String(remainingBalance(item)))}
                     </p>
                     <span className="text-xs border px-1.5 py-0.5">
                       {item.status}

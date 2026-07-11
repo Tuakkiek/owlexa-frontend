@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./router/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import TeachersPage from "./pages/owner/TeachersPage";
@@ -23,10 +24,13 @@ import TeacherEssayRubricsPage from "./pages/teacher/TeacherEssayRubricsPage";
 import TeacherEssayReviewPage from "./pages/teacher/TeacherEssayReviewPage";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
 import OwnerTestsPage from "./pages/owner/OwnerTestsPage";
+import OwnerAttendancePage from "./pages/owner/OwnerAttendancePage";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import TeacherTestsPage from "./pages/teacher/TeacherTestsPage";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import CashierPaymentsPage from "./pages/cashier/CashierPaymentsPage";
+import CashierPaymentHistoryPage from "./pages/cashier/CashierPaymentHistoryPage";
+import SessionManagementPage from "./pages/owner/SessionManagementPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
 function App() {
@@ -35,6 +39,11 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/register/student"
+          element={<RegisterPage mode="student" />}
+        />
+        <Route path="/register/owner" element={<RegisterPage mode="owner" />} />
 
         {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -53,7 +62,12 @@ function App() {
             <Route path="/owner/fee-records/overdue" element={<FeesPage />} />
             <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
             <Route path="/owner/tests" element={<OwnerTestsPage />} />
-            <Route path="/owner/mock-tests" element={<Navigate to="/owner/tests" replace />} />
+            <Route
+              path="/owner/mock-tests"
+              element={<Navigate to="/owner/tests" replace />}
+            />
+            <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
+            <Route path="/owner/sessions" element={<SessionManagementPage />} />
           </Route>
 
           {/* TEACHER Routes */}
@@ -77,7 +91,10 @@ function App() {
               element={<TeacherEssayReviewPage />}
             />
             <Route path="/teacher/tests" element={<TeacherTestsPage />} />
-            <Route path="/teacher/mock-tests" element={<Navigate to="/teacher/tests" replace />} />
+            <Route
+              path="/teacher/mock-tests"
+              element={<Navigate to="/teacher/tests" replace />}
+            />
           </Route>
 
           {/* STUDENT Routes */}
@@ -98,11 +115,28 @@ function App() {
             />
             <Route path="/student/essays" element={<StudentEssayPage />} />
             <Route path="/student/tests" element={<StudentTestsPage />} />
-            <Route path="/student/mock-tests" element={<Navigate to="/student/tests" replace />} />
-            <Route path="/student/tests/:attemptId/take" element={<StudentTestTakingPage />} />
-            <Route path="/student/mock-tests/:attemptId/take" element={<Navigate to="/student/tests/:attemptId/take" replace />} />
-            <Route path="/student/tests/results/:attemptId" element={<StudentTestResultsPage />} />
-            <Route path="/student/mock-tests/results/:attemptId" element={<Navigate to="/student/tests/results/:attemptId" replace />} />
+            <Route
+              path="/student/mock-tests"
+              element={<Navigate to="/student/tests" replace />}
+            />
+            <Route
+              path="/student/tests/:attemptId/take"
+              element={<StudentTestTakingPage />}
+            />
+            <Route
+              path="/student/mock-tests/:attemptId/take"
+              element={<Navigate to="/student/tests/:attemptId/take" replace />}
+            />
+            <Route
+              path="/student/tests/results/:attemptId"
+              element={<StudentTestResultsPage />}
+            />
+            <Route
+              path="/student/mock-tests/results/:attemptId"
+              element={
+                <Navigate to="/student/tests/results/:attemptId" replace />
+              }
+            />
           </Route>
 
           {/* CASHIER Routes */}
@@ -112,14 +146,15 @@ function App() {
               element={<Navigate to="/cashier/payments" replace />}
             />
             <Route path="/cashier/payments" element={<CashierPaymentsPage />} />
+            <Route
+              path="/cashier/payment-history"
+              element={<CashierPaymentHistoryPage />}
+            />
           </Route>
 
           {/* ADMIN Routes */}
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-            <Route
-              path="/admin/dashboard"
-              element={<AdminDashboardPage />}
-            />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           </Route>
         </Route>
 
