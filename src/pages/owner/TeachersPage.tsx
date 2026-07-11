@@ -1,28 +1,53 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { TeacherForm } from './components/TeacherForm';
-import { BulkAddTeacherForm } from './components/BulkAddTeacherForm';
-import { teacherApi } from '../../api/teacherApi';
-import type { TeacherResponse, TeacherRequest, BulkTeacherRequest, BulkTeacherResult } from '../../types/teacher';
+import { useEffect, useState, useCallback } from "react";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
+import { Input } from "../../components/ui/Input";
+import { TeacherForm } from "./components/TeacherForm";
+import { BulkAddTeacherForm } from "./components/BulkAddTeacherForm";
+import { TeacherSalaryModal } from "./components/TeacherSalaryModal";
+import { teacherApi } from "../../api/teacherApi";
+import type {
+  TeacherResponse,
+  TeacherRequest,
+  BulkTeacherRequest,
+  BulkTeacherResult,
+  TeacherSalaryResponse,
+} from "../../types/teacher";
+
+const formatSalary = (
+  salary: string | null | undefined,
+  currency: string | null | undefined,
+) => {
+  if (salary === null || salary === undefined || salary === "") return "—";
+  const numeric = Number(salary);
+  if (Number.isNaN(numeric)) return salary;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: currency ?? "VND",
+    maximumFractionDigits: 2,
+  }).format(numeric);
+};
 
 export const TeachersPage = () => {
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
-  // Modals state
+  // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<TeacherResponse | null>(null);
+  const [salaryTeacher, setSalaryTeacher] = useState<TeacherResponse | null>(null);
 
   const loadTeachers = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError("");
       const data = await teacherApi.findAll();
       setTeachers(data);
-    } catch (error) {
-      console.error('Failed to load teachers:', error);
-      // In a real app, show a toast here
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách giáo viên.");
     } finally {
       setIsLoading(false);
     }
@@ -31,6 +56,14 @@ export const TeachersPage = () => {
   useEffect(() => {
     loadTeachers();
   }, [loadTeachers]);
+
+  const filtered = search
+    ? teachers.filter(
+        (t) =>
+          t.fullName.toLowerCase().includes(search.toLowerCase()) ||
+          t.phoneNumber.includes(search),
+      )
+    : teachers;
 
   const handleCreate = async (data: TeacherRequest) => {
     await teacherApi.create(data);
@@ -46,68 +79,127 @@ export const TeachersPage = () => {
     }
   };
 
-  const handleDelete = async (teacherId: number) => {
-    if (window.confirm('Are you sure you want to delete this teacher?')) {
-      await teacherApi.delete(teacherId);
-      loadTeachers();
-    }
+  const handleDelete = async (teacher: TeacherResponse) => {
+    if (!window.confirm(`Xóa giáo viên "${teacher.fullName}"?`)) return;
+    await teacherApi.delete(teacher.userId);
+    loadTeachers();
   };
 
   const handleBulkCreate = async (data: BulkTeacherRequest): Promise<BulkTeacherResult[]> => {
     const results = await teacherApi.bulkCreate(data);
-    loadTeachers(); // Refresh list in background
-    return results; // Return to form to display temporary passwords
+    loadTeachers();
+    return results;
   };
 
+  const handleSalarySaved = useCallback((updated: TeacherSalaryResponse) => {
+    setTeachers((current) =>
+      current.map((teacher) =>
+        teacher.userId === updated.teacherUserId
+          ? { ...teacher, salary: updated.salary, currency: updated.currency }
+          : teacher,
+      ),
+    );
+  }, []);
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Teacher Management</h1>
-        <div className="space-x-3">
-          <Button variant="secondary" onClick={() => setIsBulkAddModalOpen(true)}>
-            Bulk Add
+    <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-neutral-200 space-y-4 sm:space-y-0">
+        <div>
+          <h1 className="text-xl font-medium tracking-tight">Giáo viên</h1>
+          <p className="text-xs text-neutral-400 mt-1">
+            Quản lý tài khoản và thông tin giáo viên của trung tâm.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => setIsBulkAddModalOpen(true)}
+            className="border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 rounded-none px-4 py-2 text-sm"
+          >
+            Nhập nhiều
           </Button>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            Add Teacher
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm"
+          >
+            + Thêm giáo viên
           </Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {error && (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">Tổng giáo viên</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">{teachers.length}</p>
+        </div>
+        <div className="rounded border border-neutral-200 bg-white p-4">
+          <p className="text-xs text-neutral-500 uppercase tracking-wide">Đang hiển thị</p>
+          <p className="mt-1 text-2xl font-semibold text-neutral-900">{filtered.length}</p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="max-w-sm">
+        <Input
+          label=""
+          placeholder="Tìm theo tên hoặc SĐT..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* Table */}
+      <div className="w-full overflow-x-auto">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading teachers...</div>
-        ) : teachers.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No teachers found. Click "Add Teacher" to create one.</div>
+          <div className="py-12 text-center text-sm text-neutral-400">Đang tải giáo viên...</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center text-sm text-neutral-400">
+            {search ? "Không tìm thấy giáo viên phù hợp." : "Chưa có giáo viên nào."}
+          </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          <table className="min-w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-neutral-200 text-neutral-400 text-xs uppercase tracking-wide">
+                <th className="pb-3 pr-4 text-left font-medium">Họ tên</th>
+                <th className="pb-3 px-4 text-left font-medium">Số điện thoại</th>
+                <th className="pb-3 px-4 text-left font-medium">Lương</th>
+                <th className="pb-3 pl-4 text-right font-medium">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {teachers.map((teacher) => (
-                <tr key={teacher.userId}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{teacher.fullName}</div>
+            <tbody className="divide-y divide-neutral-100">
+              {filtered.map((teacher) => (
+                <tr key={teacher.userId} className="hover:bg-neutral-50/50 transition-colors">
+                  <td className="py-4 pr-4 font-semibold text-neutral-900">{teacher.fullName}</td>
+                  <td className="py-4 px-4 text-neutral-600">{teacher.phoneNumber}</td>
+                  <td className="py-4 px-4 text-neutral-700">
+                    {formatSalary(teacher.salary, teacher.currency)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                    {teacher.phoneNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                  <td className="py-4 pl-4 text-right text-xs space-x-4">
                     <button
+                      className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
                       onClick={() => setEditingTeacher(teacher)}
-                      className="text-blue-600 hover:text-blue-900"
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
-                      onClick={() => handleDelete(teacher.userId)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      onClick={() => setSalaryTeacher(teacher)}
                     >
-                      Delete
+                      Lương
+                    </button>
+                    <button
+                      className="text-neutral-400 hover:text-red-700 underline underline-offset-4"
+                      onClick={() => handleDelete(teacher)}
+                    >
+                      Xóa
                     </button>
                   </td>
                 </tr>
@@ -117,10 +209,11 @@ export const TeachersPage = () => {
         )}
       </div>
 
+      {/* Add Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Teacher"
+        title="Thêm giáo viên mới"
       >
         <TeacherForm
           onSubmit={handleCreate}
@@ -128,17 +221,18 @@ export const TeachersPage = () => {
         />
       </Modal>
 
+      {/* Edit Modal */}
       <Modal
         isOpen={!!editingTeacher}
         onClose={() => setEditingTeacher(null)}
-        title="Edit Teacher"
+        title="Chỉnh sửa giáo viên"
       >
         {editingTeacher && (
           <TeacherForm
             initialData={{
               fullName: editingTeacher.fullName,
               phoneNumber: editingTeacher.phoneNumber,
-              email: '', // Backend doesn't return email in TeacherResponse. Might need a separate GET by ID if editing email is required.
+              email: "",
             }}
             onSubmit={handleUpdate}
             onCancel={() => setEditingTeacher(null)}
@@ -146,16 +240,25 @@ export const TeachersPage = () => {
         )}
       </Modal>
 
+      {/* Bulk Add Modal */}
       <Modal
         isOpen={isBulkAddModalOpen}
         onClose={() => setIsBulkAddModalOpen(false)}
-        title="Bulk Add Teachers"
+        title="Nhập nhiều giáo viên"
       >
         <BulkAddTeacherForm
           onSubmit={handleBulkCreate}
           onCancel={() => setIsBulkAddModalOpen(false)}
         />
       </Modal>
+
+      {/* Salary Modal */}
+      <TeacherSalaryModal
+        isOpen={salaryTeacher !== null}
+        onClose={() => setSalaryTeacher(null)}
+        teacher={salaryTeacher}
+        onSaved={handleSalarySaved}
+      />
     </div>
   );
 };

@@ -1,15 +1,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { feeApi } from "../../api/feeApi";
-import { useAuthStore } from "../../store/authStore";
-import type { FeeRecordResponse } from "../../types/fee";
+import { CollectFeeModal } from "../owner/components/CollectFeeModal";
+import type { FeeRecordResponse, CashPaymentRequest } from "../../types/fee";
+import { formatMoney, remainingBalance } from "../../utils/money";
 
 const CashierPaymentsPage = () => {
-  const user = useAuthStore((state) => state.user);
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFeeId, setSelectedFeeId] = useState<number | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState("");
+
+  const [selectedFeeRecord, setSelectedFeeRecord] =
+    useState<FeeRecordResponse | null>(null);
+  const [isCollectModalOpen, setIsCollectModalOpen] = useState(false);
 
   const loadFees = useCallback(async () => {
     try {
@@ -33,30 +35,17 @@ const CashierPaymentsPage = () => {
       f.studentPhoneNumber.includes(searchQuery),
   );
 
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(val);
+  const handleCollectCash = async (
+    feeRecordId: number,
+    data: CashPaymentRequest,
+  ) => {
+    await feeApi.collectCash(feeRecordId, data, "CASHIER");
+    loadFees();
+  };
 
-  const handlePaymentSubmit = async (feeId: number) => {
-    if (!paymentAmount || isNaN(Number(paymentAmount))) {
-      alert("Nhập số tiền hợp lệ");
-      return;
-    }
-
-    try {
-      await feeApi.collectCash(feeId, {
-        amount: Number(paymentAmount),
-        note: `Cashier ${user?.fullName} - Manual payment`,
-      });
-      alert("Ghi nhận thanh toán thành công");
-      setPaymentAmount("");
-      setSelectedFeeId(null);
-      loadFees();
-    } catch (error: any) {
-      alert(error?.response?.data?.message ?? "Thanh toán thất bại");
-    }
+  const openCollectModal = (record: FeeRecordResponse) => {
+    setSelectedFeeRecord(record);
+    setIsCollectModalOpen(true);
   };
 
   return (
@@ -101,15 +90,11 @@ const CashierPaymentsPage = () => {
           </div>
         ) : (
           filteredFees.map((fee) => {
-            const remaining = fee.amount - fee.paidAmount;
+            const remaining = remainingBalance(fee);
             return (
               <div
                 key={fee.id}
-                className={`rounded-2xl border-2 p-4 transition ${
-                  selectedFeeId === fee.id
-                    ? "border-black bg-blue-50"
-                    : "border-gray-200 bg-white"
-                }`}
+                className="rounded-2xl border-2 border-gray-200 bg-white p-4"
               >
                 <div className="flex items-center justify-between gap-4 mb-3">
                   <div>
@@ -132,68 +117,40 @@ const CashierPaymentsPage = () => {
                   <div>
                     <p className="text-xs text-gray-500">Tổng</p>
                     <p className="font-semibold text-gray-900">
-                      {formatCurrency(fee.amount)}
+                      {formatMoney(fee.amount)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Đã trả</p>
                     <p className="font-semibold text-green-600">
-                      {formatCurrency(fee.paidAmount)}
+                      {formatMoney(fee.paidAmount)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Còn nợ</p>
                     <p className="font-semibold text-red-600">
-                      {formatCurrency(remaining)}
+                      {formatMoney(String(remaining))}
                     </p>
                   </div>
                 </div>
 
-                {selectedFeeId === fee.id && (
-                  <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
-                    <input
-                      type="number"
-                      placeholder="Nhập số tiền thanh toán"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none focus:border-black"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handlePaymentSubmit(fee.id)}
-                        className="flex-1 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900"
-                      >
-                        ✓ Ghi nhận
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedFeeId(null);
-                          setPaymentAmount("");
-                        }}
-                        className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        Huỷ
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {selectedFeeId !== fee.id && (
-                  <button
-                    onClick={() => {
-                      setSelectedFeeId(fee.id);
-                      setPaymentAmount(remaining.toString());
-                    }}
-                    className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Ghi nhận thanh toán
-                  </button>
-                )}
+                <button
+                  onClick={() => openCollectModal(fee)}
+                  className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Ghi nhận thanh toán
+                </button>
               </div>
             );
           })
         )}
       </div>
+      <CollectFeeModal
+        isOpen={isCollectModalOpen}
+        onClose={() => setIsCollectModalOpen(false)}
+        feeRecord={selectedFeeRecord}
+        onSubmit={handleCollectCash}
+      />
     </div>
   );
 };

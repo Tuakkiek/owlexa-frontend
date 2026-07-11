@@ -14,7 +14,7 @@ const dashboardApi = {
   getOwnerStats: (): Promise<DashboardStats> =>
     axiosClient
       .get('/owner/dashboard/stats')
-      .then((res) => res.data?.data || res.data),
+      .then((res) => res.data),
 };
 
 export default dashboardApi;

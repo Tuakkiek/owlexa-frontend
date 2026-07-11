@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import axiosClient from "../../api/axiosClient";
+import { classApi } from "../../api/classApi";
 import type {
   TeacherClassStudents,
   TeacherStudentInfo,
@@ -16,10 +16,7 @@ export default function TeacherStudentsPage() {
     try {
       setIsLoading(true);
       setError("");
-      const res = await axiosClient.get<TeacherClassStudents[]>(
-        "/teacher/classes/with-students",
-      );
-      const data = res.data ?? [];
+      const data = await classApi.findMyClassesWithStudentsAsTeacher();
       setClasses(data);
       setSelectedClassId((current) => current ?? data[0]?.id ?? null);
     } catch (err: any) {
@@ -110,7 +107,10 @@ export default function TeacherStudentsPage() {
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-32 animate-pulse rounded-2xl bg-gray-100" />
+            <div
+              key={index}
+              className="h-32 animate-pulse rounded-2xl bg-gray-100"
+            />
           ))}
         </div>
       ) : !selectedClass ? (
@@ -132,7 +132,9 @@ export default function TeacherStudentsPage() {
               key={student.userId}
               className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
             >
-              <h3 className="font-semibold text-gray-900">{student.fullName}</h3>
+              <h3 className="font-semibold text-gray-900">
+                {student.fullName}
+              </h3>
               <div className="mt-3 border-t border-gray-100 pt-3 text-sm text-gray-600">
                 <div>{student.phoneNumber}</div>
               </div>
@@ -144,7 +146,8 @@ export default function TeacherStudentsPage() {
       {selectedClass && filteredStudents.length > 0 && (
         <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4">
           <span className="text-sm font-medium text-gray-700">
-            Tổng: <strong>{filteredStudents.length}</strong> / {selectedClass.studentCount} học sinh
+            Tổng: <strong>{filteredStudents.length}</strong> /{" "}
+            {selectedClass.studentCount} học sinh
           </span>
         </div>
       )}

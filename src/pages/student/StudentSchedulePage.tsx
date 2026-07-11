@@ -1,32 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import axiosClient from "../../api/axiosClient";
-
-export interface ScheduleItem {
-  id: number;
-  classId: number;
-  className: string;
-  teacherUserFullName: string;
-  teacherPhoneNumber: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  room: string;
-  isActive: boolean;
-}
-
-const DAY_NAMES = [
-  "",
-  "Thứ 2",
-  "Thứ 3",
-  "Thứ 4",
-  "Thứ 5",
-  "Thứ 6",
-  "Thứ 7",
-  "Chủ nhật",
-];
+import { scheduleApi } from "../../api/scheduleApi";
+import type { ScheduleResponse } from "../../types/schedule";
+import { DAY_LABELS } from "../../types/schedule";
 
 export const StudentSchedulePage = () => {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,8 +12,8 @@ export const StudentSchedulePage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await axiosClient.get("/student/schedules/me");
-      setSchedules(res.data);
+      const data = await scheduleApi.findMySchedulesAsStudent();
+      setSchedules(data);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Không thể tải thời khoá biểu.");
     } finally {
@@ -47,12 +25,15 @@ export const StudentSchedulePage = () => {
     load();
   }, [load]);
 
-  const grouped = schedules.reduce<Record<number, ScheduleItem[]>>((acc, s) => {
-    if (!acc[s.dayOfWeek]) acc[s.dayOfWeek] = [];
-    acc[s.dayOfWeek].push(s);
-    return acc;
-  }, {});
-  
+  const grouped = schedules.reduce<Record<number, ScheduleResponse[]>>(
+    (acc, s) => {
+      if (!acc[s.dayOfWeek]) acc[s.dayOfWeek] = [];
+      acc[s.dayOfWeek].push(s);
+      return acc;
+    },
+    {},
+  );
+
   const sortedDays = Object.keys(grouped)
     .map(Number)
     .sort((a, b) => a - b);
@@ -65,8 +46,8 @@ export const StudentSchedulePage = () => {
           <h1 className="text-xl font-bold">Thời khoá biểu</h1>
           <p className="text-xs text-gray-500">Lịch học của bạn theo tuần</p>
         </div>
-        <button 
-          onClick={load} 
+        <button
+          onClick={load}
           disabled={isLoading}
           className="border border-black px-3 py-1 text-sm disabled:opacity-50"
         >
@@ -93,13 +74,16 @@ export const StudentSchedulePage = () => {
           {sortedDays.map((day) => (
             <div key={day} className="border p-2">
               <h2 className="font-bold text-sm mb-2 border-b pb-1">
-                {DAY_NAMES[day] ?? `Ngày ${day}`}
+                {DAY_LABELS[day] ?? `Ngày ${day}`}
               </h2>
               <div className="space-y-2">
                 {grouped[day]
                   .sort((a, b) => a.startTime.localeCompare(b.startTime))
                   .map((s) => (
-                    <div key={s.id} className="text-sm border-b last:border-0 pb-1 last:pb-0">
+                    <div
+                      key={s.id}
+                      className="text-sm border-b last:border-0 pb-1 last:pb-0"
+                    >
                       <div>
                         <strong>
                           {s.startTime.slice(0, 5)} - {s.endTime.slice(0, 5)}

@@ -15,6 +15,7 @@ export function toUserInfo(response: AuthResponse): UserInfo {
     fullName: response.fullName,
     roleName: response.roleName,
     centerName: response.centerName,
+    centerId: response.centerId,
   };
 }
 
