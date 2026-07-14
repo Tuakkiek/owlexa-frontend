@@ -50,33 +50,30 @@ const CashierPaymentHistoryPage = () => {
           <h1 className="text-2xl font-semibold text-gray-900">
             Lịch sử thanh toán
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Xem lại các khoản học phí đã ghi nhận.
-          </p>
         </div>
         <button
           onClick={loadPayments}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
+        <div className="rounded-xl border border-gray-200 bg-white p-5">
           <p className="text-sm text-gray-500">Giao dịch</p>
           <p className="mt-2 text-2xl font-semibold text-gray-900">
             {filteredPayments.length}
           </p>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-5 sm:col-span-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 sm:col-span-2">
           <p className="text-sm text-gray-500">Tổng tiền đã thu</p>
           <p className="mt-2 text-2xl font-semibold text-gray-900">
             {formatMoney(String(totalAmount))}
@@ -93,7 +90,7 @@ const CashierPaymentHistoryPage = () => {
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-gray-500">
             Đang tải...

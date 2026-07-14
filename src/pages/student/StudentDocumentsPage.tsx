@@ -43,9 +43,6 @@ const StudentDocumentsPage = () => {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-2">
         <div>
           <h1 className="text-xl font-bold">Thư viện tài liệu</h1>
-          <p className="text-xs text-gray-500">
-            Xem tài liệu của lớp và mở nhanh trong tab mới.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -58,7 +55,7 @@ const StudentDocumentsPage = () => {
                   e.target.value === "all" ? "all" : Number(e.target.value),
                 )
               }
-              className="border border-black px-2 py-1 text-xs"
+              className="border border-gray-300 px-2 py-1 text-xs"
             >
               <option value="all">Tất cả các lớp</option>
               {classOptions.map((item) => (
@@ -71,7 +68,7 @@ const StudentDocumentsPage = () => {
           <button
             onClick={loadDocuments}
             disabled={isLoading}
-            className="border border-black px-3 py-1 text-xs disabled:opacity-50"
+            className="border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
           >
             {isLoading ? "Đang tải..." : "Làm mới"}
           </button>
@@ -119,7 +116,7 @@ const StudentDocumentsPage = () => {
                   href={doc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block border border-black px-4 py-1 text-xs font-medium"
+                  className="inline-block border border-primary px-4 py-1 text-xs font-medium"
                 >
                   Mở tài liệu
                 </a>

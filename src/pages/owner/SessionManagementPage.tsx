@@ -73,10 +73,10 @@ const SessionManagementPage = () => {
     });
 
   const deviceLabels: Record<string, string> = {
-    DESKTOP: "💻 Máy tính",
-    MOBILE: "📱 Điện thoại",
-    TABLET: "📋 Máy tính bảng",
-    UNKNOWN: "❓ Không rõ",
+    DESKTOP: "Máy tính",
+    MOBILE: "Điện thoại",
+    TABLET: "Máy tính bảng",
+    UNKNOWN: "Không rõ",
   };
 
   return (
@@ -87,7 +87,7 @@ const SessionManagementPage = () => {
         <button
           onClick={loadSessions}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -98,14 +98,14 @@ const SessionManagementPage = () => {
       {isLoading ? (
         <LoadingSkeleton count={3} height="h-24" />
       ) : sessions.length === 0 ? (
-        <EmptyState message="Không có phiên đăng nhập nào." icon="🔒" />
+        <EmptyState message="Không có phiên đăng nhập nào." />
       ) : (
         <>
           <div className="flex justify-end">
             <button
               onClick={handleRevokeAll}
               disabled={isRevokingAll}
-              className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
             >
               {isRevokingAll ? "Đang xử lý..." : "Đăng xuất tất cả phiên khác"}
             </button>
@@ -115,8 +115,8 @@ const SessionManagementPage = () => {
             {sessions.map((session) => (
               <div
                 key={session.sessionId}
-                className={`flex items-center justify-between rounded-lg border p-4 ${
-                  session.isCurrentSession
+                className={`flex items-center justify-between rounded-xl border p-4 ${
+                  session.current
                     ? "border-blue-200 bg-blue-50"
                     : "border-gray-200 bg-white"
                 }`}
@@ -129,7 +129,7 @@ const SessionManagementPage = () => {
                     <span className="font-medium text-gray-900">
                       {session.deviceName || "Thiết bị không rõ"}
                     </span>
-                    {session.isCurrentSession && (
+                    {session.current && (
                       <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
                         Phiên hiện tại
                       </span>
@@ -144,11 +144,11 @@ const SessionManagementPage = () => {
                   </div>
                 </div>
 
-                {!session.isCurrentSession && (
+                {!session.current && (
                   <button
                     onClick={() => handleRevoke(session.sessionId)}
                     disabled={revokingId === session.sessionId}
-                    className="ml-4 rounded border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    className="ml-4 rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
                   >
                     {revokingId === session.sessionId
                       ? "Đang hủy..."

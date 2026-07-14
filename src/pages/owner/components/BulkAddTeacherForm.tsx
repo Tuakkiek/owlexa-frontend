@@ -74,10 +74,10 @@ export const BulkAddTeacherForm = ({
 
     return (
       <div className="space-y-4">
-        <div className="bg-green-50 p-4 rounded text-green-800">
+        <div className="bg-green-50 p-4 rounded-lg text-green-800">
           Đã xử lý {results.length} giáo viên.
         </div>
-        <div className="max-h-64 overflow-y-auto border rounded divide-y">
+        <div className="max-h-64 overflow-y-auto border rounded-lg divide-y">
           {results.map((r, i) => (
             <div key={i} className="p-3 flex justify-between">
               <div>
@@ -119,7 +119,7 @@ export const BulkAddTeacherForm = ({
         </p>
         <textarea
           rows={6}
-          className="w-full px-3 py-2 border rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+          className="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
           value={textData}
           onChange={(e) => setTextData(e.target.value)}
           placeholder="0912345678, Nguyen Van A, a@example.com&#10;0987654321, Tran Thi B, b@example.com"

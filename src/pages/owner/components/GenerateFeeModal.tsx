@@ -89,7 +89,7 @@ export const GenerateFeeModal = ({
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-black focus:outline-none"
+            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none"
           >
             {monthOptions.map((m) => (
               <option key={m} value={m}>
@@ -110,12 +110,12 @@ export const GenerateFeeModal = ({
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+            className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none"
           />
         </div>
 
         {error && (
-          <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {error}
           </div>
         )}

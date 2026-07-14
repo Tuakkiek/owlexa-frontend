@@ -13,7 +13,7 @@ interface StatCardProps {
 
 const StatCard = ({ label, value, helper, accent }: StatCardProps) => (
   <div
-    className={`border p-4 bg-white ${accent ? "border-l-4 border-l-black" : ""}`}
+    className={`rounded-lg border p-4 bg-white ${accent ? "border-l-4 border-l-black" : ""}`}
   >
     <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
     <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
@@ -87,14 +87,11 @@ export const OwnerDashboardPage = () => {
           <h1 className="text-xl font-bold text-gray-900">
             Chào {displayName}
           </h1>
-          <p className="text-xs text-gray-500">
-            Tổng quan hoạt động của trung tâm hôm nay.
-          </p>
         </div>
         <button
           onClick={loadStats}
           disabled={isLoading}
-          className="border border-black px-3 py-1 text-xs disabled:opacity-50 bg-white hover:bg-gray-100"
+          className="rounded-lg border border-gray-300 px-3 py-1 text-xs disabled:opacity-50 bg-white hover:bg-gray-100"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -102,7 +99,7 @@ export const OwnerDashboardPage = () => {
 
       {/* Error State */}
       {error && (
-        <div className="border border-red-500 p-2 text-red-600 text-xs">
+        <div className="rounded-lg border border-red-500 p-2 text-red-600 text-xs">
           Lỗi: {error}
         </div>
       )}
@@ -111,7 +108,7 @@ export const OwnerDashboardPage = () => {
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 border bg-gray-50 animate-pulse" />
+            <div key={i} className="h-28 rounded-lg border bg-gray-50 animate-pulse" />
           ))}
         </div>
       ) : stats ? (
@@ -152,7 +149,7 @@ export const OwnerDashboardPage = () => {
           </div>
 
           {/* Progress Section */}
-          <section className="border p-4 bg-white">
+          <section className="rounded-lg border p-4 bg-white">
             <div className="flex justify-between items-center border-b pb-2 mb-3">
               <div>
                 <h2 className="font-bold text-gray-900">Tiến độ thu học phí</h2>
@@ -166,9 +163,9 @@ export const OwnerDashboardPage = () => {
               </div>
             </div>
 
-            <div className="h-2 bg-gray-100 border">
+            <div className="h-2 rounded-full bg-gray-100 border">
               <div
-                className="h-full bg-black transition-all duration-500"
+                className="h-full bg-primary transition-all duration-500"
                 style={{ width: `${paidPercent}%` }}
               />
             </div>
@@ -203,7 +200,7 @@ export const OwnerDashboardPage = () => {
             <Link
               key={link.to}
               to={link.to}
-              className="border p-4 bg-white block hover:bg-gray-50 transition-colors"
+              className="rounded-lg border p-4 bg-white block hover:bg-gray-50 transition-colors"
             >
               <h3 className="font-bold text-gray-900">{link.title}</h3>
               <p className="mt-1 text-xs text-gray-500">{link.description}</p>

@@ -102,14 +102,11 @@ const StudentEssayPage = () => {
           <h1 className="text-3xl font-semibold text-gray-900">
             Nộp bài Essay
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Viết bài, nộp và nhận điểm từ AI
-          </p>
         </div>
         <button
           onClick={loadEssays}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -125,7 +122,7 @@ const StudentEssayPage = () => {
           {rubricId && !showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="w-full rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center hover:border-gray-400 transition"
+              className="w-full rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center hover:border-gray-400 transition"
             >
               <p className="text-2xl mb-2">+</p>
               <p className="text-sm font-medium text-gray-700">Viết bài mới</p>
@@ -142,9 +139,9 @@ const StudentEssayPage = () => {
                 <button
                   key={essay.id}
                   onClick={() => setSelectedEssayId(essay.id)}
-                  className={`w-full text-left rounded-2xl border-2 p-3 transition ${
+                  className={`w-full text-left rounded-xl border-2 p-3 transition ${
                     selectedEssayId === essay.id
-                      ? "border-black bg-blue-50"
+                      ? "border-primary bg-primary-light"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
@@ -167,9 +164,9 @@ const StudentEssayPage = () => {
                 <button
                   key={essay.id}
                   onClick={() => handleViewEssay(essay.id)}
-                  className={`w-full text-left rounded-2xl border-2 p-3 transition ${
+                  className={`w-full text-left rounded-xl border-2 p-3 transition ${
                     selectedEssayId === essay.id
-                      ? "border-black bg-blue-50"
+                      ? "border-primary bg-primary-light"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
@@ -202,7 +199,7 @@ const StudentEssayPage = () => {
           {showForm ? (
             <form
               onSubmit={handleSubmitEssay}
-              className="rounded-3xl border border-gray-200 bg-white p-6 space-y-4"
+              className="rounded-xl border border-gray-200 bg-white p-6 space-y-4"
             >
               <h3 className="font-semibold text-gray-900">Viết bài mới</h3>
 
@@ -210,7 +207,7 @@ const StudentEssayPage = () => {
                 placeholder="Nhập nội dung bài essay của bạn..."
                 value={formContent}
                 onChange={(e) => setFormContent(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-black min-h-[300px] font-mono text-sm"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-primary min-h-[300px] font-mono text-sm"
               />
 
               <div className="text-xs text-gray-500">
@@ -220,7 +217,7 @@ const StudentEssayPage = () => {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white hover:bg-gray-900"
+                  className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-hover"
                 >
                   Nộp và chấm bài
                 </button>
@@ -234,7 +231,7 @@ const StudentEssayPage = () => {
               </div>
             </form>
           ) : selectedEssay ? (
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 space-y-6">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-6">
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-500 font-medium">
                   {selectedEssay.className}
@@ -253,7 +250,7 @@ const StudentEssayPage = () => {
 
               {/* Grading Results */}
               {isGrading ? (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-center">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 text-center">
                   <div className="inline-block animate-spin text-4xl mb-3">
                     ⏳
                   </div>
@@ -265,7 +262,7 @@ const StudentEssayPage = () => {
                   </p>
                 </div>
               ) : gradingResult ? (
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-6 space-y-4">
+                <div className="rounded-xl border border-green-200 bg-green-50 p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-green-900">
                       Kết quả chấm bài
@@ -324,14 +321,13 @@ const StudentEssayPage = () => {
                   )}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-500">
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-500">
                   Chưa có kết quả chấm bài
                 </div>
               )}
             </div>
           ) : (
-            <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-              <div className="text-4xl mb-3">📝</div>
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
               <p className="text-gray-600">
                 Chọn bài để xem chi tiết hoặc viết bài mới
               </p>

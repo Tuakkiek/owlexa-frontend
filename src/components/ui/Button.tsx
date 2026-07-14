@@ -15,12 +15,12 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const baseStyles =
-    "inline-flex items-center justify-center border px-4 py-2 text-sm font-medium rounded-md focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex items-center justify-center border px-4 py-2 text-sm font-medium rounded-lg focus:outline-none disabled:cursor-not-allowed disabled:opacity-60";
 
   const variants = {
-    primary: "border-black bg-black text-white hover:bg-gray-800",
+    primary: "border-primary bg-primary text-white hover:bg-primary-hover",
     secondary: "border-gray-300 bg-white text-gray-900 hover:bg-gray-50",
-    danger: "border-gray-300 bg-white text-gray-900 hover:bg-gray-50",
+    danger: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
   };
 
   return (

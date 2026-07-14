@@ -67,18 +67,15 @@ export const ClassesPage = () => {
   };
 
   return (
-    <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 text-gray-900 max-w-7xl mx-auto px-4 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-neutral-200 space-y-4 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-gray-200 space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-xl font-medium tracking-tight">Lớp học</h1>
-          <p className="text-xs text-neutral-400 mt-1">
-            Quản lý lớp học, lịch học, ghi danh và học phí.
-          </p>
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm transition-colors"
+          className="border border-primary bg-primary text-white hover:bg-primary-hover rounded-lg px-4 py-2 text-sm transition-colors"
         >
           + Tạo lớp mới
         </Button>
@@ -96,27 +93,27 @@ export const ClassesPage = () => {
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">
             Tổng lớp
           </p>
-          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+          <p className="mt-1 text-2xl font-semibold text-gray-900">
             {classes.length}
           </p>
         </div>
-        <div className="rounded border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">
             Đang hoạt động
           </p>
-          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+          <p className="mt-1 text-2xl font-semibold text-gray-900">
             {classes.filter((c) => c.isActive).length}
           </p>
         </div>
-        <div className="rounded border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">
             Tổng học sinh
           </p>
-          <p className="mt-1 text-2xl font-semibold text-neutral-900">
+          <p className="mt-1 text-2xl font-semibold text-gray-900">
             {classes.reduce((s, c) => s + c.maxStudents, 0)}
           </p>
         </div>
@@ -125,17 +122,17 @@ export const ClassesPage = () => {
       {/* Table */}
       <div className="w-full overflow-x-auto">
         {isLoading ? (
-          <div className="py-12 text-center text-sm text-neutral-400">
+          <div className="py-12 text-center text-sm text-gray-400">
             Đang tải lớp học...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-400">
+          <div className="py-12 text-center text-sm text-gray-400">
             Không tìm thấy lớp học nào.
           </div>
         ) : (
           <table className="min-w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-neutral-200 text-neutral-400 text-xs uppercase tracking-wide">
+              <tr className="border-b border-gray-200 text-gray-400 text-xs uppercase tracking-wide">
                 <th className="pb-3 pr-4 text-left font-medium">Tên lớp</th>
                 <th className="pb-3 px-4 text-left font-medium">Cấp độ</th>
                 <th className="pb-3 px-4 text-right font-medium">
@@ -150,23 +147,23 @@ export const ClassesPage = () => {
                 <th className="pb-3 pl-4 text-right font-medium">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-gray-100">
               {filtered.map((cls) => (
                 <tr
                   key={cls.id}
-                  className="hover:bg-neutral-50/50 transition-colors cursor-pointer"
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   onClick={() => setSelectedClass(cls)}
                 >
-                  <td className="py-4 pr-4 font-semibold text-neutral-900">
+                  <td className="py-4 pr-4 font-semibold text-gray-900">
                     {cls.name}
                   </td>
-                  <td className="py-4 px-4 text-neutral-600">
+                  <td className="py-4 px-4 text-gray-600">
                     {cls.vstepLevel}
                   </td>
-                  <td className="py-4 px-4 text-neutral-600 text-right">
+                  <td className="py-4 px-4 text-gray-600 text-right">
                     {cls.maxStudents}
                   </td>
-                  <td className="py-4 px-4 text-neutral-900 text-right font-medium">
+                  <td className="py-4 px-4 text-gray-900 text-right font-medium">
                     {formatCurrency(cls.monthFee)}
                   </td>
                   <td className="py-4 px-4 text-center">
@@ -185,7 +182,7 @@ export const ClassesPage = () => {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
-                      className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
                       onClick={() => {
                         setEditingClass(cls);
                         setIsAddModalOpen(true);
@@ -194,7 +191,7 @@ export const ClassesPage = () => {
                       Sửa
                     </button>
                     <button
-                      className="text-neutral-400 hover:text-red-700 underline underline-offset-4"
+                      className="text-gray-400 hover:text-red-700 underline underline-offset-4"
                       onClick={() => handleDelete(cls)}
                     >
                       Xóa

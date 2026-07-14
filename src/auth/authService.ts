@@ -6,7 +6,8 @@ import { removeLegacyAuthKeys } from "./authStorage";
 /**
  * Central auth API for the frontend.
  * Access token + user profile live in Zustand (persisted as owlexa-auth-store).
- * Refresh token stays in HttpOnly cookie — never touch localStorage for it.
+ * Refresh token is stored in localStorage (owlexa-refresh-token) as the primary
+ * durable fallback; axiosClient also sets a SameSite Lax cookie as secondary backup.
  */
 export function toUserInfo(response: AuthResponse): UserInfo {
   return {

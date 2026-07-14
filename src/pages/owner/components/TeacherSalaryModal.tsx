@@ -196,7 +196,7 @@ export const TeacherSalaryModal = ({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Giáo viên:</span>
               <span className="font-semibold text-gray-900">
@@ -250,7 +250,7 @@ export const TeacherSalaryModal = ({
             <select
               value={currency}
               onChange={(event) => setCurrency(event.target.value)}
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
               {SUPPORTED_CURRENCIES.map((code) => (
                 <option key={code} value={code}>
@@ -261,7 +261,7 @@ export const TeacherSalaryModal = ({
           </div>
 
           {error && (
-            <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
             </div>
           )}

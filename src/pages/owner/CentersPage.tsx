@@ -94,9 +94,6 @@ export const CentersPage = () => {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-2">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Trung tâm</h1>
-          <p className="text-xs text-gray-500">
-            Quản lý chi nhánh và subdomain tenant của Owlexa.
-          </p>
         </div>
         <div>
           {/* Đảm bảo component Button bên trong không có bo góc nâng cao */}
@@ -106,7 +103,7 @@ export const CentersPage = () => {
 
       {/* Error State */}
       {error && (
-        <div className="border border-red-500 p-2 text-red-600 text-xs">
+        <div className="rounded-lg border border-red-500 p-2 text-red-600 text-xs">
           Lỗi: {error}
         </div>
       )}
@@ -122,7 +119,7 @@ export const CentersPage = () => {
       </div>
 
       {/* Main Table Area */}
-      <div className="border border-gray-300 bg-white overflow-x-auto">
+      <div className="rounded-lg border border-gray-300 bg-white overflow-x-auto">
         {isLoading ? (
           <div className="p-4 text-center text-xs text-gray-500">Đang tải trung tâm...</div>
         ) : filteredCenters.length === 0 ? (
