@@ -14,7 +14,9 @@ const StudentTestsPage = () => {
   const [tests, setTests] = useState<MockTest[]>([]);
   const [results, setResults] = useState<TestAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"available" | "results">("available");
+  const [activeTab, setActiveTab] = useState<"available" | "results">(
+    "available",
+  );
   const [error, setError] = useState("");
   const [startingTestId, setStartingTestId] = useState<number | null>(null);
 
@@ -29,7 +31,9 @@ const StudentTestsPage = () => {
       setTests(testsData);
       setResults(resultsData);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể tải danh sách đề thi.");
+      setError(
+        err?.response?.data?.message ?? "Không thể tải danh sách đề thi.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +75,9 @@ const StudentTestsPage = () => {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Thi thử VSTEP</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Thi thử VSTEP
+          </h1>
         </div>
         <button
           onClick={loadData}
@@ -115,7 +121,10 @@ const StudentTestsPage = () => {
         <div className="space-y-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
+              <div
+                key={index}
+                className="h-24 rounded-xl bg-gray-100 animate-pulse"
+              />
             ))
           ) : tests.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
@@ -123,7 +132,9 @@ const StudentTestsPage = () => {
             </div>
           ) : (
             tests.map((test) => {
-              const attemptedCount = results.filter((result) => result.testId === test.id).length;
+              const attemptedCount = results.filter(
+                (result) => result.testId === test.id,
+              ).length;
               const isStarting = startingTestId === test.id;
 
               return (
@@ -133,7 +144,9 @@ const StudentTestsPage = () => {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{test.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {test.title}
+                      </h3>
                       <p className="mt-1 text-sm text-gray-600">
                         {test.description || "Không có mô tả"}
                       </p>
@@ -143,7 +156,9 @@ const StudentTestsPage = () => {
                         {LEVEL_NAMES[test.level]}
                       </p>
                       {attemptedCount > 0 && (
-                        <p className="mt-1 text-xs text-gray-500">Đã làm {attemptedCount} lần</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Đã làm {attemptedCount} lần
+                        </p>
                       )}
                     </div>
                   </div>
@@ -172,7 +187,10 @@ const StudentTestsPage = () => {
         <div className="space-y-4">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-20 rounded-xl bg-gray-100 animate-pulse" />
+              <div
+                key={index}
+                className="h-20 rounded-xl bg-gray-100 animate-pulse"
+              />
             ))
           ) : sortedResults.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
@@ -198,13 +216,19 @@ const StudentTestsPage = () => {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{result.testTitle}</h3>
+                      <h3 className="font-semibold text-gray-900">
+                        {result.testTitle}
+                      </h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        {new Date(result.completedAt || result.startedAt).toLocaleDateString("vi-VN")}
+                        {new Date(
+                          result.completedAt || result.startedAt,
+                        ).toLocaleDateString("vi-VN")}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-2xl font-bold ${scoreColor}`}>{result.score}</p>
+                      <p className={`text-2xl font-bold ${scoreColor}`}>
+                        {result.score}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {result.correctAnswers}/{result.totalQuestions} đúng
                       </p>

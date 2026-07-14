@@ -309,7 +309,6 @@ export default function OwnerTestsPage() {
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Đề thi thử</h1>
-          
         </div>
         <div className="flex gap-2">
           <Button
@@ -330,7 +329,7 @@ export default function OwnerTestsPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <div className="border border-gray-200 bg-white p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Tổng đề thi
           </p>
@@ -338,7 +337,7 @@ export default function OwnerTestsPage() {
             {tests.length}
           </p>
         </div>
-        <div className="border border-gray-200 bg-white p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Đang hoạt động
           </p>
@@ -346,7 +345,7 @@ export default function OwnerTestsPage() {
             {activeCount}
           </p>
         </div>
-        <div className="border border-gray-200 bg-white p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Câu hỏi của đề
           </p>
@@ -354,7 +353,7 @@ export default function OwnerTestsPage() {
             {selectedTest ? totalQuestions : "—"}
           </p>
         </div>
-        <div className="border border-gray-200 bg-white p-5">
+        <div className="rounded-lg border border-gray-200 bg-white p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Lượt làm bài
           </p>
@@ -365,7 +364,7 @@ export default function OwnerTestsPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="border border-gray-200 bg-white p-5">
+        <section className="rounded-lg border border-gray-200 bg-white p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -387,7 +386,7 @@ export default function OwnerTestsPage() {
               Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-28 bg-gray-100 border border-gray-200"
+                  className="h-28 rounded-lg bg-gray-100 border border-gray-200"
                 />
               ))
             ) : filteredTests.length === 0 ? (

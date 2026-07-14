@@ -81,13 +81,11 @@ const SessionManagementPage = () => {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader
-        title="Quản lý phiên đăng nhập"
-      >
+      <PageHeader title="Quản lý phiên đăng nhập">
         <button
           onClick={loadSessions}
           disabled={isLoading}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-btn border border-surface-border bg-white px-4 py-2 text-sm text-gray-700 hover:bg-surface-hover disabled:opacity-60 transition-colors"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -105,7 +103,7 @@ const SessionManagementPage = () => {
             <button
               onClick={handleRevokeAll}
               disabled={isRevokingAll}
-              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+              className="rounded-btn border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors"
             >
               {isRevokingAll ? "Đang xử lý..." : "Đăng xuất tất cả phiên khác"}
             </button>
@@ -115,10 +113,10 @@ const SessionManagementPage = () => {
             {sessions.map((session) => (
               <div
                 key={session.sessionId}
-                className={`flex items-center justify-between rounded-xl border p-4 ${
+                className={`flex items-center justify-between rounded-card border p-6 ${
                   session.current
                     ? "border-blue-200 bg-blue-50"
-                    : "border-gray-200 bg-white"
+                    : "border-surface-border bg-white"
                 }`}
               >
                 <div className="min-w-0 flex-1">
@@ -148,7 +146,7 @@ const SessionManagementPage = () => {
                   <button
                     onClick={() => handleRevoke(session.sessionId)}
                     disabled={revokingId === session.sessionId}
-                    className="ml-4 rounded-lg border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    className="ml-4 rounded-btn border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors"
                   >
                     {revokingId === session.sessionId
                       ? "Đang hủy..."

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { scheduleApi } from "../../api/scheduleApi";
 import { useAuthStore } from "../../store/authStore";
+import {
+  PageHeader,
+  StatCard,
+  Card,
+  LoadingSkeleton,
+  ErrorBanner,
+} from "../../components/ui/SharedComponents";
+import { Button } from "../../components/ui/Button";
 import type { ScheduleResponse } from "../../types/schedule";
 import { DAY_LABELS } from "../../types/schedule";
 
@@ -15,8 +22,7 @@ export default function TeacherDashboardPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await scheduleApi.findMySchedulesAsTeacher();
-      setSchedules(data);
+      setSchedules(await scheduleApi.findMySchedulesAsTeacher());
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu giáo viên.",
@@ -47,104 +53,68 @@ export default function TeacherDashboardPage() {
         .sort((a, b) => a - b),
     [grouped],
   );
-
   const activeSchedules = useMemo(
-    () => schedules.filter((schedule) => schedule.isActive),
+    () => schedules.filter((s) => s.isActive),
+    [schedules],
+  );
+  const classCount = useMemo(
+    () => new Set(schedules.map((s) => s.classId)).size,
     [schedules],
   );
 
   const todaySchedules = useMemo(() => {
     const today = new Date().getDay();
     return schedules
-      .filter((schedule) => schedule.dayOfWeek === today)
+      .filter((s) => s.dayOfWeek === today)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [schedules]);
 
-  const classCount = useMemo(
-    () => new Set(schedules.map((schedule) => schedule.classId)).size,
-    [schedules],
-  );
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Chào, {user?.fullName ?? "giáo viên"}
-          </h1>
-        </div>
-        <button
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader title={`Chào, ${user?.fullName ?? "giáo viên"}`}>
+        <Button
+          variant="secondary"
           onClick={loadData}
-          disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          isLoading={isLoading}
+          size="sm"
         >
-          {isLoading ? "Đang tải..." : "Làm mới"}
-        </button>
-      </div>
+          Làm mới
+        </Button>
+      </PageHeader>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Tổng lịch dạy
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {isLoading ? "..." : schedules.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Buổi dạy đang hoạt động
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {isLoading ? "..." : activeSchedules.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Số lớp phụ trách
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {isLoading ? "..." : classCount}
-          </p>
-        </div>
+        <StatCard
+          label="Tổng lịch dạy"
+          value={isLoading ? "..." : schedules.length}
+        />
+        <StatCard
+          label="Buổi đang hoạt động"
+          value={isLoading ? "..." : activeSchedules.length}
+        />
+        <StatCard
+          label="Số lớp phụ trách"
+          value={isLoading ? "..." : classCount}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Lịch dạy tuần này
-              </h2>
-            </div>
-          </div>
-
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Lịch dạy tuần này
+          </h2>
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-20 animate-pulse rounded-xl bg-gray-100"
-                />
-              ))}
-            </div>
+            <LoadingSkeleton count={4} height="h-20" />
           ) : schedules.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-              <p className="text-sm text-gray-600">
-                Chưa có lịch dạy nào được gán cho tài khoản của bạn.
-              </p>
+            <div className="rounded-card border border-dashed border-surface-border bg-surface-page py-12 text-center text-sm text-gray-500">
+              Chưa có lịch dạy nào được gán.
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {sortedDays.map((day) => (
                 <div key={day}>
-                  <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {DAY_LABELS[day]}
                   </h3>
                   <div className="space-y-2">
@@ -153,7 +123,7 @@ export default function TeacherDashboardPage() {
                       .map((schedule) => (
                         <div
                           key={schedule.id}
-                          className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4"
+                          className="flex items-center justify-between rounded-btn border border-surface-border bg-surface-hover px-4 py-3"
                         >
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-gray-900">
@@ -179,71 +149,38 @@ export default function TeacherDashboardPage() {
               ))}
             </div>
           )}
-        </section>
+        </Card>
 
-        <section className="space-y-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">Hôm nay</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {todaySchedules.length > 0
-                ? `Bạn có ${todaySchedules.length} buổi dạy trong hôm nay.`
-                : "Hôm nay chưa có buổi dạy nào."}
-            </p>
-
-            <div className="mt-4 space-y-2">
-              {todaySchedules.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
-                  Nghỉ ngơi một chút, hoặc chuẩn bị trước cho buổi học kế tiếp.
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900">Hôm nay</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {todaySchedules.length > 0
+              ? `Bạn có ${todaySchedules.length} buổi dạy hôm nay.`
+              : "Hôm nay chưa có buổi dạy nào."}
+          </p>
+          <div className="mt-4 space-y-2">
+            {todaySchedules.length === 0 ? (
+              <div className="rounded-btn border border-dashed border-surface-border bg-surface-page p-4 text-sm text-gray-500">
+                Nghỉ ngơi một chút, hoặc chuẩn bị trước cho buổi học kế tiếp.
+              </div>
+            ) : (
+              todaySchedules.map((schedule) => (
+                <div
+                  key={schedule.id}
+                  className="rounded-btn border border-surface-border bg-surface-hover px-4 py-3"
+                >
+                  <p className="font-semibold text-gray-900">
+                    {schedule.className}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {schedule.startTime.slice(0, 5)} -{" "}
+                    {schedule.endTime.slice(0, 5)} · Phòng {schedule.room}
+                  </p>
                 </div>
-              ) : (
-                todaySchedules.map((schedule) => (
-                  <div
-                    key={schedule.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
-                  >
-                    <p className="font-semibold text-gray-900">
-                      {schedule.className}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      {schedule.startTime.slice(0, 5)} -{" "}
-                      {schedule.endTime.slice(0, 5)} · Phòng {schedule.room}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
+              ))
+            )}
           </div>
-
-          <div className="grid gap-3">
-            <Link
-              to="/teacher/attendance"
-              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
-            >
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Điểm danh</p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Ghi nhận có mặt, vắng mặt hoặc xin phép
-                </p>
-              </div>
-              <span className="text-lg font-semibold text-gray-400">→</span>
-            </Link>
-
-            <Link
-              to="/teacher/students"
-              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
-            >
-              <div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Danh sách học sinh
-                </p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Xem học sinh theo từng lớp
-                </p>
-              </div>
-              <span className="text-lg font-semibold text-gray-400">→</span>
-            </Link>
-          </div>
-        </section>
+        </Card>
       </div>
     </div>
   );

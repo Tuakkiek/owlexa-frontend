@@ -72,7 +72,9 @@ const StudentTestResultsPage = () => {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Kết quả thi thử</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Kết quả thi thử
+          </h1>
           <p className="mt-1 text-sm text-gray-500">{result.testTitle}</p>
         </div>
         <button
@@ -89,11 +91,15 @@ const StudentTestResultsPage = () => {
         </div>
       )}
 
-      <div className={`rounded-xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}>
+      <div
+        className={`rounded-xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}
+      >
         <p className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-600">
           Điểm của bạn
         </p>
-        <div className={`mb-4 text-6xl font-bold ${scoreColor}`}>{result.score}</div>
+        <div className={`mb-4 text-6xl font-bold ${scoreColor}`}>
+          {result.score}
+        </div>
         <p className="text-xl text-gray-600">
           {percentage}% -{" "}
           {percentage >= 80
@@ -106,7 +112,9 @@ const StudentTestResultsPage = () => {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-          <p className="text-3xl font-bold text-green-600">{result.correctAnswers}</p>
+          <p className="text-3xl font-bold text-green-600">
+            {result.correctAnswers}
+          </p>
           <p className="mt-2 text-sm text-gray-600">Câu đúng</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
@@ -116,17 +124,24 @@ const StudentTestResultsPage = () => {
           <p className="mt-2 text-sm text-gray-600">Câu sai</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
-          <p className="text-3xl font-bold text-gray-900">{result.totalQuestions}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {result.totalQuestions}
+          </p>
           <p className="mt-2 text-sm text-gray-600">Tổng số câu</p>
         </div>
       </div>
 
       <section className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-6 text-xl font-semibold text-gray-900">Chi tiết câu hỏi</h2>
+        <h2 className="mb-6 text-xl font-semibold text-gray-900">
+          Chi tiết câu hỏi
+        </h2>
 
         <div className="max-h-96 space-y-3 overflow-y-auto">
           {result.answers.map((answer, index) => (
-            <div key={answer.questionId} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div
+              key={answer.questionId}
+              className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+            >
               <div className="mb-2 flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">Câu {index + 1}</p>
@@ -134,14 +149,17 @@ const StudentTestResultsPage = () => {
                     {answer.questionText || "Không có nội dung câu hỏi"}
                   </p>
                 </div>
-                <div className={`text-right text-lg font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}>
+                <div
+                  className={`text-right text-lg font-bold ${answer.isCorrect ? "text-green-600" : "text-red-600"}`}
+                >
                   {answer.isCorrect ? "✓" : "✕"}
                 </div>
               </div>
 
               <div className="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm">
                 <p className="text-gray-600">
-                  Câu trả lời của bạn: <strong>{answer.studentAnswer || "(Bỏ trống)"}</strong>
+                  Câu trả lời của bạn:{" "}
+                  <strong>{answer.studentAnswer || "(Bỏ trống)"}</strong>
                 </p>
                 {!answer.isCorrect && (
                   <p className="text-green-600">
@@ -171,7 +189,10 @@ const StudentTestResultsPage = () => {
 
       <div className="text-center text-sm text-gray-500">
         <p>
-          Hoàn thành lúc {new Date(result.completedAt || result.startedAt).toLocaleString("vi-VN")}
+          Hoàn thành lúc{" "}
+          {new Date(result.completedAt || result.startedAt).toLocaleString(
+            "vi-VN",
+          )}
         </p>
       </div>
     </div>

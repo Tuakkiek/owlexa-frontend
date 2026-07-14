@@ -13,7 +13,9 @@ const StudentTestTakingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>({});
+  const [answers, setAnswers] = useState<Record<number, "A" | "B" | "C" | "D">>(
+    {},
+  );
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,15 +31,20 @@ const StudentTestTakingPage = () => {
         setAttempt(attemptData);
         setTimeLeft((attemptData.durationMinutes ?? 0) * 60);
         setAnswers(
-          attemptData.answers.reduce<Record<number, "A" | "B" | "C" | "D">>((acc, answer) => {
-            if (answer.studentAnswer) {
-              acc[answer.questionId] = answer.studentAnswer;
-            }
-            return acc;
-          }, {}),
+          attemptData.answers.reduce<Record<number, "A" | "B" | "C" | "D">>(
+            (acc, answer) => {
+              if (answer.studentAnswer) {
+                acc[answer.questionId] = answer.studentAnswer;
+              }
+              return acc;
+            },
+            {},
+          ),
         );
 
-        const questionsData = await testApi.getStudentQuestions(attemptData.testId);
+        const questionsData = await testApi.getStudentQuestions(
+          attemptData.testId,
+        );
         setQuestions(questionsData);
       } catch (err: any) {
         setError(err?.response?.data?.message ?? "Không thể tải đề thi.");
@@ -71,7 +78,10 @@ const StudentTestTakingPage = () => {
     ? Math.round((Object.keys(answers).length / questions.length) * 100)
     : 0;
 
-  const handleAnswerChange = (questionId: number, answer: "A" | "B" | "C" | "D") => {
+  const handleAnswerChange = (
+    questionId: number,
+    answer: "A" | "B" | "C" | "D",
+  ) => {
     setAnswers((current) => ({
       ...current,
       [questionId]: answer,
@@ -124,13 +134,17 @@ const StudentTestTakingPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{attempt.testTitle}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            {attempt.testTitle}
+          </h1>
           <p className="mt-0.5 text-sm text-gray-500">
             Câu {currentQuestionIndex + 1} / {questions.length}
           </p>
         </div>
         <div className="text-right">
-          <div className={`font-mono text-2xl font-bold ${timeLeft < 300 ? "text-red-600" : "text-gray-900"}`}>
+          <div
+            className={`font-mono text-2xl font-bold ${timeLeft < 300 ? "text-red-600" : "text-gray-900"}`}
+          >
             {formatTime(timeLeft)}
           </div>
           <p className="mt-1 text-xs text-gray-500">Còn lại</p>
@@ -167,7 +181,12 @@ const StudentTestTakingPage = () => {
                     name={`question-${currentQuestion.id}`}
                     value={option}
                     checked={answers[currentQuestion.id] === option}
-                    onChange={() => handleAnswerChange(currentQuestion.id, option as "A" | "B" | "C" | "D")}
+                    onChange={() =>
+                      handleAnswerChange(
+                        currentQuestion.id,
+                        option as "A" | "B" | "C" | "D",
+                      )
+                    }
                     className="h-5 w-5"
                   />
                   <span className="text-gray-900">
@@ -183,7 +202,10 @@ const StudentTestTakingPage = () => {
           <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="mb-3 text-sm font-medium text-gray-700">Tiến độ</p>
             <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-              <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progress}%` }}
+              />
             </div>
             <p className="text-center text-xs text-gray-500">
               {Object.keys(answers).length} / {questions.length}
@@ -231,14 +253,20 @@ const StudentTestTakingPage = () => {
 
       <div className="mx-auto flex max-w-6xl gap-2 px-4 pb-6">
         <button
-          onClick={() => setCurrentQuestionIndex((current) => Math.max(0, current - 1))}
+          onClick={() =>
+            setCurrentQuestionIndex((current) => Math.max(0, current - 1))
+          }
           disabled={currentQuestionIndex === 0}
           className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           ← Câu trước
         </button>
         <button
-          onClick={() => setCurrentQuestionIndex((current) => Math.min(questions.length - 1, current + 1))}
+          onClick={() =>
+            setCurrentQuestionIndex((current) =>
+              Math.min(questions.length - 1, current + 1),
+            )
+          }
           disabled={currentQuestionIndex === questions.length - 1}
           className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
@@ -249,9 +277,12 @@ const StudentTestTakingPage = () => {
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 space-y-4 rounded-xl bg-white p-8 max-w-sm">
-            <h2 className="text-xl font-semibold text-gray-900">Xác nhận nộp bài?</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Xác nhận nộp bài?
+            </h2>
             <p className="text-sm text-gray-600">
-              Bạn đã trả lời {Object.keys(answers).length}/{questions.length} câu hỏi.
+              Bạn đã trả lời {Object.keys(answers).length}/{questions.length}{" "}
+              câu hỏi.
             </p>
             <div className="flex gap-2">
               <button

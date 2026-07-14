@@ -71,7 +71,7 @@ const StudentFeesPage = () => {
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
+          className="rounded-lg border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -79,7 +79,7 @@ const StudentFeesPage = () => {
 
       {/* Hóa đơn chưa thanh toán */}
       {unpaidFees.length > 0 && (
-        <section className="border p-4">
+        <section className="rounded-lg border p-4">
           <h2 className="font-bold mb-3 border-b pb-1">
             Hóa đơn chưa thanh toán ({unpaidFees.length})
           </h2>
@@ -88,7 +88,7 @@ const StudentFeesPage = () => {
               const remaining = remainingBalance(record);
 
               return (
-                <div key={record.id} className="border p-3">
+                <div key={record.id} className="rounded-lg border p-3">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="text-xs uppercase text-gray-500">
@@ -96,7 +96,7 @@ const StudentFeesPage = () => {
                       </p>
                       <h3 className="font-bold">{record.month}</h3>
                     </div>
-                    <span className="text-xs border px-1.5 py-0.5">
+                    <span className="rounded-lg text-xs border px-1.5 py-0.5">
                       {record.status === "PARTIAL"
                         ? "Đã trả một phần"
                         : "Chưa trả"}
@@ -128,18 +128,18 @@ const StudentFeesPage = () => {
                         selectedFeeId === record.id ? null : record.id,
                       )
                     }
-                    className="w-full border border-gray-300 py-1 text-xs font-medium"
+                    className="rounded-lg w-full border border-gray-300 py-1 text-xs font-medium"
                   >
                     {selectedFeeId === record.id ? "Đóng" : "Thanh toán QR"}
                   </button>
 
                   {/* QR Code Display */}
                   {selectedFeeId === record.id && (
-                    <div className="mt-3 border p-3 bg-gray-50">
+                    <div className="mt-3 rounded-lg border p-3 bg-gray-50">
                       <p className="text-xs font-bold mb-2 text-center uppercase">
                         Quét QR để thanh toán
                       </p>
-                      <div className="flex justify-center border p-2 bg-white w-40 h-40 mx-auto items-center">
+                      <div className="flex justify-center rounded-lg border p-2 bg-white w-40 h-40 mx-auto items-center">
                         <span className="text-xs text-gray-400">
                           QR Code Sepay
                         </span>
@@ -151,7 +151,7 @@ const StudentFeesPage = () => {
                         onClick={() => {
                           setIsPolling(true);
                         }}
-                        className="mt-2 w-full border border-gray-300 py-1 text-xs"
+                        className="mt-2 w-full rounded-lg border border-gray-300 py-1 text-xs"
                       >
                         Đã thanh toán
                       </button>
@@ -166,13 +166,13 @@ const StudentFeesPage = () => {
 
       {/* Hóa đơn đã thanh toán */}
       {paidFees.length > 0 && (
-        <section className="border p-4">
+        <section className="rounded-lg border p-4">
           <h2 className="font-bold mb-3 border-b pb-1">
             Hóa đơn đã thanh toán ({paidFees.length})
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {paidFees.map((record) => (
-              <div key={record.id} className="border p-3">
+              <div key={record.id} className="rounded-lg border p-3">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <p className="text-xs uppercase text-gray-500">
@@ -180,7 +180,7 @@ const StudentFeesPage = () => {
                     </p>
                     <h3 className="font-bold">{record.month}</h3>
                   </div>
-                  <span className="text-xs border border-gray-200 px-1.5 py-0.5">
+                  <span className="rounded-lg text-xs border border-gray-200 px-1.5 py-0.5">
                     Đã trả
                   </span>
                 </div>
@@ -207,7 +207,7 @@ const StudentFeesPage = () => {
 
       {/* Lịch sử thanh toán */}
       {payments.length > 0 && (
-        <section className="border p-4">
+        <section className="rounded-lg border p-4">
           <h2 className="font-bold mb-3 border-b pb-1">Lịch sử thanh toán</h2>
           <div className="space-y-2">
             {payments.map((payment) => (
@@ -232,7 +232,7 @@ const StudentFeesPage = () => {
 
       {/* Trạng thái trống */}
       {!isLoading && fees.length === 0 && (
-        <div className="border border-dashed p-8 text-center text-gray-500">
+        <div className="rounded-lg border border-dashed p-8 text-center text-gray-500">
           <h3 className="font-bold">Không có hóa đơn</h3>
           <p className="text-xs mt-1">
             Bạn đã thanh toán hết học phí hoặc chưa có hóa đơn nào.
@@ -242,7 +242,7 @@ const StudentFeesPage = () => {
 
       {/* Polling status */}
       {isPolling && (
-        <div className="border border-gray-200 bg-gray-50 p-2 text-center text-xs text-gray-600">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 text-center text-xs text-gray-600">
           Đang kiểm tra trạng thái thanh toán trên hệ thống...
         </div>
       )}
