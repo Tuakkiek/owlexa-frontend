@@ -55,7 +55,7 @@ const StudentDocumentsPage = () => {
                   e.target.value === "all" ? "all" : Number(e.target.value),
                 )
               }
-              className="border border-gray-300 px-2 py-1 text-xs"
+              className="rounded-lg border border-gray-300 px-2 py-1 text-xs"
             >
               <option value="all">Tất cả các lớp</option>
               {classOptions.map((item) => (
@@ -68,7 +68,7 @@ const StudentDocumentsPage = () => {
           <button
             onClick={loadDocuments}
             disabled={isLoading}
-            className="border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
+            className="rounded-lg border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
           >
             {isLoading ? "Đang tải..." : "Làm mới"}
           </button>
@@ -77,7 +77,7 @@ const StudentDocumentsPage = () => {
 
       {/* Error State */}
       {error && (
-        <div className="border border-red-500 p-2 text-red-600 text-xs">
+        <div className="rounded-lg border border-red-500 p-2 text-red-600 text-xs">
           Lỗi: {error}
         </div>
       )}
@@ -86,37 +86,36 @@ const StudentDocumentsPage = () => {
       {isLoading ? (
         <div className="text-xs">Đang tải danh sách tài liệu...</div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="border border-dashed p-6 text-center text-gray-500">
+        <div className="rounded-lg border border-dashed p-6 text-center text-gray-500">
           Không có tài liệu nào cho lựa chọn hiện tại.
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {filteredDocuments.map((doc) => (
-            <div key={doc.id} className="border p-4">
+            <div key={doc.id} className="rounded-lg border p-4">
               <div className="flex justify-between items-start border-b pb-2 mb-2">
                 <div>
                   <span className="text-xs uppercase text-gray-500">
                     [{doc.type}]
                   </span>
-                  <h2 className="font-bold text-base mt-1">
-                    {doc.title}
-                  </h2>
+                  <h2 className="font-bold text-base mt-1">{doc.title}</h2>
                 </div>
-                <span className="text-xs border px-2 py-0.5 whitespace-nowrap">
+                <span className="rounded-lg text-xs border px-2 py-0.5 whitespace-nowrap">
                   Lớp: {doc.className}
                 </span>
               </div>
-              
+
               <p className="text-xs text-gray-500">
-                Ngày đăng: {new Date(doc.uploadedAt).toLocaleDateString("vi-VN")}
+                Ngày đăng:{" "}
+                {new Date(doc.uploadedAt).toLocaleDateString("vi-VN")}
               </p>
-              
+
               <div className="mt-4">
                 <a
                   href={doc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-block border border-primary px-4 py-1 text-xs font-medium"
+                  className="rounded-lg inline-block border border-primary px-4 py-1 text-xs font-medium"
                 >
                   Mở tài liệu
                 </a>

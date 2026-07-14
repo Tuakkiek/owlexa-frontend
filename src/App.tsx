@@ -162,13 +162,13 @@ function App() {
         <Route
           path="*"
           element={
-            <div className="flex h-screen items-center justify-center bg-gray-100 text-center">
+            <div className="flex h-screen items-center justify-center bg-surface-page text-center">
               <div>
-                <h1 className="text-4xl font-bold text-gray-800">404</h1>
-                <p className="text-gray-600 mt-2">Page not found</p>
+                <h1 className="text-4xl font-semibold text-gray-900">404</h1>
+                <p className="mt-2 text-sm text-gray-500">Page not found</p>
                 <a
                   href="/login"
-                  className="mt-4 inline-block text-primary hover:underline"
+                  className="mt-4 inline-block text-sm font-medium text-primary hover:text-primary-hover transition-colors"
                 >
                   Go to Login
                 </a>

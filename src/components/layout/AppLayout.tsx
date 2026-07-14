@@ -77,7 +77,8 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-surface-page">
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <button
           type="button"
@@ -87,14 +88,16 @@ const AppLayout = () => {
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-surface-border bg-white transition-transform lg:static lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white">
+        {/* Logo */}
+        <div className="flex h-16 items-center gap-3 border-b border-surface-border px-6">
+          <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-primary text-sm font-semibold text-white">
             O
           </div>
           <div className="min-w-0">
@@ -105,6 +108,7 @@ const AppLayout = () => {
           </div>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {links.map((link) => (
             <NavLink
@@ -113,7 +117,7 @@ const AppLayout = () => {
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 [
-                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center rounded-btn px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-white"
                     : "text-gray-700 hover:bg-primary-light hover:text-primary-active",
@@ -125,9 +129,10 @@ const AppLayout = () => {
           ))}
         </nav>
 
-        <div className="border-t border-gray-100 p-4">
+        {/* User section */}
+        <div className="border-t border-surface-border p-4">
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-hover text-sm font-semibold text-gray-700">
               {user?.fullName?.charAt(0) || user?.roleName.charAt(0) || "O"}
             </div>
             <div className="min-w-0">
@@ -141,20 +146,22 @@ const AppLayout = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+            className="w-full rounded-btn border border-surface-border bg-white px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
           >
             Đăng xuất
           </button>
         </div>
       </aside>
 
+      {/* Main content area */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+        {/* Top bar */}
+        <header className="flex h-16 items-center justify-between border-b border-surface-border bg-white px-4 lg:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
               aria-label="Mở menu"
-              className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
+              className="rounded-btn border border-surface-border p-2 text-gray-600 transition-colors hover:bg-surface-hover lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <svg
@@ -177,13 +184,14 @@ const AppLayout = () => {
           </div>
 
           {user?.centerName && (
-            <div className="hidden rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-600 sm:block">
+            <div className="hidden rounded-full border border-surface-border px-3 py-1 text-sm text-gray-600 sm:block">
               {user.centerName}
             </div>
           )}
         </header>
 
-        <main className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-6">
+        {/* Page content */}
+        <main className="flex-1 overflow-auto bg-surface-page p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
