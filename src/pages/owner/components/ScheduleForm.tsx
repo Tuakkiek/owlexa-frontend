@@ -94,7 +94,7 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
         <select
           value={teacherId}
           onChange={(e) => setTeacherId(e.target.value ? Number(e.target.value) : "")}
-          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-black focus:outline-none"
+          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
         >
           <option value="">-- Chọn giáo viên --</option>
           {teachers.map((t) => (
@@ -115,7 +115,7 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
         <select
           value={dayOfWeek}
           onChange={(e) => setDayOfWeek(Number(e.target.value))}
-          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-black focus:outline-none"
+          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
         >
           {DAYS.map((d) => (
             <option key={d.value} value={d.value}>
@@ -133,7 +133,7 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
           <select
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-black focus:outline-none"
+            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -149,7 +149,7 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
           <select
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-black focus:outline-none"
+            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>

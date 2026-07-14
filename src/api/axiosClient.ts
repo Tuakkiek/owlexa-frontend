@@ -9,12 +9,13 @@ import { useAuthStore } from "../store/authStore";
 
 const REFRESH_TOKEN_KEY = "owlexa-refresh-token";
 
-// Write refresh token to localStorage as durable fallback (backup nếu cookie không hoạt động)
+// Store refresh token in localStorage (primary) and as a SameSite Lax cookie (secondary backup).
+// The cookie path is "/" so it's available for all API requests.
 function setRefreshTokenCookie(token: string): void {
   try {
     const expires = new Date();
     expires.setDate(expires.getDate() + 7);
-    document.cookie = `refreshToken=${token}; path=/auth; expires=${expires.toUTCString()}; SameSite=Lax`;
+    document.cookie = `refreshToken=${token}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
     localStorage.setItem(REFRESH_TOKEN_KEY, token);
   } catch {
     localStorage.setItem(REFRESH_TOKEN_KEY, token);

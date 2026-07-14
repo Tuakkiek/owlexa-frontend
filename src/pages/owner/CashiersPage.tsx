@@ -93,13 +93,12 @@ export const CashiersPage = () => {
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Thu ngân</h1>
-          <p className="mt-1 text-sm text-gray-500">Tạo tài khoản thu ngân để ghi nhận học phí tại trung tâm.</p>
         </div>
         <Button onClick={openCreate}>Tạo thu ngân</Button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -113,7 +112,7 @@ export const CashiersPage = () => {
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-gray-500">Đang tải thu ngân...</div>
         ) : filteredCashiers.length === 0 ? (
@@ -156,7 +155,7 @@ export const CashiersPage = () => {
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
           {temporaryPassword && (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
               Mật khẩu tạm: <span className="font-semibold">{temporaryPassword}</span>
             </div>
           )}

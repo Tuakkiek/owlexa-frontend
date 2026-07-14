@@ -7,8 +7,8 @@ import type { TeacherClassStudents } from "../../types/teacherClassStudents";
 import type { TestAnswer, TestAttempt } from "../../types/tests";
 
 const statusLabels: Record<TestAttempt["status"], string> = {
-  COMPLETED: "Hoan thanh",
-  IN_PROGRESS: "Dang lam",
+  COMPLETED: "Hoàn thành",
+  IN_PROGRESS: "Đang làm",
 };
 
 const formatDateTime = (value: string | null) => {
@@ -34,7 +34,7 @@ export default function TeacherTestsPage() {
       const data = await classApi.findMyClassesWithStudentsAsTeacher();
       setClasses(data);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Khong the tai danh sach lop.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách lớp.");
     } finally {
       setIsLoadingClasses(false);
     }
@@ -48,7 +48,7 @@ export default function TeacherTestsPage() {
       setAttempts(await testApi.getTeacherAttempts(classId));
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ?? "Khong the tai ket qua thi thu.",
+        err?.response?.data?.message ?? "Không thể tải kết quả thi thử.",
       );
     } finally {
       setIsLoadingAttempts(false);
@@ -95,7 +95,7 @@ export default function TeacherTestsPage() {
       setIsDetailOpen(true);
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ?? "Khong the tai chi tiet bai lam.",
+        err?.response?.data?.message ?? "Không thể tải chi tiết bài làm.",
       );
     } finally {
       setIsLoadingDetail(false);
@@ -107,47 +107,44 @@ export default function TeacherTestsPage() {
       <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Ket qua thi thu
+            Kết quả thi thử
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Xem bai lam mock test cua hoc sinh trong cac lop ban dang day.
-          </p>
         </div>
         <Button
           variant="secondary"
           onClick={loadAttempts}
           isLoading={isLoadingAttempts}
         >
-          Lam moi
+          Làm mới
         </Button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Luot da nop
+            Lượt đã nộp
           </p>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             {completedAttempts.length}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Diem TB
+            Điểm TB
           </p>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             {averageScore.toFixed(1)}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Ty le dung TB
+            Tỷ lệ đúng TB
           </p>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             {averagePercent.toFixed(0)}%
@@ -155,7 +152,7 @@ export default function TeacherTestsPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button
@@ -163,11 +160,11 @@ export default function TeacherTestsPage() {
               onClick={() => setSelectedClassId("all")}
               className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
                 selectedClassId === "all"
-                  ? "bg-gray-900 text-white"
+                  ? "bg-primary text-white"
                   : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              Tat ca lop
+              Tất cả lớp
             </button>
             {classes.map((cls) => (
               <button
@@ -176,7 +173,7 @@ export default function TeacherTestsPage() {
                 onClick={() => setSelectedClassId(cls.id)}
                 className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
                   selectedClassId === cls.id
-                    ? "bg-gray-900 text-white"
+                    ? "bg-primary text-white"
                     : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -188,8 +185,8 @@ export default function TeacherTestsPage() {
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Tim hoc sinh hoac de thi..."
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:border-black"
+            placeholder="Tìm học sinh hoặc đề thi..."
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
 
@@ -203,19 +200,19 @@ export default function TeacherTestsPage() {
             ))}
           </div>
         ) : filteredAttempts.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center text-sm text-gray-600">
-            Chua co ket qua thi thu nao phu hop.
+          <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center text-sm text-gray-600">
+            Chưa có kết quả thi thử nào phù hợp.
           </div>
         ) : (
-          <div className="mt-5 overflow-hidden rounded-2xl border border-gray-200">
+          <div className="mt-5 overflow-hidden rounded-xl border border-gray-200">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Hoc sinh</th>
-                  <th className="px-4 py-3 font-medium">De thi</th>
-                  <th className="px-4 py-3 font-medium">Diem</th>
-                  <th className="px-4 py-3 font-medium">Trang thai</th>
-                  <th className="px-4 py-3 text-right font-medium">Ngay nop</th>
+                  <th className="px-4 py-3 font-medium">Học sinh</th>
+                  <th className="px-4 py-3 font-medium">Đề thi</th>
+                  <th className="px-4 py-3 font-medium">Điểm</th>
+                  <th className="px-4 py-3 font-medium">Trạng thái</th>
+                  <th className="px-4 py-3 text-right font-medium">Ngày nộp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -258,22 +255,22 @@ export default function TeacherTestsPage() {
       <Modal
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
-        title="Chi tiet bai lam"
+        title="Chi tiết bài làm"
       >
         {isLoadingDetail ? (
-          <div className="py-8 text-sm text-gray-500">Dang tai chi tiet...</div>
+          <div className="py-8 text-sm text-gray-500">Đang tải chi tiết...</div>
         ) : attemptDetail ? (
           <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm font-medium text-gray-900">
                 {attemptDetail.studentFullName}
               </p>
               <p className="mt-1 text-sm text-gray-500">
                 {attemptDetail.testTitle} - {attemptDetail.score}/
-                {attemptDetail.maxScore} diem
+                {attemptDetail.maxScore} điểm
               </p>
               <p className="mt-1 text-xs text-gray-500">
-                Nop luc {formatDateTime(attemptDetail.completedAt)}
+                Nộp lúc {formatDateTime(attemptDetail.completedAt)}
               </p>
             </div>
 
@@ -281,23 +278,23 @@ export default function TeacherTestsPage() {
               (answer: TestAnswer, index: number) => (
                 <div
                   key={`${answer.questionId}-${index}`}
-                  className="rounded-2xl border border-gray-200 p-4"
+                  className="rounded-xl border border-gray-200 p-4"
                 >
                   <p className="text-xs uppercase tracking-wide text-gray-400">
-                    Cau {index + 1}
+                    Câu {index + 1}
                   </p>
                   <p className="mt-1 font-medium text-gray-900">
                     {answer.questionText}
                   </p>
                   <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                      Hoc sinh chon:{" "}
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      Học sinh chọn:{" "}
                       <span className="font-semibold">
                         {answer.studentAnswer || "-"}
                       </span>
                     </div>
-                    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                      Dap an dung:{" "}
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      Đáp án đúng:{" "}
                       <span className="font-semibold">
                         {answer.correctAnswer}
                       </span>
@@ -310,14 +307,14 @@ export default function TeacherTestsPage() {
                         : "bg-rose-50 text-rose-700"
                     }`}
                   >
-                    {answer.isCorrect ? "Dung" : "Sai"}
+                    {answer.isCorrect ? "Đúng" : "Sai"}
                   </span>
                 </div>
               ),
             )}
           </div>
         ) : (
-          <div className="py-8 text-sm text-gray-500">Khong co du lieu.</div>
+          <div className="py-8 text-sm text-gray-500">Không có dữ liệu.</div>
         )}
       </Modal>
     </div>

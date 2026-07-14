@@ -102,26 +102,23 @@ export const TeachersPage = () => {
   }, []);
 
   return (
-    <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 text-gray-900 max-w-7xl mx-auto px-4 sm:px-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-neutral-200 space-y-4 sm:space-y-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 border-b border-gray-200 space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-xl font-medium tracking-tight">Giáo viên</h1>
-          <p className="text-xs text-neutral-400 mt-1">
-            Quản lý tài khoản và thông tin giáo viên của trung tâm.
-          </p>
         </div>
         <div className="flex gap-3">
           <Button
             variant="secondary"
             onClick={() => setIsBulkAddModalOpen(true)}
-            className="border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 rounded-none px-4 py-2 text-sm"
+            className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg px-4 py-2 text-sm"
           >
             Nhập nhiều
           </Button>
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="border border-neutral-950 bg-neutral-950 text-white hover:bg-neutral-800 rounded-none px-4 py-2 text-sm"
+            className="border border-primary bg-primary text-white hover:bg-primary-hover rounded-lg px-4 py-2 text-sm"
           >
             + Thêm giáo viên
           </Button>
@@ -129,20 +126,20 @@ export const TeachersPage = () => {
       </div>
 
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div className="rounded border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">Tổng giáo viên</p>
-          <p className="mt-1 text-2xl font-semibold text-neutral-900">{teachers.length}</p>
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Tổng giáo viên</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{teachers.length}</p>
         </div>
-        <div className="rounded border border-neutral-200 bg-white p-4">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide">Đang hiển thị</p>
-          <p className="mt-1 text-2xl font-semibold text-neutral-900">{filtered.length}</p>
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Đang hiển thị</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900">{filtered.length}</p>
         </div>
       </div>
 
@@ -159,44 +156,44 @@ export const TeachersPage = () => {
       {/* Table */}
       <div className="w-full overflow-x-auto">
         {isLoading ? (
-          <div className="py-12 text-center text-sm text-neutral-400">Đang tải giáo viên...</div>
+          <div className="py-12 text-center text-sm text-gray-400">Đang tải giáo viên...</div>
         ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-400">
+          <div className="py-12 text-center text-sm text-gray-400">
             {search ? "Không tìm thấy giáo viên phù hợp." : "Chưa có giáo viên nào."}
           </div>
         ) : (
           <table className="min-w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-neutral-200 text-neutral-400 text-xs uppercase tracking-wide">
+              <tr className="border-b border-gray-200 text-gray-400 text-xs uppercase tracking-wide">
                 <th className="pb-3 pr-4 text-left font-medium">Họ tên</th>
                 <th className="pb-3 px-4 text-left font-medium">Số điện thoại</th>
                 <th className="pb-3 px-4 text-left font-medium">Lương</th>
                 <th className="pb-3 pl-4 text-right font-medium">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-gray-100">
               {filtered.map((teacher) => (
-                <tr key={teacher.userId} className="hover:bg-neutral-50/50 transition-colors">
-                  <td className="py-4 pr-4 font-semibold text-neutral-900">{teacher.fullName}</td>
-                  <td className="py-4 px-4 text-neutral-600">{teacher.phoneNumber}</td>
-                  <td className="py-4 px-4 text-neutral-700">
+                <tr key={teacher.userId} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 pr-4 font-semibold text-gray-900">{teacher.fullName}</td>
+                  <td className="py-4 px-4 text-gray-600">{teacher.phoneNumber}</td>
+                  <td className="py-4 px-4 text-gray-700">
                     {formatSalary(teacher.salary, teacher.currency)}
                   </td>
                   <td className="py-4 pl-4 text-right text-xs space-x-4">
                     <button
-                      className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
                       onClick={() => setEditingTeacher(teacher)}
                     >
                       Sửa
                     </button>
                     <button
-                      className="text-neutral-600 hover:text-neutral-900 underline underline-offset-4"
+                      className="text-gray-600 hover:text-gray-900 underline underline-offset-4"
                       onClick={() => setSalaryTeacher(teacher)}
                     >
                       Lương
                     </button>
                     <button
-                      className="text-neutral-400 hover:text-red-700 underline underline-offset-4"
+                      className="text-gray-400 hover:text-red-700 underline underline-offset-4"
                       onClick={() => handleDelete(teacher)}
                     >
                       Xóa

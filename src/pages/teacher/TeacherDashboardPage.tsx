@@ -72,27 +72,24 @@ export default function TeacherDashboardPage() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Chào, {user?.fullName ?? "giáo viên"}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Đây là bảng điều khiển của giáo viên
-          </p>
         </div>
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Tổng lịch dạy
           </p>
@@ -100,7 +97,7 @@ export default function TeacherDashboardPage() {
             {isLoading ? "..." : schedules.length}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Buổi dạy đang hoạt động
           </p>
@@ -108,7 +105,7 @@ export default function TeacherDashboardPage() {
             {isLoading ? "..." : activeSchedules.length}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Số lớp phụ trách
           </p>
@@ -119,15 +116,12 @@ export default function TeacherDashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Lịch dạy tuần này
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Sắp xếp theo từng ngày để dễ nhìn hơn khi vào ca dạy
-              </p>
             </div>
           </div>
 
@@ -136,12 +130,12 @@ export default function TeacherDashboardPage() {
               {Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-20 animate-pulse rounded-2xl bg-gray-100"
+                  className="h-20 animate-pulse rounded-xl bg-gray-100"
                 />
               ))}
             </div>
           ) : schedules.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
               <p className="text-sm text-gray-600">
                 Chưa có lịch dạy nào được gán cho tài khoản của bạn.
               </p>
@@ -159,7 +153,7 @@ export default function TeacherDashboardPage() {
                       .map((schedule) => (
                         <div
                           key={schedule.id}
-                          className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4"
+                          className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4"
                         >
                           <div className="min-w-0">
                             <p className="truncate font-semibold text-gray-900">
@@ -188,7 +182,7 @@ export default function TeacherDashboardPage() {
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900">Hôm nay</h2>
             <p className="mt-1 text-sm text-gray-500">
               {todaySchedules.length > 0
@@ -198,14 +192,14 @@ export default function TeacherDashboardPage() {
 
             <div className="mt-4 space-y-2">
               {todaySchedules.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
                   Nghỉ ngơi một chút, hoặc chuẩn bị trước cho buổi học kế tiếp.
                 </div>
               ) : (
                 todaySchedules.map((schedule) => (
                   <div
                     key={schedule.id}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3"
+                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
                   >
                     <p className="font-semibold text-gray-900">
                       {schedule.className}
@@ -223,7 +217,7 @@ export default function TeacherDashboardPage() {
           <div className="grid gap-3">
             <Link
               to="/teacher/attendance"
-              className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
             >
               <div>
                 <p className="text-sm font-semibold text-gray-900">Điểm danh</p>
@@ -236,7 +230,7 @@ export default function TeacherDashboardPage() {
 
             <Link
               to="/teacher/students"
-              className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
             >
               <div>
                 <p className="text-sm font-semibold text-gray-900">

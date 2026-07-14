@@ -222,7 +222,7 @@ export const ClassDetailDrawer = ({
           </div>
           <button
             onClick={onClose}
-            className="rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
+            className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
           >
             Đóng
           </button>
@@ -236,7 +236,7 @@ export const ClassDetailDrawer = ({
               onClick={() => setTab(t)}
               className={`flex-1 px-4 py-3 text-center font-medium transition-colors ${
                 tab === t
-                  ? "border-b-2 border-black text-black"
+                  ? "border-b-2 border-primary text-primary"
                   : "text-gray-500 hover:text-black"
               }`}
             >
@@ -258,7 +258,7 @@ export const ClassDetailDrawer = ({
             <div className="space-y-4">
               <div className="flex justify-end">
                 <Button
-                  className="border border-black bg-black text-white hover:bg-gray-800 px-3 py-1 text-xs font-medium rounded"
+                  className="border border-primary bg-primary text-white hover:bg-primary-hover px-3 py-1 text-xs font-medium rounded-lg"
                   onClick={() => {
                     setEditingSchedule(null);
                     setIsScheduleModalOpen(true);
@@ -273,7 +273,7 @@ export const ClassDetailDrawer = ({
                   Đang tải...
                 </div>
               ) : schedules.length === 0 ? (
-                <div className="rounded border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+                <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
                   Chưa có lịch học nào cho lớp này.
                 </div>
               ) : (
@@ -281,12 +281,12 @@ export const ClassDetailDrawer = ({
                   {schedules.map((s) => (
                     <div
                       key={s.id}
-                      className={`flex items-center justify-between rounded border p-3 ${
+                      className={`flex items-center justify-between rounded-lg border p-3 ${
                         s.isActive ? "bg-white" : "bg-gray-50 opacity-60"
                       }`}
                     >
                       <div className="flex items-center gap-4">
-                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium">
+                        <span className="rounded-lg bg-gray-100 px-2 py-0.5 text-xs font-medium">
                           {DAY_LABELS[s.dayOfWeek] ?? `Day ${s.dayOfWeek}`}
                         </span>
                         <span className="text-sm font-medium text-gray-900">
@@ -302,7 +302,7 @@ export const ClassDetailDrawer = ({
                         </span>
                         <button
                           onClick={() => handleToggleSchedule(s)}
-                          className={`rounded px-2 py-0.5 text-xs font-medium ${
+                          className={`rounded-lg px-2 py-0.5 text-xs font-medium ${
                             s.isActive
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-gray-200 text-gray-500"
@@ -338,7 +338,7 @@ export const ClassDetailDrawer = ({
             <div className="space-y-4">
               <div className="flex justify-end">
                 <button
-                  className="border border-black bg-black text-white hover:bg-gray-800 px-3 py-1 text-xs font-medium rounded"
+                  className="border border-primary bg-primary text-white hover:bg-primary-hover px-3 py-1 text-xs font-medium rounded-lg"
                   onClick={() => setIsEnrollModalOpen(true)}
                 >
                   + Ghi danh học sinh
@@ -357,7 +357,7 @@ export const ClassDetailDrawer = ({
                   Đang tải...
                 </div>
               ) : enrollments.length === 0 ? (
-                <div className="rounded border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+                <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
                   Chưa có học sinh nào trong lớp này.
                 </div>
               ) : (
@@ -403,7 +403,7 @@ export const ClassDetailDrawer = ({
           {/* ── Fees Tab ── */}
           {tab === "fees" && (
             <div className="space-y-4">
-              <div className="rounded border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                 <p className="font-medium text-gray-900">
                   Tạo học phí hàng tháng
                 </p>
@@ -425,7 +425,7 @@ export const ClassDetailDrawer = ({
             <div className="space-y-4">
               <div className="flex justify-end">
                 <button
-                  className="border border-black bg-black text-white hover:bg-gray-800 px-3 py-1 text-xs font-medium rounded"
+                  className="border border-primary bg-primary text-white hover:bg-primary-hover px-3 py-1 text-xs font-medium rounded-lg"
                   onClick={() => setIsDocumentUploadModalOpen(true)}
                 >
                   + Tải tài liệu
@@ -437,7 +437,7 @@ export const ClassDetailDrawer = ({
                   Đang tải...
                 </div>
               ) : documents.length === 0 ? (
-                <div className="rounded border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+                <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
                   Chưa có tài liệu nào cho lớp này.
                 </div>
               ) : (
@@ -445,7 +445,7 @@ export const ClassDetailDrawer = ({
                   {documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between rounded border p-3"
+                      className="flex items-center justify-between rounded-lg border p-3"
                     >
                       <div>
                         <p className="font-medium text-gray-900">{doc.title}</p>
@@ -458,7 +458,7 @@ export const ClassDetailDrawer = ({
                         href={doc.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        className="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                       >
                         Mở
                       </a>

@@ -53,22 +53,19 @@ export default function TeacherStudentsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Danh sách học sinh
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Xem học sinh theo từng lớp bạn đang dạy
-          </p>
         </div>
 
         <button
           onClick={loadClasses}
           disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -83,7 +80,7 @@ export default function TeacherStudentsPage() {
             }}
             className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
               selectedClassId === cls.id
-                ? "bg-black text-white"
+                ? "bg-primary text-white"
                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -99,7 +96,7 @@ export default function TeacherStudentsPage() {
             placeholder="Tìm học sinh..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-black"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
       )}
@@ -109,20 +106,20 @@ export default function TeacherStudentsPage() {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="h-32 animate-pulse rounded-2xl bg-gray-100"
+              className="h-32 animate-pulse rounded-xl bg-gray-100"
             />
           ))}
         </div>
       ) : !selectedClass ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Không có lớp nào được gán cho giáo viên.
         </div>
       ) : selectedClass.students.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Lớp {selectedClass.className} chưa có học sinh.
         </div>
       ) : filteredStudents.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Không tìm thấy học sinh phù hợp.
         </div>
       ) : (
@@ -130,7 +127,7 @@ export default function TeacherStudentsPage() {
           {filteredStudents.map((student) => (
             <div
               key={student.userId}
-              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
             >
               <h3 className="font-semibold text-gray-900">
                 {student.fullName}
@@ -144,7 +141,7 @@ export default function TeacherStudentsPage() {
       )}
 
       {selectedClass && filteredStudents.length > 0 && (
-        <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4">
+        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
           <span className="text-sm font-medium text-gray-700">
             Tổng: <strong>{filteredStudents.length}</strong> /{" "}
             {selectedClass.studentCount} học sinh

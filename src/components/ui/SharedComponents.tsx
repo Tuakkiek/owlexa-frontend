@@ -9,7 +9,7 @@ interface StatCardProps {
 
 export const StatCard = ({ label, value, helper, accent }: StatCardProps) => (
   <div
-    className={`rounded-lg border border-gray-200 bg-white p-5 ${accent ? "border-l-4 border-l-black" : ""}`}
+    className={`rounded-xl border border-gray-200 bg-white p-5 ${accent ? "border-l-4 border-l-primary" : ""}`}
   >
     <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
       {label}
@@ -30,7 +30,7 @@ export const EmptyState = ({
   icon = "📭",
   children,
 }: EmptyStateProps) => (
-  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+  <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
     <div className="text-3xl mb-3">{icon}</div>
     <p className="text-sm text-gray-500">{message}</p>
     {children && <div className="mt-4">{children}</div>}
@@ -61,7 +61,7 @@ interface ErrorBannerProps {
 }
 
 export const ErrorBanner = ({ message }: ErrorBannerProps) => (
-  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
     {message}
   </div>
 );

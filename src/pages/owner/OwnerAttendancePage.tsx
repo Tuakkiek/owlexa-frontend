@@ -238,26 +238,22 @@ export default function OwnerAttendancePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Theo dõi và cập nhật điểm danh cho tất cả các buổi học trong trung
-          tâm.
-        </p>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {success}
         </div>
       )}
 
       {/* Filters: Teacher + Schedule + Date */}
-      <div className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.5fr_1fr_0.8fr]">
+      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_1.5fr_1fr_0.8fr]">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
             Giáo viên
@@ -269,7 +265,7 @@ export default function OwnerAttendancePage() {
                 e.target.value ? Number(e.target.value) : null,
               )
             }
-            className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-black"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-primary"
           >
             <option value="">Tất cả giáo viên</option>
             {teachers.map((t) => (
@@ -287,7 +283,7 @@ export default function OwnerAttendancePage() {
           <select
             value={selectedScheduleId ?? ""}
             onChange={(e) => setSelectedScheduleId(Number(e.target.value))}
-            className="h-11 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-black"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-primary"
           >
             <option value="" disabled>
               Chọn buổi học
@@ -309,7 +305,7 @@ export default function OwnerAttendancePage() {
           onChange={(e) => setDate(e.target.value)}
         />
 
-        <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
           <div className="text-sm font-medium text-gray-700">
             Thông tin buổi học
           </div>
@@ -337,7 +333,7 @@ export default function OwnerAttendancePage() {
           (status) => (
             <div
               key={status}
-              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
             >
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                 {STATUS_META[status].label}
@@ -356,25 +352,25 @@ export default function OwnerAttendancePage() {
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
-              className="h-20 animate-pulse rounded-2xl bg-gray-100"
+              className="h-20 animate-pulse rounded-xl bg-gray-100"
             />
           ))}
         </div>
       ) : !selectedSchedule ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Chưa có buổi học nào để điểm danh.
         </div>
       ) : !selectedClass ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Không tìm thấy danh sách học sinh của lớp này.
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Chưa có học sinh nào trong lớp hoặc chưa có dữ liệu điểm danh cho ngày
           này.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="text-lg font-semibold text-gray-900">
               Học sinh trong lớp {selectedClass.className}
@@ -435,7 +431,7 @@ export default function OwnerAttendancePage() {
                       updateRow(row.studentUserId, { note: e.target.value })
                     }
                     placeholder="Ghi chú thêm..."
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
                   />
                 </div>
               </div>

@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * ═══════════════════════════════════════════════════════
+ *  Owlexa Design System — CSS Custom Properties
+ *  60‑30‑10: 60 % Neutral · 30 % Surface · 10 % Brand
+ * ═══════════════════════════════════════════════════════
+ */
+
+:root {
+  /* ── 10 % Brand Orange ── */
+  --color-primary:        #F97316;  /* orange-500 */
+  --color-primary-hover:  #EA580C;  /* orange-600 */
+  --color-primary-active: #C2410C;  /* orange-700 */
+  --color-primary-light:  #FFF7ED;  /* orange-50  */
+
+  /* ── 30 % Surface layering ── */
+  --color-surface-page:   #F9FAFB;  /* gray-50  — deepest */
+  --color-surface-card:   #FFFFFF;  /* white    — middle  */
+  --color-surface-hover:  #F3F4F6;  /* gray-100 — lightest */
+  --color-surface-border: #E5E7EB;  /* gray-200 — dividers */
+
+  /* ── 60 % Neutral text ── */
+  --color-text-heading:    #111827;  /* gray-900 */
+  --color-text-body:       #6B7280;  /* gray-500 */
+  --color-text-muted:      #9CA3AF;  /* gray-400 */
+
+  /* ── Semantic (business meaning) ── */
+  --color-success: #10B981;          /* emerald-500 */
+  --color-warning: #F59E0B;          /* amber-500   */
+  --color-error:   #EF4444;          /* red-500     */
+  --color-info:    #3B82F6;          /* blue-500    */
+
+  /* ── Legacy aliases (backward compat) ── */
+  --accent:        var(--color-primary);
+  --accent-bg:     var(--color-primary-light);
+  --accent-border: var(--color-primary);
+  --border:        var(--color-surface-border);
+}
+

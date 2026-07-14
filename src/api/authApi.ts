@@ -8,7 +8,7 @@ export interface SessionResponse {
   ipAddress: string;
   createdAt: string;
   lastUsedAt: string;
-  isCurrentSession: boolean;
+  current: boolean;
 }
 
 export const authApi = {

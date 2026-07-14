@@ -57,21 +57,21 @@ export const FeesPage = () => {
   };
 
   return (
-    <div className="space-y-6 text-neutral-900 max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 text-gray-900 max-w-7xl mx-auto px-4 sm:px-6">
       {/* Header tinh giản, sử dụng border mảnh phía dưới */}
-      <div className="py-4 border-b border-neutral-200">
+      <div className="py-4 border-b border-gray-200">
         <h1 className="text-xl font-medium tracking-tight">
-          Fee & Revenue Management
+          Quản lý học phí
         </h1>
       </div>
 
       {/* Thanh công cụ phẳng: Đưa tiêu đề phụ và ô tìm kiếm về dạng tối giản, không đổ bóng */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
-        <h2 className="text-base font-medium text-neutral-800">Overdue Fees</h2>
+        <h2 className="text-base font-medium text-gray-800">Học phí quá hạn</h2>
         <div className="w-full sm:w-72">
           <Input
             label=""
-            placeholder="Search student or class..."
+            placeholder="Tìm học sinh hoặc lớp..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -81,68 +81,68 @@ export const FeesPage = () => {
       {/* Khu vực bảng dữ liệu phẳng (Flat UI) */}
       <div className="w-full overflow-x-auto pt-2">
         {isLoading ? (
-          <div className="py-12 text-center text-sm text-neutral-400">
-            Loading fee records...
+          <div className="py-12 text-center text-sm text-gray-400">
+            Đang tải học phí...
           </div>
         ) : filteredRecords.length === 0 ? (
-          <div className="py-12 text-center text-sm text-neutral-400">
+          <div className="py-12 text-center text-sm text-gray-400">
             {searchQuery
-              ? "No matching fee records found."
-              : "Great! There are no overdue fees."}
+              ? "Không tìm thấy học phí phù hợp."
+              : "Không có học phí quá hạn."}
           </div>
         ) : (
           <table className="min-w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-neutral-200 text-neutral-400">
-                <th className="pb-3 pr-4 font-normal">Student</th>
-                <th className="pb-3 px-4 font-normal">Class</th>
-                <th className="pb-3 px-4 font-normal">Month</th>
+              <tr className="border-b border-gray-200 text-gray-400">
+                <th className="pb-3 pr-4 font-normal">Học sinh</th>
+                <th className="pb-3 px-4 font-normal">Lớp</th>
+                <th className="pb-3 px-4 font-normal">Tháng</th>
                 <th className="pb-3 px-4 font-normal text-right">
-                  Remaining Balance
+                  Còn nợ
                 </th>
-                <th className="pb-3 px-4 font-normal text-right">Due Date</th>
-                <th className="pb-3 pl-4 text-right font-normal">Actions</th>
+                <th className="pb-3 px-4 font-normal text-right">Hạn</th>
+                <th className="pb-3 pl-4 text-right font-normal">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100">
+            <tbody className="divide-y divide-gray-100">
               {filteredRecords.map((record) => {
                 const remaining = remainingBalance(record);
                 return (
                   <tr
                     key={record.id}
-                    className="hover:bg-neutral-50/50 transition-colors"
+                    className="hover:bg-gray-50/50 transition-colors"
                   >
                     <td className="py-4 pr-4">
-                      <div className="font-normal text-neutral-900">
+                      <div className="font-normal text-gray-900">
                         {record.studentFullName}
                       </div>
-                      <div className="text-xs text-neutral-400 mt-0.5">
+                      <div className="text-xs text-gray-400 mt-0.5">
                         {record.studentPhoneNumber}
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-neutral-600">
+                    <td className="py-4 px-4 text-gray-600">
                       {record.className}
                     </td>
-                    <td className="py-4 px-4 text-neutral-500">
+                    <td className="py-4 px-4 text-gray-500">
                       {record.month}
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <div className="font-medium text-neutral-900">
+                      <div className="font-medium text-gray-900">
                         {formatMoney(String(remaining))}
                       </div>
-                      <div className="text-xs text-neutral-400 mt-0.5">
-                        of {formatMoney(record.amount)}
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        / {formatMoney(record.amount)}
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-right text-neutral-600">
+                    <td className="py-4 px-4 text-right text-gray-600">
                       {record.dueDate}
                     </td>
                     <td className="py-4 pl-4 text-right">
                       <button
                         onClick={() => openCollectModal(record)}
-                        className="border border-neutral-950 text-neutral-950 hover:bg-neutral-950 hover:text-white px-3 py-1 text-xs transition-colors font-medium"
+                        className="border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white px-3 py-1 text-xs transition-colors font-medium"
                       >
-                        Collect Cash
+                        Thu tiền mặt
                       </button>
                     </td>
                   </tr>

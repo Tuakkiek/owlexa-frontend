@@ -127,7 +127,7 @@ export const DocumentUploadModal = ({
               onChange={(e) =>
                 setType(e.target.value as StudentDocumentRequest["type"])
               }
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
               {DOCUMENT_TYPES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -146,7 +146,7 @@ export const DocumentUploadModal = ({
           />
 
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
               {error}
             </div>
           )}

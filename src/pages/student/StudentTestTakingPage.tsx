@@ -139,7 +139,7 @@ const StudentTestTakingPage = () => {
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-4">
         <div className="lg:col-span-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
             <p className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-500">
               Câu hỏi {currentQuestionIndex + 1}
             </p>
@@ -158,7 +158,7 @@ const StudentTestTakingPage = () => {
                   key={option}
                   className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition ${
                     answers[currentQuestion.id] === option
-                      ? "border-black bg-gray-50"
+                      ? "border-primary bg-primary-light"
                       : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
@@ -180,17 +180,17 @@ const StudentTestTakingPage = () => {
         </div>
 
         <div className="space-y-4 lg:col-span-1">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="mb-3 text-sm font-medium text-gray-700">Tiến độ</p>
             <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-              <div className="h-full bg-black transition-all" style={{ width: `${progress}%` }} />
+              <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
             </div>
             <p className="text-center text-xs text-gray-500">
               {Object.keys(answers).length} / {questions.length}
             </p>
           </div>
 
-          <div className="max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4">
+          <div className="max-h-96 overflow-y-auto rounded-xl border border-gray-200 bg-white p-4">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-700">
               Danh sách câu hỏi
             </p>
@@ -201,7 +201,7 @@ const StudentTestTakingPage = () => {
                   onClick={() => setCurrentQuestionIndex(index)}
                   className={`h-8 w-8 rounded text-xs font-medium transition ${
                     currentQuestionIndex === index
-                      ? "bg-black text-white"
+                      ? "bg-primary text-white"
                       : answers[question.id]
                         ? "bg-green-100 text-green-700 hover:bg-green-200"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -216,7 +216,7 @@ const StudentTestTakingPage = () => {
           <button
             onClick={() => setShowConfirm(true)}
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-white hover:bg-gray-900 disabled:opacity-60"
+            className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
           >
             {isSubmitting ? "Đang nộp..." : "Nộp bài"}
           </button>
@@ -248,7 +248,7 @@ const StudentTestTakingPage = () => {
 
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 space-y-4 rounded-2xl bg-white p-8 max-w-sm">
+          <div className="mx-4 space-y-4 rounded-xl bg-white p-8 max-w-sm">
             <h2 className="text-xl font-semibold text-gray-900">Xác nhận nộp bài?</h2>
             <p className="text-sm text-gray-600">
               Bạn đã trả lời {Object.keys(answers).length}/{questions.length} câu hỏi.
@@ -265,7 +265,7 @@ const StudentTestTakingPage = () => {
                   setShowConfirm(false);
                   void handleSubmitTest();
                 }}
-                className="flex-1 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900"
+                className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
               >
                 Nộp ngay
               </button>

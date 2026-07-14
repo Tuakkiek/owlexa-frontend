@@ -89,10 +89,7 @@ const StudentDashboardPage = () => {
             <h1 className="text-2xl font-bold text-gray-900">
               {user?.fullName || "Học sinh"}
             </h1>
-            <p className="mt-1 text-xs text-gray-500">
-              Đây là bảng điều khiển dành cho học sinh. Xem lịch học, học phí và
-              tài liệu nhanh.
-            </p>
+
           </div>
           <div className="grid gap-2 grid-cols-3">
             <DashboardCard
@@ -119,14 +116,11 @@ const StudentDashboardPage = () => {
               <h2 className="text-base font-bold text-gray-900">
                 Lịch học sắp tới
               </h2>
-              <p className="text-xs text-gray-500">
-                3 buổi học đầu tiên trong tuần
-              </p>
             </div>
             <button
               onClick={loadData}
               disabled={isLoading}
-              className="border border-black px-3 py-1 text-xs disabled:opacity-50"
+              className="border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
             >
               {isLoading ? "Đang tải..." : "Cập nhật"}
             </button>
@@ -174,7 +168,6 @@ const StudentDashboardPage = () => {
             <h2 className="text-base font-bold text-gray-900">
               Học phí đang chờ
             </h2>
-            <p className="text-xs text-gray-500">Theo dữ liệu từ hệ thống</p>
           </div>
 
           <div className="space-y-3">

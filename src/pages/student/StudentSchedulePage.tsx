@@ -44,12 +44,11 @@ export const StudentSchedulePage = () => {
       <div className="flex justify-between items-center mb-4 border-b pb-2">
         <div>
           <h1 className="text-xl font-bold">Thời khoá biểu</h1>
-          <p className="text-xs text-gray-500">Lịch học của bạn theo tuần</p>
         </div>
         <button
           onClick={load}
           disabled={isLoading}
-          className="border border-black px-3 py-1 text-sm disabled:opacity-50"
+          className="border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
         >
           Làm mới
         </button>

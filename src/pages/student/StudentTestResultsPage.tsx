@@ -77,19 +77,19 @@ const StudentTestResultsPage = () => {
         </div>
         <button
           onClick={() => navigate("/student/tests")}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
           ← Quay lại
         </button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className={`rounded-3xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}>
+      <div className={`rounded-xl border-2 ${scoreBorderColor} ${scoreBgColor} p-8 text-center`}>
         <p className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-600">
           Điểm của bạn
         </p>
@@ -105,23 +105,23 @@ const StudentTestResultsPage = () => {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
           <p className="text-3xl font-bold text-green-600">{result.correctAnswers}</p>
           <p className="mt-2 text-sm text-gray-600">Câu đúng</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
           <p className="text-3xl font-bold text-red-600">
             {result.totalQuestions - result.correctAnswers}
           </p>
           <p className="mt-2 text-sm text-gray-600">Câu sai</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
           <p className="text-3xl font-bold text-gray-900">{result.totalQuestions}</p>
           <p className="mt-2 text-sm text-gray-600">Tổng số câu</p>
         </div>
       </div>
 
-      <section className="rounded-3xl border border-gray-200 bg-white p-6">
+      <section className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="mb-6 text-xl font-semibold text-gray-900">Chi tiết câu hỏi</h2>
 
         <div className="max-h-96 space-y-3 overflow-y-auto">
@@ -163,7 +163,7 @@ const StudentTestResultsPage = () => {
         </button>
         <button
           onClick={() => navigate("/student/tests")}
-          className="flex-1 rounded-lg bg-black px-4 py-3 text-sm font-medium text-white hover:bg-gray-900 transition"
+          className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary-hover transition"
         >
           Làm bài khác
         </button>
