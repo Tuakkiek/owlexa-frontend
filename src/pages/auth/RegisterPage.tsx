@@ -84,9 +84,9 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8">
+      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-lg font-semibold text-white">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-lg font-semibold text-white">
             O
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">
@@ -96,7 +96,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
         </div>
 
         {error && (
-          <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -111,7 +111,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Nguyễn Văn A"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             />
           </div>
 
@@ -124,7 +124,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@email.com"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             />
           </div>
 
@@ -137,7 +137,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="0901234567"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             />
           </div>
 
@@ -151,7 +151,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ít nhất 8 ký tự"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 text-sm text-gray-900 outline-none focus:border-black"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-12 text-sm text-gray-900 outline-none focus:border-primary"
               />
               <button
                 type="button"
@@ -172,14 +172,14 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Nhập lại mật khẩu"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? "Đang đăng ký..." : "Đăng ký"}
           </button>
@@ -187,7 +187,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
 
         <div className="mt-6 border-t border-gray-200 pt-4 text-center text-sm text-gray-500">
           Đã có tài khoản?{" "}
-          <Link to="/login" className="font-medium text-black hover:underline">
+          <Link to="/login" className="font-medium text-primary hover:underline">
             Đăng nhập
           </Link>
         </div>

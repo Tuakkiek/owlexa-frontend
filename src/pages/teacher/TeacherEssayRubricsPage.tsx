@@ -98,14 +98,11 @@ const TeacherEssayRubricsPage = () => {
           <h1 className="text-3xl font-semibold text-gray-900">
             Rubric chấm Essay
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Tạo tiêu chí chấm bài essay cho từng lớp
-          </p>
         </div>
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -119,7 +116,7 @@ const TeacherEssayRubricsPage = () => {
             onClick={() => setSelectedClassId(cls.id)}
             className={`whitespace-nowrap rounded-full px-4 py-2 font-medium transition ${
               selectedClassId === cls.id
-                ? "bg-black text-white"
+                ? "bg-primary text-white"
                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -132,7 +129,7 @@ const TeacherEssayRubricsPage = () => {
       {isCreating ? (
         <form
           onSubmit={handleCreateRubric}
-          className="rounded-3xl border border-gray-200 bg-white p-6 space-y-4"
+          className="rounded-xl border border-gray-200 bg-white p-6 space-y-4"
         >
           <h3 className="font-semibold text-gray-900">Tạo rubric mới</h3>
 
@@ -143,7 +140,7 @@ const TeacherEssayRubricsPage = () => {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-black"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-primary"
             required
           />
 
@@ -153,7 +150,7 @@ const TeacherEssayRubricsPage = () => {
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-black min-h-[100px]"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-primary min-h-[100px]"
             rows={4}
           />
 
@@ -167,7 +164,7 @@ const TeacherEssayRubricsPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, maxScore: Number(e.target.value) })
               }
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-black mt-1"
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 outline-none focus:border-primary mt-1"
               min={1}
               max={100}
             />
@@ -195,7 +192,7 @@ const TeacherEssayRubricsPage = () => {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-900"
+              className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
             >
               Tạo rubric
             </button>
@@ -214,7 +211,7 @@ const TeacherEssayRubricsPage = () => {
       ) : (
         <button
           onClick={() => setIsCreating(true)}
-          className="w-full rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-gray-400 transition"
+          className="w-full rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center hover:border-gray-400 transition"
         >
           <p className="text-2xl mb-2">+</p>
           <p className="text-sm font-medium text-gray-700">
@@ -229,19 +226,18 @@ const TeacherEssayRubricsPage = () => {
           Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-40 rounded-2xl bg-gray-100 animate-pulse"
+              className="h-40 rounded-xl bg-gray-100 animate-pulse"
             />
           ))
         ) : selectedClassRubrics.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-            <div className="text-4xl mb-3">📋</div>
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
             <p className="text-gray-600">Chưa có rubric nào cho lớp này.</p>
           </div>
         ) : (
           selectedClassRubrics.map((rubric) => (
             <div
               key={rubric.id}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+              className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>

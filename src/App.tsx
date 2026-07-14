@@ -168,7 +168,7 @@ function App() {
                 <p className="text-gray-600 mt-2">Page not found</p>
                 <a
                   href="/login"
-                  className="mt-4 inline-block text-blue-600 hover:underline"
+                  className="mt-4 inline-block text-primary hover:underline"
                 >
                   Go to Login
                 </a>

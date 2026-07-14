@@ -65,7 +65,7 @@ export const EnrollStudentModal = ({
           placeholder="Tìm theo tên hoặc SĐT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+          className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
 
         {error && (

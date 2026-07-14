@@ -84,9 +84,9 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8">
+      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-lg font-semibold text-white">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-lg font-semibold text-white">
             O
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">Đăng nhập</h1>
@@ -94,7 +94,7 @@ const LoginPage = () => {
         </div>
 
         {error && (
-          <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -110,7 +110,7 @@ const LoginPage = () => {
               onChange={(event) => setPhoneNumber(event.target.value)}
               placeholder="0901234567"
               autoComplete="username"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             />
           </div>
 
@@ -124,7 +124,7 @@ const LoginPage = () => {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 text-sm text-gray-900 outline-none focus:border-black"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-12 text-sm text-gray-900 outline-none focus:border-primary"
               />
               <button
                 type="button"
@@ -139,7 +139,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>

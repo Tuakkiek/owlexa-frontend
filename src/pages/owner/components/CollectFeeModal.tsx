@@ -103,7 +103,7 @@ export const CollectFeeModal = ({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Info */}
-          <div className="rounded border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Học sinh:</span>
               <span className="font-semibold text-gray-900">
@@ -156,7 +156,7 @@ export const CollectFeeModal = ({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="VD: Thanh toán đủ bởi mẹ em..."
-              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none"
+              className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none"
             />
           </div>
 

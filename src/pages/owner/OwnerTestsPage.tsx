@@ -324,7 +324,7 @@ export default function OwnerTestsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -371,9 +371,6 @@ export default function OwnerTestsPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 Danh sách đề thi
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Chọn một đề để quản lý câu hỏi và theo dõi kết quả.
-              </p>
             </div>
             <div className="w-full sm:w-56">
               <Input
@@ -394,7 +391,7 @@ export default function OwnerTestsPage() {
                 />
               ))
             ) : filteredTests.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center text-gray-600">
+              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center text-gray-600">
                 Chưa có đề thi nào phù hợp.
               </div>
             ) : (
@@ -405,7 +402,7 @@ export default function OwnerTestsPage() {
                     key={test.id}
                     type="button"
                     onClick={() => setSelectedTestId(test.id)}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                    className={`w-full rounded-xl border p-4 text-left transition ${
                       active
                         ? "border-gray-900 bg-gray-900 text-white"
                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
@@ -481,7 +478,7 @@ export default function OwnerTestsPage() {
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -500,7 +497,7 @@ export default function OwnerTestsPage() {
 
             {selectedTest && (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                     Câu hỏi hiện có
                   </p>
@@ -508,7 +505,7 @@ export default function OwnerTestsPage() {
                     {questions.length}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                     Lượt làm bài
                   </p>
@@ -521,7 +518,7 @@ export default function OwnerTestsPage() {
           </div>
 
           {selectedTest && (
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -539,14 +536,14 @@ export default function OwnerTestsPage() {
                     Đang tải câu hỏi...
                   </div>
                 ) : questions.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
+                  <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
                     Chưa có câu hỏi nào cho đề này.
                   </div>
                 ) : (
                   questions.map((question) => (
                     <div
                       key={question.id}
-                      className="rounded-2xl border border-gray-200 p-4"
+                      className="rounded-xl border border-gray-200 p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -584,7 +581,7 @@ export default function OwnerTestsPage() {
                         ].map(([label, value]) => (
                           <div
                             key={label}
-                            className={`rounded-md border px-3 py-2 ${
+                            className={`rounded-lg border px-3 py-2 ${
                               question.correctAnswer === label
                                 ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                                 : "border-gray-200 bg-gray-50 text-gray-700"
@@ -609,7 +606,7 @@ export default function OwnerTestsPage() {
           )}
 
           {selectedTest && (
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -621,7 +618,7 @@ export default function OwnerTestsPage() {
                 </div>
               </div>
 
-              <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200">
+              <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
                 {isLoadingDetails ? (
                   <div className="p-6 text-sm text-gray-500">
                     Đang tải lượt làm bài...
@@ -719,7 +716,7 @@ export default function OwnerTestsPage() {
                     level: event.target.value as MockTest["level"],
                   }))
                 }
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
               >
                 {LEVEL_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -870,7 +867,7 @@ export default function OwnerTestsPage() {
                       .value as QuestionFormState["correctAnswer"],
                   }))
                 }
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-black"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
               >
                 {(["A", "B", "C", "D"] as const).map((option) => (
                   <option key={option} value={option}>
@@ -927,7 +924,7 @@ export default function OwnerTestsPage() {
           <div className="py-8 text-sm text-gray-500">Đang tải chi tiết...</div>
         ) : attemptDetail ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-sm font-medium text-gray-900">
                 {attemptDetail.studentFullName}
               </p>
@@ -948,7 +945,7 @@ export default function OwnerTestsPage() {
 
             <div className="space-y-3">
               {(attemptDetail.answers ?? []).length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
                   Chưa có câu trả lời nào trong lượt làm này.
                 </div>
               ) : (
@@ -956,7 +953,7 @@ export default function OwnerTestsPage() {
                   (answer: TestAnswer, index: number) => (
                     <div
                       key={`${answer.questionId}-${index}`}
-                      className="rounded-2xl border border-gray-200 p-4"
+                      className="rounded-xl border border-gray-200 p-4"
                     >
                       <p className="text-xs uppercase tracking-wide text-gray-400">
                         Câu {index + 1}
@@ -965,13 +962,13 @@ export default function OwnerTestsPage() {
                         {answer.questionText || `Câu hỏi #${answer.questionId}`}
                       </p>
                       <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-                        <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                           <span className="font-semibold text-gray-700">
                             Đáp án học sinh:
                           </span>{" "}
                           {answer.studentAnswer || "Chưa trả lời"}
                         </div>
-                        <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                           <span className="font-semibold text-gray-700">
                             Đáp án đúng:
                           </span>{" "}

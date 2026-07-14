@@ -94,7 +94,7 @@ const AppLayout = () => {
         ].join(" ")}
       >
         <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-900 text-sm font-semibold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white">
             O
           </div>
           <div className="min-w-0">
@@ -113,10 +113,10 @@ const AppLayout = () => {
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 [
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-950",
+                    ? "bg-primary text-white"
+                    : "text-gray-700 hover:bg-primary-light hover:text-primary-active",
                 ].join(" ")
               }
             >
@@ -141,7 +141,7 @@ const AppLayout = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
           >
             Đăng xuất
           </button>
@@ -154,7 +154,7 @@ const AppLayout = () => {
             <button
               type="button"
               aria-label="Mở menu"
-              className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
+              className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50 lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <svg

@@ -4,7 +4,7 @@ import type { ScheduleResponse } from "../../types/schedule";
 import { DAY_LABELS } from "../../types/schedule";
 
 const SkeletonRow = () => (
-  <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 animate-pulse">
+  <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 animate-pulse">
     <div className="h-12 w-16 rounded-lg bg-gray-200" />
     <div className="flex-1 space-y-2">
       <div className="h-3 w-1/3 rounded bg-gray-200" />
@@ -68,22 +68,19 @@ export default function TeacherSchedulePage() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Lịch dạy của tôi
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Thời khóa biểu theo tuần, lấy trực tiếp từ backend
-          </p>
         </div>
 
         <button
           onClick={load}
           disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Tổng buổi học
           </p>
@@ -91,7 +88,7 @@ export default function TeacherSchedulePage() {
             {isLoading ? "..." : schedules.length}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Lớp phụ trách
           </p>
@@ -99,7 +96,7 @@ export default function TeacherSchedulePage() {
             {isLoading ? "..." : totalClasses}
           </p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
             Buổi đang hoạt động
           </p>
@@ -112,7 +109,7 @@ export default function TeacherSchedulePage() {
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -124,7 +121,7 @@ export default function TeacherSchedulePage() {
           ))}
         </div>
       ) : schedules.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
           Chưa có lịch dạy nào.
         </div>
       ) : (
@@ -140,7 +137,7 @@ export default function TeacherSchedulePage() {
                   .map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                      className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
                       <div className="min-w-[72px] text-center">
                         <div className="text-sm font-semibold text-gray-900">

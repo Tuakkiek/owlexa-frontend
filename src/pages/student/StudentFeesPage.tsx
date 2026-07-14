@@ -67,14 +67,11 @@ const StudentFeesPage = () => {
       <div className="flex justify-between items-center border-b pb-2">
         <div>
           <h1 className="text-xl font-bold">Học phí & Thanh toán</h1>
-          <p className="text-xs text-gray-500">
-            Xem hóa đơn, lịch sử và thanh toán trực tuyến
-          </p>
         </div>
         <button
           onClick={loadData}
           disabled={isLoading}
-          className="border border-black px-3 py-1 text-xs disabled:opacity-50"
+          className="border border-gray-300 px-3 py-1 text-xs disabled:opacity-50"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -131,7 +128,7 @@ const StudentFeesPage = () => {
                         selectedFeeId === record.id ? null : record.id,
                       )
                     }
-                    className="w-full border border-black py-1 text-xs font-medium"
+                    className="w-full border border-gray-300 py-1 text-xs font-medium"
                   >
                     {selectedFeeId === record.id ? "Đóng" : "Thanh toán QR"}
                   </button>
@@ -154,7 +151,7 @@ const StudentFeesPage = () => {
                         onClick={() => {
                           setIsPolling(true);
                         }}
-                        className="mt-2 w-full border border-black py-1 text-xs"
+                        className="mt-2 w-full border border-gray-300 py-1 text-xs"
                       >
                         Đã thanh toán
                       </button>
@@ -183,7 +180,7 @@ const StudentFeesPage = () => {
                     </p>
                     <h3 className="font-bold">{record.month}</h3>
                   </div>
-                  <span className="text-xs border border-black px-1.5 py-0.5">
+                  <span className="text-xs border border-gray-200 px-1.5 py-0.5">
                     Đã trả
                   </span>
                 </div>
@@ -245,7 +242,7 @@ const StudentFeesPage = () => {
 
       {/* Polling status */}
       {isPolling && (
-        <div className="border border-black p-2 text-center text-xs">
+        <div className="border border-gray-200 bg-gray-50 p-2 text-center text-xs text-gray-600">
           Đang kiểm tra trạng thái thanh toán trên hệ thống...
         </div>
       )}

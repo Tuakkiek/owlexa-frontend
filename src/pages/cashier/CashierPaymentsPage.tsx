@@ -53,14 +53,11 @@ const CashierPaymentsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold text-gray-900">Thu Học Phí</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Ghi nhận thanh toán tiền mặt từ học sinh
-          </p>
         </div>
         <button
           onClick={loadFees}
           disabled={isLoading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
         >
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
@@ -72,7 +69,7 @@ const CashierPaymentsPage = () => {
           placeholder="Tìm học sinh theo tên hoặc SĐT..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-black"
+          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-primary"
         />
       </div>
 
@@ -81,11 +78,11 @@ const CashierPaymentsPage = () => {
           Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="h-20 rounded-2xl bg-gray-100 animate-pulse"
+              className="h-20 animate-pulse rounded-xl bg-gray-100"
             />
           ))
         ) : filteredFees.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-500">
+          <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center text-gray-500">
             Không tìm thấy hóa đơn nợ.
           </div>
         ) : (
@@ -94,7 +91,7 @@ const CashierPaymentsPage = () => {
             return (
               <div
                 key={fee.id}
-                className="rounded-2xl border-2 border-gray-200 bg-white p-4"
+                className="rounded-xl border-2 border-gray-200 bg-white p-4"
               >
                 <div className="flex items-center justify-between gap-4 mb-3">
                   <div>
