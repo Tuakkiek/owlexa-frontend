@@ -58,7 +58,11 @@ export const EnrollStudentModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Ghi danh học sinh vào lớp ${className}`}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Ghi danh học sinh vào lớp ${className}`}
+    >
       <div className="space-y-4">
         <input
           type="text"
@@ -69,7 +73,9 @@ export const EnrollStudentModal = ({
         />
 
         {error && (
-          <p className="text-sm text-red-600 border border-red-200 bg-red-50 p-2">{error}</p>
+          <p className="text-sm text-red-600 border border-red-200 bg-red-50 p-2">
+            {error}
+          </p>
         )}
 
         <div className="max-h-64 overflow-y-auto border border-gray-200">
@@ -94,7 +100,9 @@ export const EnrollStudentModal = ({
                   className="accent-black"
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{student.fullName}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {student.fullName}
+                  </p>
                   <p className="text-xs text-gray-500">{student.phoneNumber}</p>
                 </div>
               </label>
@@ -106,7 +114,11 @@ export const EnrollStudentModal = ({
           <Button type="button" variant="secondary" onClick={onClose}>
             Hủy
           </Button>
-          <Button onClick={handleSubmit} isLoading={isLoading} disabled={!selected}>
+          <Button
+            onClick={handleSubmit}
+            isLoading={isLoading}
+            disabled={!selected}
+          >
             Ghi danh
           </Button>
         </div>

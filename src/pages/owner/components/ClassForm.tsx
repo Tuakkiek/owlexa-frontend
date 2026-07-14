@@ -24,7 +24,11 @@ interface ClassFormProps {
   onCancel: () => void;
 }
 
-export const ClassForm = ({ initialData, onSubmit, onCancel }: ClassFormProps) => {
+export const ClassForm = ({
+  initialData,
+  onSubmit,
+  onCancel,
+}: ClassFormProps) => {
   const [name, setName] = useState(initialData?.name ?? "");
   const [vstepLevel, setVstepLevel] = useState(initialData?.vstepLevel ?? "");
   const [maxStudent, setMaxStudent] = useState(initialData?.maxStudent ?? 20);
@@ -90,7 +94,9 @@ export const ClassForm = ({ initialData, onSubmit, onCancel }: ClassFormProps) =
         >
           <option value="">-- Chọn cấp độ --</option>
           {VSTEP_LEVELS.map((l) => (
-            <option key={l.value} value={l.value}>{l.label}</option>
+            <option key={l.value} value={l.value}>
+              {l.label}
+            </option>
           ))}
         </select>
         {errors.vstepLevel && (
@@ -120,7 +126,14 @@ export const ClassForm = ({ initialData, onSubmit, onCancel }: ClassFormProps) =
 
       {monthlyFee > 0 && (
         <p className="text-xs text-gray-500">
-          Học phí: <strong>{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(monthlyFee)}</strong>/tháng
+          Học phí:{" "}
+          <strong>
+            {new Intl.NumberFormat("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            }).format(monthlyFee)}
+          </strong>
+          /tháng
         </p>
       )}
 

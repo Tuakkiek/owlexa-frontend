@@ -28,7 +28,12 @@ const TIME_OPTIONS = (() => {
   return times;
 })();
 
-export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: ScheduleFormProps) => {
+export const ScheduleForm = ({
+  initialData,
+  teachers,
+  onSubmit,
+  onCancel,
+}: ScheduleFormProps) => {
   const [teacherId, setTeacherId] = useState<number | "">(
     initialData?.teacherUserId ?? "",
   );
@@ -93,7 +98,9 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
         </label>
         <select
           value={teacherId}
-          onChange={(e) => setTeacherId(e.target.value ? Number(e.target.value) : "")}
+          onChange={(e) =>
+            setTeacherId(e.target.value ? Number(e.target.value) : "")
+          }
           className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
         >
           <option value="">-- Chọn giáo viên --</option>
@@ -159,9 +166,7 @@ export const ScheduleForm = ({ initialData, teachers, onSubmit, onCancel }: Sche
           </select>
         </div>
       </div>
-      {errors.time && (
-        <p className="text-xs text-red-500">{errors.time}</p>
-      )}
+      {errors.time && <p className="text-xs text-red-500">{errors.time}</p>}
 
       <Input
         label="Phòng học"

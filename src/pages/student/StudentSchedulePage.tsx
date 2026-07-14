@@ -48,7 +48,7 @@ export const StudentSchedulePage = () => {
         <button
           onClick={load}
           disabled={isLoading}
-          className="border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+          className="rounded-lg border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
         >
           Làm mới
         </button>
@@ -56,7 +56,7 @@ export const StudentSchedulePage = () => {
 
       {/* Error State */}
       {error && (
-        <div className="border border-red-500 p-2 text-red-600 mb-4 text-sm">
+        <div className="rounded-lg border border-red-500 p-2 text-red-600 mb-4 text-sm">
           Lỗi: {error}
         </div>
       )}
@@ -65,13 +65,13 @@ export const StudentSchedulePage = () => {
       {isLoading ? (
         <div className="text-sm">Đang tải dữ liệu...</div>
       ) : schedules.length === 0 ? (
-        <div className="text-sm border p-4 text-center text-gray-500">
+        <div className="rounded-lg text-sm border p-4 text-center text-gray-500">
           Bạn chưa được đăng ký vào lớp nào.
         </div>
       ) : (
         <div className="space-y-4">
           {sortedDays.map((day) => (
-            <div key={day} className="border p-2">
+            <div key={day} className="rounded-lg border p-2">
               <h2 className="font-bold text-sm mb-2 border-b pb-1">
                 {DAY_LABELS[day] ?? `Ngày ${day}`}
               </h2>

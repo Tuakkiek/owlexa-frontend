@@ -4,6 +4,14 @@ import { classApi } from "../../api/classApi";
 import { attendanceApi } from "../../api/attendanceApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import {
+  PageHeader,
+  ErrorBanner,
+  StatCard,
+  LoadingSkeleton,
+  EmptyState,
+  Card,
+} from "../../components/ui/SharedComponents";
 import type {
   AttendanceMarkRequest,
   AttendanceResponse,
@@ -175,24 +183,18 @@ export default function TeacherAttendancePage() {
     : "";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Điểm danh</h1>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader title="Điểm danh" />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       {success && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="rounded-input border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {success}
         </div>
       )}
 
-      <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
+      <Card className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
             Buổi học
@@ -202,7 +204,7 @@ export default function TeacherAttendancePage() {
             onChange={(event) =>
               setSelectedScheduleId(Number(event.target.value))
             }
-            className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none focus:border-primary"
+            className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
           >
             <option value="" disabled>
               Chọn buổi học
@@ -223,7 +225,7 @@ export default function TeacherAttendancePage() {
           onChange={(event) => setDate(event.target.value)}
         />
 
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="rounded-input border border-surface-border bg-surface-hover px-4 py-3">
           <div className="text-sm font-medium text-gray-700">
             Thông tin buổi học
           </div>
@@ -251,51 +253,31 @@ export default function TeacherAttendancePage() {
         >
           Tải danh sách
         </Button>
-      </div>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {(["PRESENT", "ABSENT", "EXCUSED"] as AttendanceStatus[]).map(
           (status) => (
-            <div
+            <StatCard
               key={status}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                {STATUS_META[status].label}
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-gray-900">
-                {summary[status]}
-              </p>
-            </div>
+              label={STATUS_META[status].label}
+              value={summary[status]}
+            />
           ),
         )}
       </div>
 
       {isLoading || isLoadingAttendance ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-20 animate-pulse rounded-xl bg-gray-100"
-            />
-          ))}
-        </div>
+        <LoadingSkeleton count={4} height="h-20" />
       ) : !selectedSchedule ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
-          Chưa có buổi học nào để điểm danh.
-        </div>
+        <EmptyState message="Chưa có buổi học nào để điểm danh." />
       ) : !selectedClass ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
-          Không tìm thấy danh sách học sinh của lớp này.
-        </div>
+        <EmptyState message="Không tìm thấy danh sách học sinh của lớp này." />
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center text-gray-600">
-          Chưa có học sinh nào trong lớp hoặc chưa có dữ liệu điểm danh cho ngày
-          này.
-        </div>
+        <EmptyState message="Chưa có học sinh nào trong lớp hoặc chưa có dữ liệu điểm danh cho ngày này." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-5 py-4">
+        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
+          <div className="border-b border-surface-border px-6 py-4">
             <h2 className="text-lg font-semibold text-gray-900">
               Học sinh trong lớp {selectedClass.className}
             </h2>
@@ -305,11 +287,11 @@ export default function TeacherAttendancePage() {
             </p>
           </div>
 
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-surface-border">
             {rows.map((row) => (
               <div
                 key={row.studentUserId}
-                className="grid gap-4 px-5 py-4 lg:grid-cols-[1.2fr_1fr_1.4fr] lg:items-center"
+                className="grid gap-4 px-6 py-4 lg:grid-cols-[1.2fr_1fr_1.4fr] lg:items-center"
               >
                 <div>
                   <p className="font-medium text-gray-900">
@@ -331,10 +313,10 @@ export default function TeacherAttendancePage() {
                           onClick={() =>
                             updateRow(row.studentUserId, { status })
                           }
-                          className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
+                          className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
                             active
                               ? STATUS_META[status].className
-                              : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                              : "border-surface-border bg-white text-gray-600 hover:bg-surface-hover"
                           }`}
                         >
                           {STATUS_META[status].label}
@@ -352,14 +334,14 @@ export default function TeacherAttendancePage() {
                       updateRow(row.studentUserId, { note: event.target.value })
                     }
                     placeholder="Ghi chú thêm..."
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                    className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
                   />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center justify-end border-t border-gray-200 bg-gray-50 px-5 py-4">
+          <div className="flex items-center justify-end border-t border-surface-border bg-surface-hover px-6 py-4">
             <Button onClick={handleSave} isLoading={isSaving}>
               Lưu điểm danh
             </Button>

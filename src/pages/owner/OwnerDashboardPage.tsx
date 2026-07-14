@@ -3,48 +3,30 @@ import { Link } from "react-router-dom";
 import dashboardApi, { type DashboardStats } from "../../api/dashboardApi";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/money";
-
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  helper?: string;
-  accent?: boolean;
-}
-
-const StatCard = ({ label, value, helper, accent }: StatCardProps) => (
-  <div
-    className={`rounded-lg border p-4 bg-white ${accent ? "border-l-4 border-l-black" : ""}`}
-  >
-    <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
-    <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
-    {helper && <p className="mt-1 text-xs text-gray-400">{helper}</p>}
-  </div>
-);
+import {
+  StatCard,
+  Card,
+  PageHeader,
+  ErrorBanner,
+} from "../../components/ui/SharedComponents";
+import { Button } from "../../components/ui/Button";
 
 const quickLinks = [
   {
     title: "Quản lý học sinh",
-    description: "Thêm, cập nhật và theo dõi danh sách học sinh.",
     to: "/owner/students",
-    icon: "👨‍🎓",
   },
   {
     title: "Quản lý giáo viên",
-    description: "Tạo tài khoản giáo viên và xem danh sách giảng dạy.",
     to: "/owner/teachers",
-    icon: "👨‍🏫",
   },
   {
     title: "Lớp học",
-    description: "Thiết lập lớp, lịch học, ghi danh và học phí.",
     to: "/owner/classes",
-    icon: "📚",
   },
   {
     title: "Học phí quá hạn",
-    description: "Theo dõi các khoản chưa thu và ghi nhận thanh toán.",
     to: "/owner/fee-records/overdue",
-    icon: "💰",
   },
 ];
 
@@ -75,45 +57,35 @@ export const OwnerDashboardPage = () => {
   const paidPercent = stats?.totalFeeRecords
     ? Math.round((stats.paidFeeRecords / stats.totalFeeRecords) * 100)
     : 0;
-
   const displayName =
     user?.fullName?.split(" ").slice(-1)[0] || user?.fullName || "Owner";
 
   return (
-    <div className="p-4 space-y-6 text-sm max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Chào {displayName}
-          </h1>
-        </div>
-        <button
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader title={`Chào ${displayName}`}>
+        <Button
+          variant="secondary"
           onClick={loadStats}
-          disabled={isLoading}
-          className="rounded-lg border border-gray-300 px-3 py-1 text-xs disabled:opacity-50 bg-white hover:bg-gray-100"
+          isLoading={isLoading}
+          size="sm"
         >
-          {isLoading ? "Đang tải..." : "Làm mới"}
-        </button>
-      </div>
+          Làm mới
+        </Button>
+      </PageHeader>
 
-      {/* Error State */}
-      {error && (
-        <div className="rounded-lg border border-red-500 p-2 text-red-600 text-xs">
-          Lỗi: {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
-      {/* Content */}
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-lg border bg-gray-50 animate-pulse" />
+            <div
+              key={i}
+              className="h-28 animate-pulse rounded-card bg-surface-hover"
+            />
           ))}
         </div>
       ) : stats ? (
         <>
-          {/* People Stats */}
           <div className="grid gap-4 sm:grid-cols-3">
             <StatCard
               label="Học sinh"
@@ -129,10 +101,8 @@ export const OwnerDashboardPage = () => {
             />
           </div>
 
-          {/* Financial Stats */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
-              accent
               label="Tổng doanh thu"
               value={formatCurrency(stats.totalRevenue)}
             />
@@ -148,51 +118,48 @@ export const OwnerDashboardPage = () => {
             />
           </div>
 
-          {/* Progress Section */}
-          <section className="rounded-lg border p-4 bg-white">
-            <div className="flex justify-between items-center border-b pb-2 mb-3">
+          <Card>
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-bold text-gray-900">Tiến độ thu học phí</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Tiến độ thu học phí
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
                   {stats.paidFeeRecords} / {stats.totalFeeRecords} hóa đơn đã
                   thanh toán.
                 </p>
               </div>
-              <div className="text-xl font-bold text-gray-900">
+              <span className="text-2xl font-semibold text-gray-900">
                 {paidPercent}%
-              </div>
+              </span>
             </div>
-
-            <div className="h-2 rounded-full bg-gray-100 border">
+            <div className="mt-4 h-2 w-full rounded-full bg-surface-hover">
               <div
-                className="h-full bg-primary transition-all duration-500"
+                className="h-full rounded-full bg-primary transition-all duration-500"
                 style={{ width: `${paidPercent}%` }}
               />
             </div>
-
-            <div className="mt-3 flex gap-4 text-xs text-gray-500 border-t border-dashed pt-2">
+            <div className="mt-4 flex gap-4 border-t border-surface-border pt-4 text-sm text-gray-500">
               <span>Đã thu: {stats.paidFeeRecords}</span>
               <span>Chưa thu: {stats.unpaidFeeRecords}</span>
               <span>Tổng số: {stats.totalFeeRecords}</span>
             </div>
-
             {stats.unpaidFeeRecords > 0 && (
-              <div className="mt-3 flex justify-end">
+              <div className="mt-4 flex justify-end">
                 <Link
                   to="/owner/fee-records/overdue"
-                  className="text-xs text-blue-600 hover:underline font-medium"
+                  className="text-sm font-medium text-primary hover:text-primary-hover transition-colors"
                 >
                   Xem các khoản chưa thu →
                 </Link>
               </div>
             )}
-          </section>
+          </Card>
         </>
       ) : null}
 
-      {/* Quick Links */}
       <section>
-        <h2 className="mb-3 text-base font-bold text-gray-900">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Thao tác nhanh
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
@@ -200,10 +167,17 @@ export const OwnerDashboardPage = () => {
             <Link
               key={link.to}
               to={link.to}
-              className="rounded-lg border p-4 bg-white block hover:bg-gray-50 transition-colors"
+              className="rounded-card border border-surface-border bg-white p-6 transition-colors hover:bg-surface-hover"
             >
-              <h3 className="font-bold text-gray-900">{link.title}</h3>
-              <p className="mt-1 text-xs text-gray-500">{link.description}</p>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{link.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{link.title}</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {link.description}
+                  </p>
+                </div>
+              </div>
             </Link>
           ))}
         </div>

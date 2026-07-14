@@ -79,7 +79,8 @@ export const GenerateFeeModal = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-gray-500">
-          Hệ thống sẽ tự động tạo bản ghi học phí cho tất cả học sinh đang học của lớp này.
+          Hệ thống sẽ tự động tạo bản ghi học phí cho tất cả học sinh đang học
+          của lớp này.
         </p>
 
         <div>

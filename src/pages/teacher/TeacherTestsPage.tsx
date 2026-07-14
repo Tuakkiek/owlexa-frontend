@@ -3,6 +3,15 @@ import { classApi } from "../../api/classApi";
 import testApi from "../../api/testApi";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
+import {
+  PageHeader,
+  ErrorBanner,
+  StatCard,
+  Badge,
+  FilterTabs,
+  SearchInput,
+  LoadingSkeleton,
+} from "../../components/ui/SharedComponents";
 import type { TeacherClassStudents } from "../../types/teacherClassStudents";
 import type { TestAnswer, TestAttempt } from "../../types/tests";
 
@@ -104,125 +113,79 @@ export default function TeacherTestsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Kết quả thi thử
-          </h1>
-        </div>
+      <PageHeader title="Kết quả thi thử">
         <Button
           variant="secondary"
           onClick={loadAttempts}
           isLoading={isLoadingAttempts}
+          size="sm"
         >
           Làm mới
         </Button>
-      </div>
+      </PageHeader>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Lượt đã nộp
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {completedAttempts.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Điểm TB
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {averageScore.toFixed(1)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-            Tỷ lệ đúng TB
-          </p>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {averagePercent.toFixed(0)}%
-          </p>
-        </div>
+        <StatCard label="Lượt đã nộp" value={completedAttempts.length} />
+        <StatCard label="Điểm TB" value={averageScore.toFixed(1)} />
+        <StatCard
+          label="Tỷ lệ đúng TB"
+          value={`${averagePercent.toFixed(0)}%`}
+        />
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setSelectedClassId("all")}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
-                selectedClassId === "all"
-                  ? "bg-primary text-white"
-                  : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              Tất cả lớp
-            </button>
-            {classes.map((cls) => (
-              <button
-                type="button"
-                key={cls.id}
-                onClick={() => setSelectedClassId(cls.id)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
-                  selectedClassId === cls.id
-                    ? "bg-primary text-white"
-                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {cls.className} ({cls.studentCount})
-              </button>
-            ))}
-          </div>
-          <input
-            type="text"
+      <section className="rounded-card border border-surface-border bg-white p-6">
+        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+          <FilterTabs
+            tabs={[
+              { key: "all", label: "Tất cả lớp", count: attempts.length },
+              ...classes.map((c) => ({
+                key: String(c.id),
+                label: c.className,
+                count: c.studentCount,
+              })),
+            ]}
+            activeKey={String(selectedClassId)}
+            onChange={(key) =>
+              setSelectedClassId(key === "all" ? "all" : Number(key))
+            }
+          />
+          <SearchInput
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={setSearchQuery}
             placeholder="Tìm học sinh hoặc đề thi..."
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           />
         </div>
 
         {isLoadingClasses || isLoadingAttempts ? (
-          <div className="mt-5 space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-16 animate-pulse rounded-xl bg-gray-100"
-              />
-            ))}
+          <div className="mt-4 space-y-3">
+            <LoadingSkeleton count={5} height="h-16" />
           </div>
         ) : filteredAttempts.length === 0 ? (
-          <div className="mt-5 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center text-sm text-gray-600">
+          <div className="mt-4 rounded-card border border-dashed border-surface-border bg-surface-page py-12 text-center text-sm text-gray-500">
             Chưa có kết quả thi thử nào phù hợp.
           </div>
         ) : (
-          <div className="mt-5 overflow-hidden rounded-xl border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Học sinh</th>
-                  <th className="px-4 py-3 font-medium">Đề thi</th>
-                  <th className="px-4 py-3 font-medium">Điểm</th>
-                  <th className="px-4 py-3 font-medium">Trạng thái</th>
-                  <th className="px-4 py-3 text-right font-medium">Ngày nộp</th>
+          <div className="mt-4 overflow-hidden rounded-card border border-surface-border">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-6 py-3">Học sinh</th>
+                  <th className="px-6 py-3">Đề thi</th>
+                  <th className="px-6 py-3">Điểm</th>
+                  <th className="px-6 py-3">Trạng thái</th>
+                  <th className="px-6 py-3 text-right">Ngày nộp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-surface-border">
                 {filteredAttempts.map((attempt) => (
                   <tr
                     key={attempt.id}
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer transition-colors hover:bg-surface-hover"
                     onClick={() => openAttemptDetail(attempt)}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">
                         {attempt.studentFullName}
                       </div>
@@ -230,18 +193,18 @@ export default function TeacherTestsPage() {
                         ID #{attempt.studentId}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-6 py-4 text-gray-700">
                       {attempt.testTitle}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-6 py-4 text-gray-700">
                       {attempt.score}/{attempt.maxScore}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                    <td className="px-6 py-4">
+                      <Badge variant="success">
                         {statusLabels[attempt.status]}
-                      </span>
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-500">
+                    <td className="px-6 py-4 text-right text-gray-500">
                       {formatDateTime(attempt.completedAt)}
                     </td>
                   </tr>
