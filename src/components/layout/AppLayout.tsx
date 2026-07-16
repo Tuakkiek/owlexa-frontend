@@ -21,7 +21,8 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Khóa học", path: "/owner/courses" },
     { name: "Phòng học", path: "/owner/rooms" },
     { name: "Lớp học", path: "/owner/classes" },
-    { name: "Điểm danh", path: "/owner/attendance" },
+    { name: "Điểm danh HS", path: "/owner/attendance" },
+    { name: "Chấm công GV", path: "/owner/teacher-attendance" },
     { name: "Học phí", path: "/owner/fee-records/overdue" },
     { name: "Thanh toán", path: "/owner/payments" },
     { name: "Đề thi", path: "/owner/tests" },
@@ -39,6 +40,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
   STUDENT: [
     { name: "Dashboard", path: "/student/dashboard" },
     { name: "Schedule", path: "/student/schedule" },
+    { name: "Attendance", path: "/student/attendance" },
     { name: "Fees", path: "/student/fees" },
     { name: "Essays", path: "/student/essays" },
     { name: "Mock Tests", path: "/student/tests" },
