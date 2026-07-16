@@ -124,7 +124,7 @@ export default function TeacherSchedulePage() {
                           {schedule.className}
                         </div>
                         <div className="mt-1 text-sm text-gray-500">
-                          Phòng {schedule.room} · #{schedule.classId}
+                          Phòng {schedule.roomName} · #{schedule.classId}
                         </div>
                       </div>
                       {!schedule.isActive && (

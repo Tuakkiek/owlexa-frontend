@@ -234,7 +234,7 @@ export default function TeacherAttendancePage() {
               <>
                 {currentDayName} · {selectedSchedule.className}
                 <br />
-                Phòng {selectedSchedule.room} ·{" "}
+                Phòng {selectedSchedule.roomName} ·{" "}
                 {selectedSchedule.startTime.slice(0, 5)}-
                 {selectedSchedule.endTime.slice(0, 5)}
               </>

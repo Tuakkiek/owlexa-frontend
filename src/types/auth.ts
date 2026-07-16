@@ -9,7 +9,7 @@ export interface UserInfo {
 
 export interface AuthResponse {
   accessToken: string;
-  sessionId: string;
+  sessionId?: string;
   phoneNumber?: string;
   email?: string;
   fullName?: string;

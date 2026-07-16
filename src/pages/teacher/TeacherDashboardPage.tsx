@@ -130,7 +130,7 @@ export default function TeacherDashboardPage() {
                               {schedule.className}
                             </p>
                             <p className="mt-1 text-sm text-gray-500">
-                              Phòng {schedule.room} · #{schedule.classId}
+                              Phòng {schedule.roomName} · #{schedule.classId}
                             </p>
                           </div>
                           <div className="shrink-0 text-right">
@@ -174,7 +174,7 @@ export default function TeacherDashboardPage() {
                   </p>
                   <p className="mt-1 text-sm text-gray-500">
                     {schedule.startTime.slice(0, 5)} -{" "}
-                    {schedule.endTime.slice(0, 5)} · Phòng {schedule.room}
+                    {schedule.endTime.slice(0, 5)} · Phòng {schedule.roomName}
                   </p>
                 </div>
               ))

@@ -91,7 +91,7 @@ export const StudentSchedulePage = () => {
                         <span>{s.className}</span>
                       </div>
                       <div className="text-xs text-gray-600">
-                        Giáo viên: {s.teacherUserFullName} | Phòng: {s.room}
+                        Giáo viên: {s.teacherUserFullName} | Phòng: {s.roomName}
                         {!s.isActive && (
                           <span className="ml-2 text-red-500">(Tạm dừng)</span>
                         )}

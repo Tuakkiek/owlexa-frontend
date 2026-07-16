@@ -18,6 +18,8 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Giáo viên", path: "/owner/teachers" },
     { name: "Học sinh", path: "/owner/students" },
     { name: "Thu ngân", path: "/owner/cashiers" },
+    { name: "Khóa học", path: "/owner/courses" },
+    { name: "Phòng học", path: "/owner/rooms" },
     { name: "Lớp học", path: "/owner/classes" },
     { name: "Điểm danh", path: "/owner/attendance" },
     { name: "Học phí", path: "/owner/fee-records/overdue" },

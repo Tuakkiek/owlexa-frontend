@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
+import { Badge } from "../../../components/ui/SharedComponents";
 import { ScheduleForm } from "./ScheduleForm";
 import { EnrollStudentModal } from "./EnrollStudentModal";
 import { GenerateFeeModal } from "./GenerateFeeModal";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 import { scheduleApi } from "../../../api/scheduleApi";
 import { enrollmentApi } from "../../../api/enrollmentApi";
+import { classApi } from "../../../api/classApi";
 import { feeApi } from "../../../api/feeApi";
 import { studentApi } from "../../../api/studentApi";
 import { teacherApi } from "../../../api/teacherApi";
@@ -16,10 +18,12 @@ import type {
   ScheduleRequest,
 } from "../../../types/schedule";
 import type { EnrollmentResponse } from "../../../types/enrollment";
+import { ENROLLMENT_STATUS_LABELS } from "../../../types/enrollment";
 import type { TeacherResponse } from "../../../types/teacher";
 import type { StudentResponse } from "../../../types/student";
 import type { StudentDocumentResponse } from "../../../types/document";
 import type { ClassResponse } from "../../../types/class";
+import { CLASS_STATUS_LABELS } from "../../../types/class";
 import { DAY_LABELS } from "../../../types/schedule";
 import { formatCurrency } from "../../../utils/money";
 
@@ -196,10 +200,57 @@ export const ClassDetailDrawer = ({
     onRefresh();
   };
 
+  const handleApprove = async (enrollment: EnrollmentResponse) => {
+    if (
+      !window.confirm(`Duyệt học sinh "${enrollment.studentFullName}" vào lớp?`)
+    )
+      return;
+    await enrollmentApi.approve(cls.id, enrollment.studentUserId);
+    loadEnrollments();
+    onRefresh();
+  };
+
+  const handleReject = async (enrollment: EnrollmentResponse) => {
+    if (!window.confirm(`Từ chối học sinh "${enrollment.studentFullName}"?`))
+      return;
+    await enrollmentApi.reject(cls.id, enrollment.studentUserId);
+    loadEnrollments();
+    onRefresh();
+  };
+
   const handleGenerateFee = async (month: string, dueDate: string) => {
     await feeApi.generateFeeForClass(cls.id, { month, dueDate });
     setIsGenerateFeeModalOpen(false);
     onRefresh();
+  };
+
+  const handleLifecycle = async (action: string) => {
+    const labels: Record<string, string> = {
+      open: "mở đăng ký",
+      start: "bắt đầu",
+      finish: "kết thúc",
+      archive: "lưu trữ",
+      cancel: "hủy",
+    };
+    if (
+      !window.confirm(
+        `${labels[action] ? "Xác nhận " + labels[action] + " lớp này?" : "Xác nhận?"}`,
+      )
+    )
+      return;
+    try {
+      if (action === "open") await classApi.openForEnrollment(cls.id);
+      else if (action === "start") await classApi.startClass(cls.id);
+      else if (action === "finish") await classApi.finishClass(cls.id);
+      else if (action === "archive") await classApi.archiveClass(cls.id);
+      else if (action === "cancel") await classApi.cancelClass(cls.id);
+      onRefresh();
+      onClose();
+    } catch (err: any) {
+      alert(
+        err?.response?.data?.message ?? "Không thể thực hiện thao tác này.",
+      );
+    }
   };
 
   const enrolledIds = enrollments.map((e) => e.studentUserId);
@@ -214,11 +265,32 @@ export const ClassDetailDrawer = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{cls.name}</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-gray-900">{cls.name}</h2>
+              <Badge
+                variant={
+                  cls.status === "IN_PROGRESS" || cls.status === "OPEN"
+                    ? "success"
+                    : cls.status === "PLANNING"
+                      ? "warning"
+                      : cls.status === "CANCELLED"
+                        ? "error"
+                        : "default"
+                }
+              >
+                {CLASS_STATUS_LABELS[cls.status] ?? cls.status}
+              </Badge>
+            </div>
             <p className="mt-1 text-sm text-gray-500">
+              {cls.courseName ? `${cls.courseName} · ` : ""}
               {cls.vstepLevel} · {formatCurrency(cls.monthFee)}/tháng · Tối đa{" "}
               {cls.maxStudents} học sinh
             </p>
+            {cls.teacherFullName && (
+              <p className="mt-1 text-sm text-gray-500">
+                GV phụ trách: {cls.teacherFullName}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -226,6 +298,52 @@ export const ClassDetailDrawer = ({
           >
             Đóng
           </button>
+        </div>
+
+        {/* Lifecycle Actions */}
+        <div className="flex flex-wrap gap-2 border-b px-6 py-3">
+          {cls.status === "PLANNING" && (
+            <>
+              <Button size="sm" onClick={() => handleLifecycle("open")}>
+                Mở đăng ký
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => handleLifecycle("cancel")}
+              >
+                Hủy lớp
+              </Button>
+            </>
+          )}
+          {(cls.status === "OPEN" || cls.status === "FULL") && (
+            <>
+              <Button size="sm" onClick={() => handleLifecycle("start")}>
+                Bắt đầu học
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => handleLifecycle("cancel")}
+              >
+                Hủy lớp
+              </Button>
+            </>
+          )}
+          {cls.status === "IN_PROGRESS" && (
+            <Button size="sm" onClick={() => handleLifecycle("finish")}>
+              Kết thúc
+            </Button>
+          )}
+          {(cls.status === "FINISHED" || cls.status === "CANCELLED") && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleLifecycle("archive")}
+            >
+              Lưu trữ
+            </Button>
+          )}
         </div>
 
         {/* Tabs */}
@@ -293,7 +411,7 @@ export const ClassDetailDrawer = ({
                           {s.startTime?.slice(0, 5)} – {s.endTime?.slice(0, 5)}
                         </span>
                         <span className="text-sm text-gray-600">
-                          Phòng {s.room}
+                          Phòng {s.roomName}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -366,6 +484,7 @@ export const ClassDetailDrawer = ({
                     <tr className="border-b text-left text-xs text-gray-500 uppercase">
                       <th className="pb-2">Họ tên</th>
                       <th className="pb-2">SĐT</th>
+                      <th className="pb-2">Trạng thái</th>
                       <th className="pb-2">Ngày ghi danh</th>
                       <th className="pb-2 text-right">Thao tác</th>
                     </tr>
@@ -379,18 +498,51 @@ export const ClassDetailDrawer = ({
                         <td className="py-3 text-gray-600">
                           {e.studentPhoneNumber}
                         </td>
+                        <td className="py-3">
+                          <Badge
+                            variant={
+                              e.status === "ACTIVE"
+                                ? "success"
+                                : e.status === "PENDING"
+                                  ? "warning"
+                                  : "default"
+                            }
+                          >
+                            {ENROLLMENT_STATUS_LABELS[e.status] ?? e.status}
+                          </Badge>
+                        </td>
                         <td className="py-3 text-gray-500">
                           {e.enrolledAt
                             ? new Date(e.enrolledAt).toLocaleDateString("vi-VN")
                             : "—"}
                         </td>
                         <td className="py-3 text-right">
-                          <button
-                            className="text-xs text-red-600 underline"
-                            onClick={() => handleDrop(e)}
-                          >
-                            Xóa khỏi lớp
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            {e.status === "PENDING" && (
+                              <>
+                                <button
+                                  className="text-xs text-emerald-600 underline"
+                                  onClick={() => handleApprove(e)}
+                                >
+                                  Duyệt
+                                </button>
+                                <button
+                                  className="text-xs text-red-600 underline"
+                                  onClick={() => handleReject(e)}
+                                >
+                                  Từ chối
+                                </button>
+                              </>
+                            )}
+                            {e.status !== "PENDING" && (
+                              <button
+                                className="text-xs text-red-600 underline"
+                                onClick={() => handleDrop(e)}
+                              >
+                                Xóa khỏi lớp
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

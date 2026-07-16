@@ -316,7 +316,7 @@ export default function OwnerAttendancePage() {
                 <br />
                 {selectedSchedule.teacherUserFullName}
                 <br />
-                Phòng {selectedSchedule.room} ·{" "}
+                Phòng {selectedSchedule.roomName} ·{" "}
                 {selectedSchedule.startTime.slice(0, 5)}-
                 {selectedSchedule.endTime.slice(0, 5)}
               </>
