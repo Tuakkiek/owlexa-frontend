@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
+import { roomApi } from "../../../api/roomApi";
 import type { ScheduleRequest } from "../../../types/schedule";
 import type { TeacherResponse } from "../../../types/teacher";
+import type { RoomResponse } from "../../../types/room";
 import { DAY_LABELS } from "../../../types/schedule";
 
 interface ScheduleFormProps {
@@ -42,9 +44,17 @@ export const ScheduleForm = ({
   );
   const [startTime, setStartTime] = useState(initialData?.startTime ?? "08:00");
   const [endTime, setEndTime] = useState(initialData?.endTime ?? "10:00");
-  const [room, setRoom] = useState(initialData?.room ?? "");
+  const [roomId, setRoomId] = useState<number | "">(initialData?.roomId ?? "");
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    roomApi
+      .findAll()
+      .then(setRooms)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (initialData?.teacherUserId) {
@@ -59,8 +69,8 @@ export const ScheduleForm = ({
     if (initialData?.endTime) {
       setEndTime(initialData.endTime.slice(0, 5));
     }
-    if (initialData?.room) {
-      setRoom(initialData.room);
+    if (initialData?.roomId) {
+      setRoomId(initialData.roomId);
     }
   }, [initialData]);
 
@@ -68,22 +78,22 @@ export const ScheduleForm = ({
     const errs: Record<string, string> = {};
     if (!teacherId) errs.teacherId = "Vui lòng chọn giáo viên";
     if (startTime >= endTime) errs.time = "Giờ bắt đầu phải trước giờ kết thúc";
-    if (!room.trim()) errs.room = "Phòng học không được để trống";
+    if (!roomId) errs.roomId = "Vui lòng chọn phòng học";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validate() || !teacherId) return;
+    if (!validate() || !teacherId || !roomId) return;
     try {
       setIsLoading(true);
       await onSubmit({
         teacherUserId: teacherId as number,
+        roomId: roomId as number,
         dayOfWeek,
         startTime,
         endTime,
-        room: room.trim(),
       });
     } finally {
       setIsLoading(false);
@@ -168,13 +178,30 @@ export const ScheduleForm = ({
       </div>
       {errors.time && <p className="text-xs text-red-500">{errors.time}</p>}
 
-      <Input
-        label="Phòng học"
-        value={room}
-        onChange={(e) => setRoom(e.target.value)}
-        placeholder="VD: Phòng 101"
-        error={errors.room}
-      />
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Phòng học
+        </label>
+        <select
+          value={roomId}
+          onChange={(e) =>
+            setRoomId(e.target.value ? Number(e.target.value) : "")
+          }
+          className={`w-full border bg-white px-3 py-2 text-sm focus:outline-none focus:border-primary ${
+            errors.roomId ? "border-red-400" : "border-gray-300"
+          }`}
+        >
+          <option value="">-- Chọn phòng học --</option>
+          {rooms.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.code} — {r.name}
+            </option>
+          ))}
+        </select>
+        {errors.roomId && (
+          <p className="mt-1 text-xs text-red-500">{errors.roomId}</p>
+        )}
+      </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>

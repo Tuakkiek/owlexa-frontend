@@ -6,17 +6,27 @@ import {
   PageHeader,
   Badge,
   StatCard,
+  FilterTabs,
 } from "../../components/ui/SharedComponents";
 import { ClassForm } from "./components/ClassForm";
 import { ClassDetailDrawer } from "./components/ClassDetailDrawer";
 import { classApi } from "../../api/classApi";
-import { formatCurrency } from "../../utils/money";
 import type { ClassResponse, ClassRequest } from "../../types/class";
+import { CLASS_STATUS_LABELS } from "../../types/class";
+
+const STATUS_FILTERS: Array<{ key: string; label: string }> = [
+  { key: "ALL", label: "Tất cả" },
+  { key: "PLANNING", label: "Lên kế hoạch" },
+  { key: "OPEN", label: "Mở đăng ký" },
+  { key: "IN_PROGRESS", label: "Đang học" },
+  { key: "FINISHED", label: "Đã kết thúc" },
+];
 
 export const ClassesPage = () => {
   const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [selectedClass, setSelectedClass] = useState<ClassResponse | null>(
     null,
   );
@@ -40,14 +50,20 @@ export const ClassesPage = () => {
   }, [loadClasses]);
 
   const filtered = useMemo(() => {
-    if (!searchQuery) return classes;
-    const q = searchQuery.toLowerCase();
-    return classes.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.vstepLevel.toLowerCase().includes(q),
-    );
-  }, [classes, searchQuery]);
+    let result = classes;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.vstepLevel.toLowerCase().includes(q),
+      );
+    }
+    if (statusFilter !== "ALL") {
+      result = result.filter((c) => c.status === statusFilter);
+    }
+    return result;
+  }, [classes, searchQuery, statusFilter]);
 
   const handleCreate = async (data: ClassRequest) => {
     await classApi.create(data);
@@ -77,6 +93,12 @@ export const ClassesPage = () => {
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Tìm theo tên lớp hoặc cấp độ..."
+      />
+
+      <FilterTabs
+        tabs={STATUS_FILTERS}
+        activeKey={statusFilter}
+        onChange={setStatusFilter}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -110,9 +132,10 @@ export const ClassesPage = () => {
             <thead>
               <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <th className="px-6 py-3">Tên lớp</th>
+                <th className="px-6 py-3">Khóa học</th>
+                <th className="px-6 py-3">Giáo viên</th>
                 <th className="px-6 py-3">Cấp độ</th>
-                <th className="px-6 py-3 text-right">Sĩ số tối đa</th>
-                <th className="px-6 py-3 text-right">Học phí/tháng</th>
+                <th className="px-6 py-3 text-right">Sĩ số</th>
                 <th className="px-6 py-3 text-center">Trạng thái</th>
                 <th className="px-6 py-3 text-right">Thao tác</th>
               </tr>
@@ -127,16 +150,19 @@ export const ClassesPage = () => {
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {cls.name}
                   </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {cls.courseName ?? "—"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {cls.teacherFullName ?? "—"}
+                  </td>
                   <td className="px-6 py-4 text-gray-600">{cls.vstepLevel}</td>
                   <td className="px-6 py-4 text-right text-gray-600">
                     {cls.maxStudents}
                   </td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-900">
-                    {formatCurrency(cls.monthFee)}
-                  </td>
                   <td className="px-6 py-4 text-center">
                     <Badge variant={cls.isActive ? "success" : "default"}>
-                      {cls.isActive ? "Đang hoạt động" : "Tạm dừng"}
+                      {CLASS_STATUS_LABELS[cls.status] ?? cls.status}
                     </Badge>
                   </td>
                   <td
@@ -181,6 +207,8 @@ export const ClassesPage = () => {
             editingClass
               ? {
                   name: editingClass.name,
+                  courseId: editingClass.courseId ?? undefined,
+                  teacherUserId: editingClass.teacherUserId ?? undefined,
                   vstepLevel: editingClass.vstepLevel,
                   maxStudent: editingClass.maxStudents,
                   monthlyFee: editingClass.monthFee,
