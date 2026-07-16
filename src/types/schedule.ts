@@ -6,20 +6,22 @@ export interface ScheduleResponse {
   teacherUserId: number;
   teacherUserFullName: string;
   teacherPhoneNumber: string;
+  roomId: number;
+  roomName: string;
+  roomCode: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  room: string;
   isActive: boolean;
   createdAt: string;
 }
 
 export interface ScheduleRequest {
   teacherUserId: number;
+  roomId: number;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  room: string;
 }
 
 export const DAY_LABELS: Record<number, string> = {

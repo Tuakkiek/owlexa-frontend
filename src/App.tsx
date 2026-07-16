@@ -6,6 +6,8 @@ import AppLayout from "./components/layout/AppLayout";
 import TeachersPage from "./pages/owner/TeachersPage";
 import StudentsPage from "./pages/owner/StudentsPage";
 import ClassesPage from "./pages/owner/ClassesPage";
+import CoursesPage from "./pages/owner/CoursesPage";
+import RoomsPage from "./pages/owner/RoomsPage";
 import FeesPage from "./pages/owner/FeesPage";
 import CentersPage from "./pages/owner/CentersPage";
 import CashiersPage from "./pages/owner/CashiersPage";
@@ -58,6 +60,8 @@ function App() {
             <Route path="/owner/students" element={<StudentsPage />} />
             <Route path="/owner/cashiers" element={<CashiersPage />} />
             <Route path="/owner/classes" element={<ClassesPage />} />
+            <Route path="/owner/courses" element={<CoursesPage />} />
+            <Route path="/owner/rooms" element={<RoomsPage />} />
             <Route path="/owner/fees" element={<FeesPage />} />
             <Route path="/owner/fee-records/overdue" element={<FeesPage />} />
             <Route path="/owner/payments" element={<OwnerPaymentsPage />} />

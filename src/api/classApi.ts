@@ -47,4 +47,31 @@ export const classApi = {
   delete: async (classId: number): Promise<void> => {
     await axiosClient.delete(`${BASE_URL}/${classId}`);
   },
+
+  // ── Lifecycle transitions ────────────────────────────────────────────────
+
+  openForEnrollment: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(`${BASE_URL}/${classId}/open`);
+    return response.data;
+  },
+
+  startClass: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(`${BASE_URL}/${classId}/start`);
+    return response.data;
+  },
+
+  finishClass: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(`${BASE_URL}/${classId}/finish`);
+    return response.data;
+  },
+
+  archiveClass: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(`${BASE_URL}/${classId}/archive`);
+    return response.data;
+  },
+
+  cancelClass: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(`${BASE_URL}/${classId}/cancel`);
+    return response.data;
+  },
 };
