@@ -6,7 +6,8 @@ export interface PermissionResponse {
 export interface EffectivePermission {
   code: string;
   description: string;
-  source: "ROLE_DEFAULT" | "ALLOW" | "DENY";
+  /** ENABLED = permission is active; DISABLED = permission revoked by Owner */
+  source: "ENABLED" | "DISABLED";
 }
 
 export interface UserPermissionsResponse {
@@ -17,7 +18,7 @@ export interface UserPermissionsResponse {
 
 export interface PermissionOverrideItem {
   permissionCode: string;
-  type: "ALLOW" | "DENY" | "INHERIT";
+  type: "DISABLED";
 }
 
 export interface BulkPermissionOverrideRequest {
@@ -25,5 +26,5 @@ export interface BulkPermissionOverrideRequest {
 }
 
 export interface SinglePermissionOverrideRequest {
-  type: "ALLOW" | "DENY" | "INHERIT";
+  type: "DISABLED";
 }

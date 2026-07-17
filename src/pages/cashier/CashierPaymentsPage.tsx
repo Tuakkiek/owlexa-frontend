@@ -21,7 +21,7 @@ const CashierPaymentsPage = () => {
   const loadFees = useCallback(async () => {
     try {
       setIsLoading(true);
-      setFees(await feeApi.getOverdueFees());
+      setFees(await feeApi.getOverdueFees("CASHIER"));
     } catch (error) {
       console.error("Failed to load fees:", error);
     } finally {

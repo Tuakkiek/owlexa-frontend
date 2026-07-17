@@ -11,8 +11,10 @@ export interface FeeGenerateRequest {
 }
 
 export const feeApi = {
-  getOverdueFees: async (): Promise<FeeRecordResponse[]> => {
-    const response = await axiosClient.get("/owner/fee-records/overdue");
+  getOverdueFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
+    // Use /cashier/ prefix for CASHIER role, /owner/ for others
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/fee-records/overdue`);
     return response.data;
   },
 
