@@ -8,9 +8,16 @@ interface TeacherFormProps {
   initialData?: Partial<TeacherRequest>;
   onSubmit: (data: TeacherRequest) => Promise<void>;
   onCancel: () => void;
+  /** Highlights the specified field with error styling after a 409 response */
+  fieldError?: "email" | "phoneNumber" | null;
 }
 
-export const TeacherForm = ({ initialData, onSubmit, onCancel }: TeacherFormProps) => {
+export const TeacherForm = ({
+  initialData,
+  onSubmit,
+  onCancel,
+  fieldError,
+}: TeacherFormProps) => {
   const [formData, setFormData] = useState<TeacherRequest>({
     fullName: "",
     email: "",
@@ -32,14 +39,16 @@ export const TeacherForm = ({ initialData, onSubmit, onCancel }: TeacherFormProp
 
   const validate = (): boolean => {
     const newErrors: Partial<TeacherRequest> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Họ tên không được để trống";
+    if (!formData.fullName.trim())
+      newErrors.fullName = "Họ tên không được để trống";
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Email không hợp lệ";
     }
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = "Số điện thoại không được để trống";
     } else if (!/^0\d{9}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = "SĐT phải gồm 10 chữ số, bắt đầu bằng 0 (VD: 0912345678)";
+      newErrors.phoneNumber =
+        "SĐT phải gồm 10 chữ số, bắt đầu bằng 0 (VD: 0912345678)";
     }
 
     setErrors(newErrors);
@@ -73,15 +82,21 @@ export const TeacherForm = ({ initialData, onSubmit, onCancel }: TeacherFormProp
         type="email"
         value={formData.email}
         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        error={errors.email}
+        error={fieldError === "email" ? "Email already exists" : errors.email}
         placeholder="VD: nguyenvana@email.com"
       />
 
       <Input
         label="Số điện thoại"
         value={formData.phoneNumber}
-        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-        error={errors.phoneNumber}
+        onChange={(e) =>
+          setFormData({ ...formData, phoneNumber: e.target.value })
+        }
+        error={
+          fieldError === "phoneNumber"
+            ? "Phone number already exists"
+            : errors.phoneNumber
+        }
         placeholder="0912345678"
       />
 
