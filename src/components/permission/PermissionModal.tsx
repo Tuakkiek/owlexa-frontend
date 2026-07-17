@@ -14,41 +14,22 @@ interface PermissionModalProps {
   onClose: () => void;
 }
 
-type OverrideAction = "INHERIT" | "ALLOW" | "DENY";
-
 interface PermissionRowState {
   code: string;
   description: string;
-  originalSource: string;
-  pendingAction: OverrideAction;
+  enabled: boolean;
+  dirty: boolean; // true if user toggled from original state
 }
 
-const SOURCE_LABELS: Record<string, { label: string; className: string }> = {
-  ROLE_DEFAULT: {
-    label: "Mặc định",
-    className: "bg-blue-50 text-blue-700",
-  },
-  ALLOW: {
-    label: "Cho phép",
-    className: "bg-emerald-50 text-emerald-700",
-  },
-  DENY: {
-    label: "Từ chối",
-    className: "bg-red-50 text-red-700",
-  },
+const ROLE_LABELS: Record<string, string> = {
+  OWNER: "Chủ trung tâm",
+  MANAGER: "Quản lý",
+  ACADEMIC_STAFF: "Nhân viên học vụ",
+  TEACHER: "Giáo viên",
+  STUDENT: "Học viên",
+  CASHIER: "Thu ngân",
+  ADMIN: "Quản trị viên",
 };
-
-const ACTION_LABELS: Record<OverrideAction, string> = {
-  INHERIT: "Kế thừa",
-  ALLOW: "Cho phép",
-  DENY: "Từ chối",
-};
-
-function deriveAction(source: string): OverrideAction {
-  if (source === "ALLOW") return "ALLOW";
-  if (source === "DENY") return "DENY";
-  return "INHERIT";
-}
 
 export const PermissionModal = ({
   userId,
@@ -74,8 +55,8 @@ export const PermissionModal = ({
         data.permissions.map((p: EffectivePermission) => ({
           code: p.code,
           description: p.description,
-          originalSource: p.source,
-          pendingAction: deriveAction(p.source),
+          enabled: p.source === "ENABLED",
+          dirty: false,
         })),
       );
     } catch (err: any) {
@@ -93,30 +74,26 @@ export const PermissionModal = ({
     }
   }, [isOpen, loadPermissions]);
 
-  const handleActionChange = (code: string, action: OverrideAction) => {
+  const handleToggle = (code: string) => {
     setPermissions((prev) =>
-      prev.map((p) => (p.code === code ? { ...p, pendingAction: action } : p)),
+      prev.map((p) =>
+        p.code === code ? { ...p, enabled: !p.enabled, dirty: true } : p,
+      ),
     );
   };
 
-  // Diff used ONLY for UI state (Save button enable/disable, change count badge).
-  // The API payload is built from the full permissions state (see handleSave).
-  const changedPermissions = permissions.filter((p) => {
-    const originalAction = deriveAction(p.originalSource);
-    return p.pendingAction !== originalAction;
-  });
+  const changedCount = permissions.filter((p) => p.dirty).length;
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
       setError("");
-      // Send ALL non-INHERIT overrides (complete set), not just the diff.
-      // Backend deleteByUser_Id + re-insert requires the full desired state.
+      // Send only DISABLED permissions as overrides
       const overrides = permissions
-        .filter((p) => p.pendingAction !== "INHERIT")
+        .filter((p) => !p.enabled)
         .map((p) => ({
           permissionCode: p.code,
-          type: p.pendingAction,
+          type: "DISABLED",
         }));
       await permissionApi.bulkUpdateOverrides(userId, { overrides });
       onClose();
@@ -144,12 +121,6 @@ export const PermissionModal = ({
     }
   };
 
-  const getEffectiveSource = (row: PermissionRowState): string => {
-    if (row.pendingAction === "ALLOW") return "ALLOW";
-    if (row.pendingAction === "DENY") return "DENY";
-    return row.originalSource;
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Phân quyền — ${userName}`}>
       <div className="space-y-4">
@@ -160,7 +131,13 @@ export const PermissionModal = ({
         )}
 
         <p className="text-sm text-gray-500">
-          Vai trò: <span className="font-medium text-gray-700">{roleName}</span>
+          Vai trò:{" "}
+          <span className="font-medium text-gray-700">
+            {ROLE_LABELS[roleName] ?? roleName}
+          </span>
+          <span className="ml-2 text-xs text-gray-400">
+            (hiển thị {permissions.length} quyền của vai trò)
+          </span>
         </p>
 
         {isLoading ? (
@@ -169,69 +146,51 @@ export const PermissionModal = ({
           </div>
         ) : permissions.length === 0 ? (
           <div className="py-8 text-center text-sm text-gray-400">
-            Không có quyền nào.
+            Vai trò này không có quyền nào.
           </div>
         ) : (
           <div className="max-h-80 overflow-y-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-border text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="pb-2 pr-3">Quyền</th>
-                  <th className="pb-2 pr-3">Trạng thái</th>
-                  <th className="pb-2 text-right">Hành động</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {permissions.map((perm) => {
-                  const source = getEffectiveSource(perm);
-                  const badge =
-                    SOURCE_LABELS[source] ?? SOURCE_LABELS.ROLE_DEFAULT;
-                  const isChanged =
-                    deriveAction(perm.originalSource) !== perm.pendingAction;
-                  return (
-                    <tr
-                      key={perm.code}
-                      className={isChanged ? "bg-amber-50" : ""}
-                    >
-                      <td className="py-2 pr-3">
-                        <div className="font-medium text-gray-900">
-                          {perm.code}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {perm.description}
-                        </div>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}
-                        >
-                          {badge.label}
-                        </span>
-                      </td>
-                      <td className="py-2 text-right">
-                        <select
-                          value={perm.pendingAction}
-                          onChange={(e) =>
-                            handleActionChange(
-                              perm.code,
-                              e.target.value as OverrideAction,
-                            )
-                          }
-                          className="rounded-input border border-surface-border bg-white px-2 py-1 text-xs text-gray-700 focus:border-primary focus:outline-none"
-                        >
-                          <option value="INHERIT">
-                            {ACTION_LABELS.INHERIT}
-                          </option>
-                          <option value="ALLOW">{ACTION_LABELS.ALLOW}</option>
-                          <option value="DENY">{ACTION_LABELS.DENY}</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="space-y-1">
+              {permissions.map((perm) => (
+                <label
+                  key={perm.code}
+                  className={`flex cursor-pointer items-center gap-3 rounded-btn px-3 py-2 transition-colors hover:bg-surface-hover ${
+                    perm.dirty ? "bg-amber-50" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={perm.enabled}
+                    onChange={() => handleToggle(perm.code)}
+                    className="h-4 w-4 rounded border-surface-border text-primary focus:ring-primary"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {perm.code}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {perm.description}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      perm.enabled
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {perm.enabled ? "Bật" : "Tắt"}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
+        )}
+
+        {changedCount > 0 && (
+          <p className="text-xs text-amber-600">
+            Đã thay đổi {changedCount} quyền. Nhấn Lưu để áp dụng.
+          </p>
         )}
 
         <div className="flex items-center justify-between border-t border-surface-border pt-4">
@@ -248,14 +207,13 @@ export const PermissionModal = ({
               Hủy
             </Button>
             <Button
+              variant="primary"
               size="sm"
               onClick={handleSave}
               isLoading={isSaving}
-              disabled={changedPermissions.length === 0}
+              disabled={isLoading}
             >
-              Lưu thay đổi
-              {changedPermissions.length > 0 &&
-                ` (${changedPermissions.length})`}
+              Lưu
             </Button>
           </div>
         </div>

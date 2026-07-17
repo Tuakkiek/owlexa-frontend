@@ -166,6 +166,26 @@ function App() {
             />
           </Route>
 
+          {/* MANAGER Routes — shares OWNER pages with limited sidebar */}
+          <Route element={<ProtectedRoute allowedRoles={["MANAGER"]} />}>
+            <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
+            <Route path="/owner/centers" element={<CentersPage />} />
+            <Route path="/owner/teachers" element={<TeachersPage />} />
+            <Route path="/owner/students" element={<StudentsPage />} />
+            <Route path="/owner/classes" element={<ClassesPage />} />
+            <Route path="/owner/courses" element={<CoursesPage />} />
+            <Route path="/owner/rooms" element={<RoomsPage />} />
+            <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
+            <Route path="/owner/sessions" element={<SessionManagementPage />} />
+          </Route>
+
+          {/* ACADEMIC_STAFF Routes — limited academic operations */}
+          <Route element={<ProtectedRoute allowedRoles={["ACADEMIC_STAFF"]} />}>
+            <Route path="/owner/students" element={<StudentsPage />} />
+            <Route path="/owner/classes" element={<ClassesPage />} />
+            <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
+          </Route>
+
           {/* ADMIN Routes */}
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
