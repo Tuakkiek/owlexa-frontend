@@ -9,6 +9,8 @@ import {
   ErrorBanner,
 } from "../../components/ui/SharedComponents";
 import { cashierApi } from "../../api/cashierApi";
+import { PermissionModal } from "../../components/permission/PermissionModal";
+import { TemporaryPasswordDialog } from "../../components/ui/TemporaryPasswordDialog";
 import type { CashierRequest, CashierResponse } from "../../types/cashier";
 
 const emptyForm: CashierRequest = { fullName: "", email: "", phoneNumber: "" };
@@ -23,8 +25,21 @@ export const CashiersPage = () => {
     null,
   );
   const [form, setForm] = useState<CashierRequest>(emptyForm);
-  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [permissionCashier, setPermissionCashier] =
+    useState<CashierResponse | null>(null);
+
+  // Temporary password dialog state
+  const [createdUser, setCreatedUser] = useState<{
+    fullName: string;
+    phoneNumber: string;
+    temporaryPassword: string;
+  } | null>(null);
+
+  // Field-level error for create/edit forms (409 highlighting)
+  const [fieldError, setFieldError] = useState<"email" | "phoneNumber" | null>(
+    null,
+  );
 
   const loadCashiers = useCallback(async () => {
     try {
@@ -56,13 +71,15 @@ export const CashiersPage = () => {
 
   const openCreate = () => {
     setEditingCashier(null);
-    setTemporaryPassword("");
     setForm(emptyForm);
+    setFieldError(null);
+    setError("");
     setIsModalOpen(true);
   };
   const openEdit = (cashier: CashierResponse) => {
     setEditingCashier(cashier);
-    setTemporaryPassword("");
+    setFieldError(null);
+    setError("");
     setForm({
       fullName: cashier.fullName,
       phoneNumber: cashier.phoneNumber,
@@ -75,23 +92,41 @@ export const CashiersPage = () => {
     event.preventDefault();
     try {
       setIsSaving(true);
+      setError("");
+      setFieldError(null);
       if (editingCashier) {
         await cashierApi.update(editingCashier.userId, form);
       } else {
         const created = await cashierApi.create(form);
-        setTemporaryPassword(created.temporaryPassword ?? "");
+        if (created.temporaryPassword) {
+          setCreatedUser({
+            fullName: created.fullName,
+            phoneNumber: created.phoneNumber,
+            temporaryPassword: created.temporaryPassword,
+          });
+        }
       }
       await loadCashiers();
-      if (editingCashier) setIsModalOpen(false);
+      if (editingCashier) {
+        setIsModalOpen(false);
+        setFieldError(null);
+      }
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể lưu thu ngân.");
+      const message = err?.response?.data?.message ?? "Không thể lưu thu ngân.";
+      setError(message);
+      if (message.includes("Email")) {
+        setFieldError("email");
+      } else if (message.includes("Phone")) {
+        setFieldError("phoneNumber");
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (cashier: CashierResponse) => {
-    if (!window.confirm(`Xóa thu ngân "${cashier.fullName}"?`)) return;
+    if (!window.confirm(`Gỡ thu ngân "${cashier.fullName}" khỏi trung tâm?`))
+      return;
     await cashierApi.delete(cashier.userId);
     await loadCashiers();
   };
@@ -148,6 +183,12 @@ export const CashiersPage = () => {
                     <div className="flex justify-end gap-3 text-sm">
                       <button
                         className="text-primary hover:text-primary-hover transition-colors"
+                        onClick={() => setPermissionCashier(cashier)}
+                      >
+                        Phân quyền
+                      </button>
+                      <button
+                        className="text-primary hover:text-primary-hover transition-colors"
                         onClick={() => openEdit(cashier)}
                       >
                         Sửa
@@ -156,7 +197,7 @@ export const CashiersPage = () => {
                         className="text-gray-400 hover:text-red-600 transition-colors"
                         onClick={() => handleDelete(cashier)}
                       >
-                        Xóa
+                        Gỡ
                       </button>
                     </div>
                   </td>
@@ -169,16 +210,14 @@ export const CashiersPage = () => {
 
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setFieldError(null);
+          setError("");
+        }}
         title={editingCashier ? "Chỉnh sửa thu ngân" : "Tạo thu ngân"}
       >
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {temporaryPassword && (
-            <div className="rounded-input border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-              Mật khẩu tạm:{" "}
-              <span className="font-semibold">{temporaryPassword}</span>
-            </div>
-          )}
           <Input
             label="Họ tên"
             value={form.fullName}
@@ -192,12 +231,18 @@ export const CashiersPage = () => {
             type="email"
             value={form.email}
             onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+            error={fieldError === "email" ? "Email already exists" : undefined}
           />
           <Input
             label="Số điện thoại"
             value={form.phoneNumber}
             onChange={(e) =>
               setForm((c) => ({ ...c, phoneNumber: e.target.value }))
+            }
+            error={
+              fieldError === "phoneNumber"
+                ? "Phone number already exists"
+                : undefined
             }
             placeholder="0901234567"
             required
@@ -216,6 +261,22 @@ export const CashiersPage = () => {
           </div>
         </form>
       </Modal>
+
+      <PermissionModal
+        userId={permissionCashier?.userId ?? 0}
+        userName={permissionCashier?.fullName ?? ""}
+        isOpen={permissionCashier !== null}
+        onClose={() => setPermissionCashier(null)}
+      />
+
+      <TemporaryPasswordDialog
+        isOpen={createdUser !== null}
+        onClose={() => setCreatedUser(null)}
+        fullName={createdUser?.fullName ?? ""}
+        phoneNumber={createdUser?.phoneNumber ?? ""}
+        temporaryPassword={createdUser?.temporaryPassword ?? ""}
+        roleLabel="Cashier"
+      />
     </div>
   );
 };
