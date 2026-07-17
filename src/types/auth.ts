@@ -2,9 +2,10 @@ export interface UserInfo {
   phoneNumber?: string;
   email?: string;
   fullName?: string;
-  roleName: "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER";
+  roleName: "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER" | "MANAGER" | "ACADEMIC_STAFF";
   centerName?: string;
   centerId?: number | null;
+  permissions?: string[];
 }
 
 export interface AuthResponse {
@@ -13,9 +14,10 @@ export interface AuthResponse {
   phoneNumber?: string;
   email?: string;
   fullName?: string;
-  roleName: "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER";
+  roleName: "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER" | "MANAGER" | "ACADEMIC_STAFF";
   centerName?: string;
   centerId?: number | null;
+  permissions?: string[];
 }
 
 export interface LoginRequest {

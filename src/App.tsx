@@ -13,6 +13,7 @@ import CentersPage from "./pages/owner/CentersPage";
 import CashiersPage from "./pages/owner/CashiersPage";
 import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
+import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import StudentDocumentsPage from "./pages/student/StudentDocumentsPage";
 import StudentEssayPage from "./pages/student/StudentEssayPage";
@@ -27,6 +28,7 @@ import TeacherEssayReviewPage from "./pages/teacher/TeacherEssayReviewPage";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
 import OwnerTestsPage from "./pages/owner/OwnerTestsPage";
 import OwnerAttendancePage from "./pages/owner/OwnerAttendancePage";
+import OwnerTeacherAttendancePage from "./pages/owner/OwnerTeacherAttendancePage";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import TeacherTestsPage from "./pages/teacher/TeacherTestsPage";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
@@ -71,6 +73,10 @@ function App() {
               element={<Navigate to="/owner/tests" replace />}
             />
             <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
+            <Route
+              path="/owner/teacher-attendance"
+              element={<OwnerTeacherAttendancePage />}
+            />
             <Route path="/owner/sessions" element={<SessionManagementPage />} />
           </Route>
 
@@ -108,6 +114,10 @@ function App() {
               element={<StudentDashboardPage />}
             />
             <Route path="/student/schedule" element={<StudentSchedulePage />} />
+            <Route
+              path="/student/attendance"
+              element={<StudentAttendancePage />}
+            />
             <Route path="/student/fees" element={<StudentFeesPage />} />
             <Route
               path="/student/documents"
@@ -154,6 +164,26 @@ function App() {
               path="/cashier/payment-history"
               element={<CashierPaymentHistoryPage />}
             />
+          </Route>
+
+          {/* MANAGER Routes — shares OWNER pages with limited sidebar */}
+          <Route element={<ProtectedRoute allowedRoles={["MANAGER"]} />}>
+            <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
+            <Route path="/owner/centers" element={<CentersPage />} />
+            <Route path="/owner/teachers" element={<TeachersPage />} />
+            <Route path="/owner/students" element={<StudentsPage />} />
+            <Route path="/owner/classes" element={<ClassesPage />} />
+            <Route path="/owner/courses" element={<CoursesPage />} />
+            <Route path="/owner/rooms" element={<RoomsPage />} />
+            <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
+            <Route path="/owner/sessions" element={<SessionManagementPage />} />
+          </Route>
+
+          {/* ACADEMIC_STAFF Routes — limited academic operations */}
+          <Route element={<ProtectedRoute allowedRoles={["ACADEMIC_STAFF"]} />}>
+            <Route path="/owner/students" element={<StudentsPage />} />
+            <Route path="/owner/classes" element={<ClassesPage />} />
+            <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
           </Route>
 
           {/* ADMIN Routes */}

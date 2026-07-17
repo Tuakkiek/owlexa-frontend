@@ -11,6 +11,8 @@ import {
 import { TeacherForm } from "./components/TeacherForm";
 import { BulkAddTeacherForm } from "./components/BulkAddTeacherForm";
 import { TeacherSalaryModal } from "./components/TeacherSalaryModal";
+import { PermissionModal } from "../../components/permission/PermissionModal";
+import { TemporaryPasswordDialog } from "../../components/ui/TemporaryPasswordDialog";
 import { teacherApi } from "../../api/teacherApi";
 import type {
   TeacherResponse,
@@ -48,6 +50,20 @@ export const TeachersPage = () => {
   const [salaryTeacher, setSalaryTeacher] = useState<TeacherResponse | null>(
     null,
   );
+  const [permissionTeacher, setPermissionTeacher] =
+    useState<TeacherResponse | null>(null);
+
+  // Temporary password dialog state
+  const [createdUser, setCreatedUser] = useState<{
+    fullName: string;
+    phoneNumber: string;
+    temporaryPassword: string;
+  } | null>(null);
+
+  // Field-level error for create/edit forms (409 highlighting)
+  const [fieldError, setFieldError] = useState<"email" | "phoneNumber" | null>(
+    null,
+  );
 
   const loadTeachers = useCallback(async () => {
     try {
@@ -76,19 +92,54 @@ export const TeachersPage = () => {
     : teachers;
 
   const handleCreate = async (data: TeacherRequest) => {
-    await teacherApi.create(data);
-    setIsAddModalOpen(false);
-    loadTeachers();
+    try {
+      setError("");
+      setFieldError(null);
+      const created = await teacherApi.create(data);
+      setIsAddModalOpen(false);
+      setFieldError(null);
+      if (created.temporaryPassword) {
+        setCreatedUser({
+          fullName: created.fullName,
+          phoneNumber: created.phoneNumber,
+          temporaryPassword: created.temporaryPassword,
+        });
+      }
+      loadTeachers();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ?? "Không thể tạo giáo viên.";
+      setError(message);
+      if (message.includes("Email")) {
+        setFieldError("email");
+      } else if (message.includes("Phone")) {
+        setFieldError("phoneNumber");
+      }
+    }
   };
   const handleUpdate = async (data: TeacherRequest) => {
-    if (editingTeacher) {
+    if (!editingTeacher) return;
+    try {
+      setError("");
+      setFieldError(null);
       await teacherApi.update(editingTeacher.userId, data);
       setEditingTeacher(null);
+      setFieldError(null);
       loadTeachers();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ?? "Không thể cập nhật giáo viên.";
+      setError(message);
+      if (message.includes("Email")) {
+        setFieldError("email");
+      } else if (message.includes("Phone")) {
+        setFieldError("phoneNumber");
+      }
     }
   };
   const handleDelete = async (teacher: TeacherResponse) => {
-    if (!window.confirm(`Xóa giáo viên "${teacher.fullName}"?`)) return;
+    if (!window.confirm(`Gỡ giáo viên "${teacher.fullName}" khỏi trung tâm?`))
+      return;
     await teacherApi.delete(teacher.userId);
     loadTeachers();
   };
@@ -175,6 +226,12 @@ export const TeachersPage = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-3 text-sm">
                       <button
+                        className="text-primary hover:text-primary-hover transition-colors"
+                        onClick={() => setPermissionTeacher(teacher)}
+                      >
+                        Phân quyền
+                      </button>
+                      <button
                         className="text-gray-600 hover:text-gray-900 transition-colors"
                         onClick={() => setEditingTeacher(teacher)}
                       >
@@ -190,7 +247,7 @@ export const TeachersPage = () => {
                         className="text-gray-400 hover:text-red-600 transition-colors"
                         onClick={() => handleDelete(teacher)}
                       >
-                        Xóa
+                        Gỡ
                       </button>
                     </div>
                   </td>
@@ -208,13 +265,22 @@ export const TeachersPage = () => {
       >
         <TeacherForm
           onSubmit={handleCreate}
-          onCancel={() => setIsAddModalOpen(false)}
+          onCancel={() => {
+            setIsAddModalOpen(false);
+            setFieldError(null);
+            setError("");
+          }}
+          fieldError={fieldError}
         />
       </Modal>
 
       <Modal
         isOpen={!!editingTeacher}
-        onClose={() => setEditingTeacher(null)}
+        onClose={() => {
+          setEditingTeacher(null);
+          setFieldError(null);
+          setError("");
+        }}
         title="Chỉnh sửa giáo viên"
       >
         {editingTeacher && (
@@ -225,7 +291,12 @@ export const TeachersPage = () => {
               email: "",
             }}
             onSubmit={handleUpdate}
-            onCancel={() => setEditingTeacher(null)}
+            onCancel={() => {
+              setEditingTeacher(null);
+              setFieldError(null);
+              setError("");
+            }}
+            fieldError={fieldError}
           />
         )}
       </Modal>
@@ -246,6 +317,22 @@ export const TeachersPage = () => {
         onClose={() => setSalaryTeacher(null)}
         teacher={salaryTeacher}
         onSaved={handleSalarySaved}
+      />
+
+      <PermissionModal
+        userId={permissionTeacher?.userId ?? 0}
+        userName={permissionTeacher?.fullName ?? ""}
+        isOpen={permissionTeacher !== null}
+        onClose={() => setPermissionTeacher(null)}
+      />
+
+      <TemporaryPasswordDialog
+        isOpen={createdUser !== null}
+        onClose={() => setCreatedUser(null)}
+        fullName={createdUser?.fullName ?? ""}
+        phoneNumber={createdUser?.phoneNumber ?? ""}
+        temporaryPassword={createdUser?.temporaryPassword ?? ""}
+        roleLabel="Teacher"
       />
     </div>
   );

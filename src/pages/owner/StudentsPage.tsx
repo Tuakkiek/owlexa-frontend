@@ -10,6 +10,7 @@ import {
 } from "../../components/ui/SharedComponents";
 import { StudentForm } from "./components/StudentForm";
 import { BulkAddStudentForm } from "./components/BulkAddStudentForm";
+import { TemporaryPasswordDialog } from "../../components/ui/TemporaryPasswordDialog";
 import { studentApi } from "../../api/studentApi";
 import type {
   StudentResponse,
@@ -27,6 +28,18 @@ export const StudentsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkAddModalOpen, setIsBulkAddModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(
+    null,
+  );
+
+  // Temporary password dialog state
+  const [createdUser, setCreatedUser] = useState<{
+    fullName: string;
+    phoneNumber: string;
+    temporaryPassword: string;
+  } | null>(null);
+
+  // Field-level error for create/edit forms (409 highlighting)
+  const [fieldError, setFieldError] = useState<"email" | "phoneNumber" | null>(
     null,
   );
 
@@ -58,19 +71,53 @@ export const StudentsPage = () => {
   }, [students, search]);
 
   const handleCreate = async (data: StudentRequest) => {
-    await studentApi.create(data);
-    setIsAddModalOpen(false);
-    loadStudents();
+    try {
+      setError("");
+      setFieldError(null);
+      const created = await studentApi.create(data);
+      setIsAddModalOpen(false);
+      setFieldError(null);
+      if (created.temporaryPassword) {
+        setCreatedUser({
+          fullName: created.fullName,
+          phoneNumber: created.phoneNumber,
+          temporaryPassword: created.temporaryPassword,
+        });
+      }
+      loadStudents();
+    } catch (err: any) {
+      const message = err?.response?.data?.message ?? "Không thể tạo học sinh.";
+      setError(message);
+      if (message.includes("Email")) {
+        setFieldError("email");
+      } else if (message.includes("Phone")) {
+        setFieldError("phoneNumber");
+      }
+    }
   };
   const handleUpdate = async (data: StudentRequest) => {
-    if (editingStudent) {
+    if (!editingStudent) return;
+    try {
+      setError("");
+      setFieldError(null);
       await studentApi.update(editingStudent.userId, data);
       setEditingStudent(null);
+      setFieldError(null);
       loadStudents();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ?? "Không thể cập nhật học sinh.";
+      setError(message);
+      if (message.includes("Email")) {
+        setFieldError("email");
+      } else if (message.includes("Phone")) {
+        setFieldError("phoneNumber");
+      }
     }
   };
   const handleDelete = async (student: StudentResponse) => {
-    if (!window.confirm(`Xóa học sinh "${student.fullName}"?`)) return;
+    if (!window.confirm(`Gỡ học sinh "${student.fullName}" khỏi trung tâm?`))
+      return;
     await studentApi.delete(student.userId);
     loadStudents();
   };
@@ -153,7 +200,7 @@ export const StudentsPage = () => {
                         className="text-gray-400 hover:text-red-600 transition-colors"
                         onClick={() => handleDelete(student)}
                       >
-                        Xóa
+                        Gỡ
                       </button>
                     </div>
                   </td>
@@ -171,12 +218,21 @@ export const StudentsPage = () => {
       >
         <StudentForm
           onSubmit={handleCreate}
-          onCancel={() => setIsAddModalOpen(false)}
+          onCancel={() => {
+            setIsAddModalOpen(false);
+            setFieldError(null);
+            setError("");
+          }}
+          fieldError={fieldError}
         />
       </Modal>
       <Modal
         isOpen={!!editingStudent}
-        onClose={() => setEditingStudent(null)}
+        onClose={() => {
+          setEditingStudent(null);
+          setFieldError(null);
+          setError("");
+        }}
         title="Chỉnh sửa học sinh"
       >
         {editingStudent && (
@@ -187,7 +243,12 @@ export const StudentsPage = () => {
               email: "",
             }}
             onSubmit={handleUpdate}
-            onCancel={() => setEditingStudent(null)}
+            onCancel={() => {
+              setEditingStudent(null);
+              setFieldError(null);
+              setError("");
+            }}
+            fieldError={fieldError}
           />
         )}
       </Modal>
@@ -201,6 +262,15 @@ export const StudentsPage = () => {
           onCancel={() => setIsBulkAddModalOpen(false)}
         />
       </Modal>
+
+      <TemporaryPasswordDialog
+        isOpen={createdUser !== null}
+        onClose={() => setCreatedUser(null)}
+        fullName={createdUser?.fullName ?? ""}
+        phoneNumber={createdUser?.phoneNumber ?? ""}
+        temporaryPassword={createdUser?.temporaryPassword ?? ""}
+        roleLabel="Student"
+      />
     </div>
   );
 };

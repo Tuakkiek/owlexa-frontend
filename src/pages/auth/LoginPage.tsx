@@ -23,6 +23,8 @@ const LoginPage = () => {
     const rolePath: Record<string, string> = {
       ADMIN: "/admin/dashboard",
       OWNER: "/owner/dashboard",
+      MANAGER: "/owner/dashboard",
+      ACADEMIC_STAFF: "/owner/students",
       TEACHER: "/teacher/dashboard",
       STUDENT: "/student/dashboard",
       CASHIER: "/cashier/dashboard",
