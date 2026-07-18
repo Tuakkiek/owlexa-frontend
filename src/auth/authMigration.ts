@@ -36,6 +36,10 @@ function buildUserInfo(source: Record<string, unknown>): UserInfo | null {
     roleName: source.roleName,
     centerName:
       typeof source.centerName === "string" ? source.centerName : undefined,
+    centerId:
+      typeof source.centerId === "number" ? source.centerId : undefined,
+    permissions:
+      Array.isArray(source.permissions) ? (source.permissions as string[]) : undefined,
   };
 }
 
