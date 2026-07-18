@@ -155,7 +155,11 @@ const AppLayout = () => {
 
         {/* User section */}
         <div className="border-t border-surface-border p-4">
-          <div className="mb-3 flex items-center gap-3">
+          <NavLink
+            to="/account"
+            onClick={() => setSidebarOpen(false)}
+            className="mb-3 flex items-center gap-3 rounded-btn p-2 -mx-2 transition-colors hover:bg-surface-hover"
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-hover text-sm font-semibold text-gray-700">
               {user?.fullName?.charAt(0) || user?.roleName.charAt(0) || "O"}
             </div>
@@ -167,7 +171,7 @@ const AppLayout = () => {
                 {user?.phoneNumber || user?.email}
               </div>
             </div>
-          </div>
+          </NavLink>
           <button
             onClick={handleLogout}
             className="w-full rounded-btn border border-surface-border bg-white px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"

@@ -1,4 +1,5 @@
 export interface UserInfo {
+  userId?: number;
   phoneNumber?: string;
   email?: string;
   fullName?: string;

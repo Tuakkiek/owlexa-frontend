@@ -34,7 +34,9 @@ import TeacherTestsPage from "./pages/teacher/TeacherTestsPage";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import CashierPaymentsPage from "./pages/cashier/CashierPaymentsPage";
 import CashierPaymentHistoryPage from "./pages/cashier/CashierPaymentHistoryPage";
+import CashierDashboardPage from "./pages/cashier/CashierDashboardPage";
 import SessionManagementPage from "./pages/owner/SessionManagementPage";
+import AccountPage from "./pages/account/AccountPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
 function App() {
@@ -54,6 +56,11 @@ function App() {
 
         {/* Protected Routes wrapped in AppLayout */}
         <Route element={<AppLayout />}>
+          {/* Account — accessible to all roles (no allowedRoles filter) */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/account" element={<AccountPage />} />
+          </Route>
+
           {/* OWNER Routes */}
           <Route element={<ProtectedRoute allowedRoles={["OWNER"]} />}>
             <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
@@ -157,7 +164,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["CASHIER"]} />}>
             <Route
               path="/cashier/dashboard"
-              element={<Navigate to="/cashier/payments" replace />}
+              element={<CashierDashboardPage />}
             />
             <Route path="/cashier/payments" element={<CashierPaymentsPage />} />
             <Route
@@ -190,6 +197,19 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           </Route>
+
+          {/* Unauthorized page */}
+          <Route path="/unauthorized" element={
+            <div className="flex min-h-screen items-center justify-center bg-surface-page">
+              <div className="text-center">
+                <h1 className="text-6xl font-bold text-gray-300">403</h1>
+                <p className="mt-4 text-lg text-gray-600">Bạn không có quyền truy cập trang này.</p>
+                <a href="/login" className="mt-6 inline-block text-primary hover:underline">
+                  Quay lại đăng nhập
+                </a>
+              </div>
+            </div>
+          } />
         </Route>
 
         {/* Fallback for undefined routes */}
