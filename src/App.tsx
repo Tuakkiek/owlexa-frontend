@@ -77,8 +77,14 @@ function App() {
             <Route path="/owner/fees" element={<FeesPage />} />
             <Route path="/owner/fee-records/overdue" element={<FeesPage />} />
             <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
-            <Route path="/owner/payments/:paymentId/receipt" element={<ReceiptPage />} />
-            <Route path="/owner/discounts" element={<DiscountManagementPage />} />
+            <Route
+              path="/owner/payments/:paymentId/receipt"
+              element={<ReceiptPage />}
+            />
+            <Route
+              path="/owner/discounts"
+              element={<DiscountManagementPage />}
+            />
             <Route path="/owner/audit-logs" element={<AuditLogPage />} />
             <Route path="/owner/tests" element={<OwnerTestsPage />} />
             <Route
@@ -209,17 +215,25 @@ function App() {
           </Route>
 
           {/* Unauthorized page */}
-          <Route path="/unauthorized" element={
-            <div className="flex min-h-screen items-center justify-center bg-surface-page">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold text-gray-300">403</h1>
-                <p className="mt-4 text-lg text-gray-600">Bạn không có quyền truy cập trang này.</p>
-                <a href="/login" className="mt-6 inline-block text-primary hover:underline">
-                  Quay lại đăng nhập
-                </a>
+          <Route
+            path="/unauthorized"
+            element={
+              <div className="flex min-h-screen items-center justify-center bg-surface-page">
+                <div className="text-center">
+                  <h1 className="text-6xl font-bold text-gray-300">403</h1>
+                  <p className="mt-4 text-lg text-gray-600">
+                    Bạn không có quyền truy cập trang này.
+                  </p>
+                  <a
+                    href="/login"
+                    className="mt-6 inline-block text-primary hover:underline"
+                  >
+                    Quay lại đăng nhập
+                  </a>
+                </div>
               </div>
-            </div>
-          } />
+            }
+          />
         </Route>
 
         {/* Fallback for undefined routes */}
