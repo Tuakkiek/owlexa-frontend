@@ -2,6 +2,7 @@ import { useAuthStore } from "../store/authStore";
 import type { AuthResponse, UserInfo } from "../types/auth";
 import { migrateLegacyAuthStorage } from "./authMigration";
 import { removeLegacyAuthKeys } from "./authStorage";
+import type { AccountResponse } from "../api/accountApi";
 
 /**
  * Central auth API for the frontend.
@@ -33,6 +34,23 @@ export function applyAuthFromResponse(response: AuthResponse): void {
 export function clearAuthState(): void {
   useAuthStore.getState().clearAuth();
   removeLegacyAuthKeys();
+}
+
+export function toUserInfoFromAccount(response: AccountResponse): Partial<UserInfo> {
+  return {
+    userId: response.userId,
+    phoneNumber: response.phoneNumber,
+    email: response.email,
+    fullName: response.fullName,
+    roleName: response.roleName as UserInfo["roleName"],
+    centerName: response.centerName,
+    centerId: response.centerId,
+    permissions: response.permissions,
+  };
+}
+
+export function applyAccountUpdate(response: AccountResponse): void {
+  useAuthStore.getState().updateUser(toUserInfoFromAccount(response));
 }
 
 export function getAccessToken(): string | null {

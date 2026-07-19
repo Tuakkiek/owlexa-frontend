@@ -1,132 +1,131 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   SearchInput,
   PageHeader,
   ErrorBanner,
-  StatCard,
+  Badge,
+  EmptyState,
 } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
-import { feeApi } from "../../api/feeApi";
-import type { PaymentResponse } from "../../types/fee";
-import { formatMoney, parseMoney } from "../../utils/money";
+import { feeApi, type PaymentFilterParams } from "../../api/feeApi";
+import type { PaymentPage } from "../../types/fee";
+import { formatMoney } from "../../utils/money";
+import { FEE_STATUS_COLORS, FEE_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "../../types/fee";
+import { Link } from "react-router-dom";
+
+const PAGE_SIZE = 15;
 
 const CashierPaymentHistoryPage = () => {
-  const [payments, setPayments] = useState<PaymentResponse[]>([]);
+  const [page, setPage] = useState<PaymentPage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const loadPayments = useCallback(async () => {
+  const loadPayments = useCallback(async (pageNum: number, searchQuery: string) => {
     try {
       setIsLoading(true);
       setError("");
-      setPayments(await feeApi.getCashierPayments());
+      const params: PaymentFilterParams = {
+        page: pageNum,
+        size: PAGE_SIZE,
+        sort: "createdAt,desc",
+      };
+      if (searchQuery) params.student = searchQuery;
+      const result = await feeApi.getPaymentsPaginated("cashier", params);
+      setPage(result);
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.",
-      );
+      setError(err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPayments();
-  }, [loadPayments]);
+    loadPayments(currentPage, query);
+  }, [currentPage, loadPayments]);
 
-  const filteredPayments = useMemo(() => {
-    const keyword = query.trim().toLowerCase();
-    if (!keyword) return payments;
-    return payments.filter(
-      (p) =>
-        p.studentFullName.toLowerCase().includes(keyword) ||
-        p.studentPhoneNumber.includes(keyword),
-    );
-  }, [payments, query]);
-
-  const totalAmount = filteredPayments.reduce(
-    (sum, p) => sum + parseMoney(p.amount),
-    0,
-  );
+  const handleSearch = () => {
+    setCurrentPage(0);
+    loadPayments(0, query);
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <PageHeader title="Lịch sử thanh toán">
-        <Button
-          variant="secondary"
-          onClick={loadPayments}
-          isLoading={isLoading}
-          size="sm"
-        >
-          Làm mới
-        </Button>
-      </PageHeader>
+      <PageHeader title="Lịch sử thanh toán" />
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Giao dịch" value={filteredPayments.length} />
-        <StatCard
-          label="Tổng tiền đã thu"
-          value={formatMoney(String(totalAmount))}
-        />
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <SearchInput value={query} onChange={setQuery} placeholder="Tên hoặc SĐT học sinh..." />
+        <Button onClick={handleSearch} variant="secondary" size="sm">Tìm</Button>
       </div>
 
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        placeholder="Tên hoặc SĐT học sinh..."
-      />
-
       {isLoading ? (
-        <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          Đang tải...
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-card bg-surface-hover" />
+          ))}
         </div>
-      ) : filteredPayments.length === 0 ? (
-        <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          Chưa có thanh toán phù hợp.
-        </div>
+      ) : !page || page.content.length === 0 ? (
+        <EmptyState message="Chưa có thanh toán nào." icon="📋" />
       ) : (
-        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                <th className="px-6 py-3">Học sinh</th>
-                <th className="px-6 py-3">Phương thức</th>
-                <th className="px-6 py-3">Ghi chú</th>
-                <th className="px-6 py-3 text-right">Số tiền</th>
-                <th className="px-6 py-3 text-right">Ngày</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {filteredPayments.map((payment) => (
-                <tr
-                  key={payment.id}
-                  className="transition-colors hover:bg-surface-hover"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">
-                      {payment.studentFullName}
-                    </div>
-                    <div className="mt-0.5 text-xs text-gray-500">
-                      {payment.studentPhoneNumber}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{payment.method}</td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {payment.note || "-"}
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium text-gray-900">
-                    {formatMoney(payment.amount)}
-                  </td>
-                  <td className="px-6 py-4 text-right text-gray-600">
-                    {new Date(payment.createdAt).toLocaleString("vi-VN")}
-                  </td>
+        <>
+          <div className="overflow-hidden rounded-card border border-surface-border bg-white">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3">Mã biên lai</th>
+                  <th className="px-4 py-3">Học sinh</th>
+                  <th className="px-4 py-3">Lớp / Khóa</th>
+                  <th className="px-4 py-3">Phương thức</th>
+                  <th className="px-4 py-3 text-right">Số tiền</th>
+                  <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3 text-right">Ngày</th>
+                  <th className="px-4 py-3 text-right">BL</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                {page.content.map((payment) => (
+                  <tr key={payment.id} className="transition-colors hover:bg-surface-hover">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{payment.receiptNumber}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{payment.studentFullName}</div>
+                      <div className="text-xs text-gray-400">{payment.studentPhoneNumber}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-gray-700">{payment.className}</div>
+                      {payment.courseName && <div className="text-xs text-gray-400">{payment.courseName}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="default">{PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">{formatMoney(payment.amount)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${FEE_STATUS_COLORS[payment.feeRecordStatus]}`}>
+                        {FEE_STATUS_LABELS[payment.feeRecordStatus]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                      {new Date(payment.createdAt).toLocaleDateString("vi-VN")}<br />
+                      {new Date(payment.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link to={`/cashier/payments/${payment.id}/receipt`} className="text-xs font-medium text-primary hover:underline">Xem</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-500">Tổng: {page.totalElements} giao dịch | Trang {page.number + 1}/{page.totalPages}</span>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)}>Trước</Button>
+              <Button variant="secondary" size="sm" disabled={currentPage >= page.totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)}>Sau</Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
