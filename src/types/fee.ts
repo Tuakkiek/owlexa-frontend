@@ -40,6 +40,7 @@ export interface FeeRecordResponse {
   classId: number;
   className: string;
   amount: Money;
+  discountAmount: Money;
   paidAmount: Money;
   remainingAmount: Money;
   month: string;
@@ -72,6 +73,7 @@ export interface PaymentResponse {
   note?: string;
   collectedByUserId: number;
   collectedByUserName: string;
+  status: "ACTIVE" | "VOIDED";
   createdAt: string;
   feeRecordAmount: Money;
   feeRecordPaidAmount: Money;
@@ -92,6 +94,12 @@ export interface RevenueSummary {
   yesterdayRevenue: number;
   thisWeekRevenue: number;
   thisMonthRevenue: number;
+  grossRevenue: number;
+  discountTotal: number;
+  refundTotal: number;
+  netRevenue: number;
+  outstandingTuition: number;
+  overdueTuition: number;
   todayTransactionCount: number;
   thisMonthTransactionCount: number;
   averagePaymentAmount: number;

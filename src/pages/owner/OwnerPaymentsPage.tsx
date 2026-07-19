@@ -36,6 +36,9 @@ export const OwnerPaymentsPage = () => {
   const [refundReason, setRefundReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [filterMethod, setFilterMethod] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
 
   const loadPayments = useCallback(
     async (pageNum: number, searchQuery: string) => {
@@ -47,8 +50,9 @@ export const OwnerPaymentsPage = () => {
           size: PAGE_SIZE,
           sort: "createdAt,desc",
         };
-        if (searchQuery) params.student = searchQuery;
-        const result = await feeApi.getPaymentsPaginated("owner", params);
+        if (searchQuery) params.student = searchQuery;      if (filterMethod) params.method = filterMethod;
+      if (filterStartDate) params.startDate = new Date(filterStartDate).toISOString();
+      if (filterEndDate) params.endDate = new Date(filterEndDate).toISOString();        const result = await feeApi.getPaymentsPaginated("owner", params);
         setPage(result);
       } catch (err: any) {
         setError(
@@ -128,6 +132,19 @@ export const OwnerPaymentsPage = () => {
         <Button onClick={handleSearch} variant="secondary" size="sm">
           Tìm
         </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <select className="rounded-input border border-gray-300 p-2 text-sm" value={filterMethod} onChange={(e) => setFilterMethod(e.target.value)}>
+          <option value="">Tất cả phương thức</option>
+          <option value="CASH">Tiền mặt</option>
+          <option value="BANK_TRANSFER">Chuyển khoản</option>
+          <option value="QR_CODE">QR Code</option>
+          <option value="ONLINE">Online</option>
+          <option value="SEPAY">SePay</option>
+        </select>
+        <input type="date" className="rounded-input border border-gray-300 p-2 text-sm" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} placeholder="Từ ngày" />
+        <input type="date" className="rounded-input border border-gray-300 p-2 text-sm" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} placeholder="Đến ngày" />
       </div>
 
       {isLoading ? (
@@ -214,12 +231,12 @@ export const OwnerPaymentsPage = () => {
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          (payment as any).status === "VOIDED"
+                          payment.status === "VOIDED"
                             ? "bg-red-50 text-red-700"
                             : "bg-emerald-50 text-emerald-700"
                         }`}
                       >
-                        {(payment as any).status === "VOIDED"
+                        {payment.status === "VOIDED"
                           ? "Đã hủy"
                           : "Active"}
                       </span>
@@ -232,7 +249,7 @@ export const OwnerPaymentsPage = () => {
                         >
                           BL
                         </Link>
-                        {(payment as any).status !== "VOIDED" && (
+                        {payment.status !== "VOIDED" && (
                           <>
                             <button
                               onClick={() => {

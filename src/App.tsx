@@ -14,7 +14,9 @@ import CashiersPage from "./pages/owner/CashiersPage";
 import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
 import ReceiptPage from "./pages/owner/ReceiptPage";
 import DiscountManagementPage from "./pages/owner/DiscountManagementPage";
+import InstallmentManagementPage from "./pages/owner/InstallmentManagementPage";
 import AuditLogPage from "./pages/owner/AuditLogPage";
+import FinancialTimelinePage from "./pages/owner/FinancialTimelinePage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
 import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
@@ -85,7 +87,12 @@ function App() {
               path="/owner/discounts"
               element={<DiscountManagementPage />}
             />
+            <Route
+              path="/owner/installments"
+              element={<InstallmentManagementPage />}
+            />
             <Route path="/owner/audit-logs" element={<AuditLogPage />} />
+            <Route path="/owner/finance/timeline" element={<FinancialTimelinePage />} />
             <Route path="/owner/tests" element={<OwnerTestsPage />} />
             <Route
               path="/owner/mock-tests"
