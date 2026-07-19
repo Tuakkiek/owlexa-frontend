@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import dashboardApi, { type DashboardStats } from "../../api/dashboardApi";
+import { feeApi } from "../../api/feeApi";
+import type { RevenueSummary } from "../../types/fee";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/money";
 import {
@@ -33,6 +35,7 @@ const quickLinks = [
 export const OwnerDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [revenue, setRevenue] = useState<RevenueSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +43,12 @@ export const OwnerDashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      setStats(await dashboardApi.getOwnerStats());
+      const [ownerStats, revenueData] = await Promise.all([
+        dashboardApi.getOwnerStats(),
+        feeApi.getRevenueSummary("owner"),
+      ]);
+      setStats(ownerStats);
+      setRevenue(revenueData);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu dashboard.",
@@ -155,6 +163,53 @@ export const OwnerDashboardPage = () => {
               </div>
             )}
           </Card>
+
+          {/* Revenue Summary */}
+          {revenue && (
+            <>
+              <h2 className="text-lg font-semibold text-gray-900 mt-2">Doanh thu</h2>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <StatCard label="Hôm nay" value={formatCurrency(revenue.todayRevenue)} />
+                <StatCard label="Hôm qua" value={formatCurrency(revenue.yesterdayRevenue)} />
+                <StatCard label="Tuần này" value={formatCurrency(revenue.thisWeekRevenue)} />
+                <StatCard label="Tháng này" value={formatCurrency(revenue.thisMonthRevenue)} />
+                <StatCard label="Tổng thu (gross)" value={formatCurrency(revenue.grossRevenue)} />
+                <StatCard label="Giảm giá" value={formatCurrency(revenue.discountTotal)} helper="Tổng chiết khấu" />
+                <StatCard label="Hoàn tiền" value={formatCurrency(revenue.refundTotal)} helper="Tổng hoàn trả" />
+                <StatCard label="Doanh thu ròng" value={formatCurrency(revenue.netRevenue)} />
+                <StatCard label="Còn nợ" value={formatCurrency(revenue.outstandingTuition)} helper="Chưa thanh toán" />
+              </div>
+
+              {/* Payment method breakdown */}
+              {revenue.methodBreakdown && Object.keys(revenue.methodBreakdown).length > 0 && (
+                <Card>
+                  <h3 className="mb-4 text-sm font-semibold text-gray-700">Phân bổ theo phương thức (tháng này)</h3>
+                  <div className="space-y-2">
+                    {Object.entries(revenue.methodBreakdown).map(([method, amount]) => (
+                      <div key={method} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">{method}</span>
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(amount as number)}
+                          <span className="ml-2 text-xs text-gray-400">
+                            ({revenue.methodCounts?.[method] ?? 0} giao dịch)
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Transaction stats */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <StatCard label="GD hôm nay" value={revenue.todayTransactionCount} />
+                <StatCard label="GD tháng này" value={revenue.thisMonthTransactionCount} />
+                <StatCard label="TB mỗi GD" value={formatCurrency(revenue.averagePaymentAmount)} helper="Tháng này" />
+                <StatCard label="GD lớn nhất" value={formatCurrency(revenue.highestPaymentAmount)} />
+                <StatCard label="GD nhỏ nhất" value={formatCurrency(revenue.lowestPaymentAmount)} />
+              </div>
+            </>
+          )}
         </>
       ) : null}
 

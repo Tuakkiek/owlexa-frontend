@@ -43,7 +43,7 @@ const CashierPaymentsPage = () => {
     feeRecordId: number,
     data: CashPaymentRequest,
   ) => {
-    await feeApi.collectCash(feeRecordId, data, "CASHIER");
+    await feeApi.collectCash(feeRecordId, data);
     loadFees();
   };
 

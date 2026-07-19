@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { formatCurrency } from "../../utils/money";
+import { feeApi } from "../../api/feeApi";
+import type { RevenueSummary } from "../../types/fee";
 import {
   StatCard,
   Card,
@@ -27,6 +29,7 @@ const quickLinks = [
 const CashierDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const [stats, setStats] = useState<CashierDashboardStats | null>(null);
+  const [revenue, setRevenue] = useState<RevenueSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +37,12 @@ const CashierDashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await axiosClient.get<CashierDashboardStats>(
-        "/cashier/dashboard/stats",
-      );
-      setStats(response.data);
+      const [cashierStats, revenueData] = await Promise.all([
+        axiosClient.get<CashierDashboardStats>("/cashier/dashboard/stats"),
+        feeApi.getRevenueSummary("cashier"),
+      ]);
+      setStats(cashierStats.data);
+      setRevenue(revenueData);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu dashboard.",
@@ -90,6 +95,19 @@ const CashierDashboardPage = () => {
             label="Tiền chưa thu"
             value={formatCurrency(stats?.totalPendingAmount ?? 0)}
           />
+        </div>
+      )}
+
+      {/* Revenue Summary */}
+      {revenue && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Thu hôm nay" value={formatCurrency(revenue.todayRevenue)} />
+          <StatCard label="Thu hôm qua" value={formatCurrency(revenue.yesterdayRevenue)} />
+          <StatCard label="Thu tuần này" value={formatCurrency(revenue.thisWeekRevenue)} />
+          <StatCard label="Thu tháng này" value={formatCurrency(revenue.thisMonthRevenue)} />
+          <StatCard label="Còn nợ" value={formatCurrency(revenue.outstandingTuition)} />
+          <StatCard label="GD hôm nay" value={revenue.todayTransactionCount} />
+          <StatCard label="TB mỗi GD" value={formatCurrency(revenue.averagePaymentAmount)} />
         </div>
       )}
 
