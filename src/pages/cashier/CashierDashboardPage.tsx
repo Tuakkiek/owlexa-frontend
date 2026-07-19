@@ -101,13 +101,31 @@ const CashierDashboardPage = () => {
       {/* Revenue Summary */}
       {revenue && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Thu hôm nay" value={formatCurrency(revenue.todayRevenue)} />
-          <StatCard label="Thu hôm qua" value={formatCurrency(revenue.yesterdayRevenue)} />
-          <StatCard label="Thu tuần này" value={formatCurrency(revenue.thisWeekRevenue)} />
-          <StatCard label="Thu tháng này" value={formatCurrency(revenue.thisMonthRevenue)} />
-          <StatCard label="Còn nợ" value={formatCurrency(revenue.outstandingTuition)} />
+          <StatCard
+            label="Thu hôm nay"
+            value={formatCurrency(revenue.todayRevenue)}
+          />
+          <StatCard
+            label="Thu hôm qua"
+            value={formatCurrency(revenue.yesterdayRevenue)}
+          />
+          <StatCard
+            label="Thu tuần này"
+            value={formatCurrency(revenue.thisWeekRevenue)}
+          />
+          <StatCard
+            label="Thu tháng này"
+            value={formatCurrency(revenue.thisMonthRevenue)}
+          />
+          <StatCard
+            label="Còn nợ"
+            value={formatCurrency(revenue.outstandingTuition)}
+          />
           <StatCard label="GD hôm nay" value={revenue.todayTransactionCount} />
-          <StatCard label="TB mỗi GD" value={formatCurrency(revenue.averagePaymentAmount)} />
+          <StatCard
+            label="TB mỗi GD"
+            value={formatCurrency(revenue.averagePaymentAmount)}
+          />
         </div>
       )}
 

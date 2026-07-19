@@ -121,17 +121,17 @@ export const FeesPage = () => {
                       {record.dueDate}
                     </td>
                     {!isOwner && (
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedFeeRecord(record);
-                          setIsCollectModalOpen(true);
-                        }}
-                        className="rounded-btn border border-gray-900 px-3 py-1 text-xs font-medium text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
-                      >
-                        Thu tiền mặt
-                      </button>
-                    </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedFeeRecord(record);
+                            setIsCollectModalOpen(true);
+                          }}
+                          className="rounded-btn border border-gray-900 px-3 py-1 text-xs font-medium text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
+                        >
+                          Thu tiền mặt
+                        </button>
+                      </td>
                     )}
                   </tr>
                 );
