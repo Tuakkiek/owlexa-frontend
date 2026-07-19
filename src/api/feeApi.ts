@@ -3,6 +3,8 @@ import type {
   FeeRecordResponse,
   CashPaymentRequest,
   PaymentResponse,
+  PaymentPage,
+  RevenueSummary,
 } from "../types/fee";
 
 export interface FeeGenerateRequest {
@@ -10,9 +12,19 @@ export interface FeeGenerateRequest {
   dueDate: string;
 }
 
+export interface PaymentFilterParams {
+  student?: string;
+  cashierId?: number;
+  method?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
 export const feeApi = {
   getOverdueFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
-    // Use /cashier/ prefix for CASHIER role, /owner/ for others
     const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/fee-records/overdue`);
     return response.data;
@@ -24,9 +36,7 @@ export const feeApi = {
   ): Promise<FeeRecordResponse[]> => {
     const response = await axiosClient.get(
       `/owner/classes/${classId}/fee-records`,
-      {
-        params: { month },
-      },
+      { params: { month } },
     );
     return response.data;
   },
@@ -45,12 +55,9 @@ export const feeApi = {
   collectCash: async (
     feeRecordId: number,
     request: CashPaymentRequest,
-    roleName: string = "OWNER",
   ): Promise<PaymentResponse> => {
-    // Use /owner/ or /cashier/ prefix based on role
-    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.post(
-      `${prefix}/fee-record/${feeRecordId}/payments/cash`,
+      `/cashier/fee-record/${feeRecordId}/payments/cash`,
       request,
     );
     return response.data;
@@ -66,13 +73,38 @@ export const feeApi = {
     return response.data;
   },
 
+  getPaymentsPaginated: async (
+    role: "owner" | "cashier",
+    params: PaymentFilterParams = {},
+  ): Promise<PaymentPage> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments`, { params });
+    return response.data;
+  },
+
+  getReceipt: async (
+    role: "owner" | "cashier",
+    paymentId: number,
+  ): Promise<PaymentResponse> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments/${paymentId}/receipt`);
+    return response.data;
+  },
+
+  getRevenueSummary: async (role: "owner" | "cashier"): Promise<RevenueSummary> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/dashboard/revenue`);
+    return response.data;
+  },
+
+  // Legacy - kept for backward compatibility
   getOwnerPayments: async (): Promise<PaymentResponse[]> => {
-    const response = await axiosClient.get("/owner/payments");
+    const response = await axiosClient.get("/owner/payments/all");
     return response.data;
   },
 
   getCashierPayments: async (): Promise<PaymentResponse[]> => {
-    const response = await axiosClient.get("/cashier/payments");
+    const response = await axiosClient.get("/cashier/payments/all");
     return response.data;
   },
 };

@@ -12,6 +12,9 @@ import FeesPage from "./pages/owner/FeesPage";
 import CentersPage from "./pages/owner/CentersPage";
 import CashiersPage from "./pages/owner/CashiersPage";
 import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
+import ReceiptPage from "./pages/owner/ReceiptPage";
+import DiscountManagementPage from "./pages/owner/DiscountManagementPage";
+import AuditLogPage from "./pages/owner/AuditLogPage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
 import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
@@ -74,6 +77,9 @@ function App() {
             <Route path="/owner/fees" element={<FeesPage />} />
             <Route path="/owner/fee-records/overdue" element={<FeesPage />} />
             <Route path="/owner/payments" element={<OwnerPaymentsPage />} />
+            <Route path="/owner/payments/:paymentId/receipt" element={<ReceiptPage />} />
+            <Route path="/owner/discounts" element={<DiscountManagementPage />} />
+            <Route path="/owner/audit-logs" element={<AuditLogPage />} />
             <Route path="/owner/tests" element={<OwnerTestsPage />} />
             <Route
               path="/owner/mock-tests"
@@ -170,6 +176,10 @@ function App() {
             <Route
               path="/cashier/payment-history"
               element={<CashierPaymentHistoryPage />}
+            />
+            <Route
+              path="/cashier/payments/:paymentId/receipt"
+              element={<ReceiptPage />}
             />
           </Route>
 

@@ -49,9 +49,11 @@ export const FeesPage = () => {
     feeRecordId: number,
     data: CashPaymentRequest,
   ) => {
-    await feeApi.collectCash(feeRecordId, data, user?.roleName);
+    await feeApi.collectCash(feeRecordId, data);
     loadOverdueFees();
   };
+
+  const isOwner = user?.roleName === "OWNER";
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -84,7 +86,7 @@ export const FeesPage = () => {
                 <th className="px-6 py-3">Tháng</th>
                 <th className="px-6 py-3 text-right">Còn nợ</th>
                 <th className="px-6 py-3 text-right">Hạn</th>
-                <th className="px-6 py-3 text-right">Thao tác</th>
+                {!isOwner && <th className="px-6 py-3 text-right">Thao tác</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
@@ -118,6 +120,7 @@ export const FeesPage = () => {
                     <td className="px-6 py-4 text-right text-gray-600">
                       {record.dueDate}
                     </td>
+                    {!isOwner && (
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => {
@@ -129,6 +132,7 @@ export const FeesPage = () => {
                         Thu tiền mặt
                       </button>
                     </td>
+                    )}
                   </tr>
                 );
               })}
