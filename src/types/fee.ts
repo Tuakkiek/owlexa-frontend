@@ -16,7 +16,12 @@ export const FEE_STATUS_COLORS: Record<FeeStatus, string> = {
 
 export type Money = string;
 
-export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "QR_CODE" | "ONLINE" | "SEPAY";
+export type PaymentMethod =
+  | "CASH"
+  | "BANK_TRANSFER"
+  | "QR_CODE"
+  | "ONLINE"
+  | "SEPAY";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   CASH: "Tiền mặt",

@@ -10,7 +10,11 @@ import { Button } from "../../components/ui/Button";
 import { feeApi, type PaymentFilterParams } from "../../api/feeApi";
 import type { PaymentPage } from "../../types/fee";
 import { formatMoney } from "../../utils/money";
-import { FEE_STATUS_COLORS, FEE_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "../../types/fee";
+import {
+  FEE_STATUS_COLORS,
+  FEE_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+} from "../../types/fee";
 import { Link } from "react-router-dom";
 
 const PAGE_SIZE = 15;
@@ -22,24 +26,29 @@ const CashierPaymentHistoryPage = () => {
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
-  const loadPayments = useCallback(async (pageNum: number, searchQuery: string) => {
-    try {
-      setIsLoading(true);
-      setError("");
-      const params: PaymentFilterParams = {
-        page: pageNum,
-        size: PAGE_SIZE,
-        sort: "createdAt,desc",
-      };
-      if (searchQuery) params.student = searchQuery;
-      const result = await feeApi.getPaymentsPaginated("cashier", params);
-      setPage(result);
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const loadPayments = useCallback(
+    async (pageNum: number, searchQuery: string) => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const params: PaymentFilterParams = {
+          page: pageNum,
+          size: PAGE_SIZE,
+          sort: "createdAt,desc",
+        };
+        if (searchQuery) params.student = searchQuery;
+        const result = await feeApi.getPaymentsPaginated("cashier", params);
+        setPage(result);
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     loadPayments(currentPage, query);
@@ -57,14 +66,23 @@ const CashierPaymentHistoryPage = () => {
       {error && <ErrorBanner message={error} />}
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <SearchInput value={query} onChange={setQuery} placeholder="Tên hoặc SĐT học sinh..." />
-        <Button onClick={handleSearch} variant="secondary" size="sm">Tìm</Button>
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Tên hoặc SĐT học sinh..."
+        />
+        <Button onClick={handleSearch} variant="secondary" size="sm">
+          Tìm
+        </Button>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-card bg-surface-hover" />
+            <div
+              key={i}
+              className="h-16 animate-pulse rounded-card bg-surface-hover"
+            />
           ))}
         </div>
       ) : !page || page.content.length === 0 ? (
@@ -87,31 +105,60 @@ const CashierPaymentHistoryPage = () => {
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {page.content.map((payment) => (
-                  <tr key={payment.id} className="transition-colors hover:bg-surface-hover">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{payment.receiptNumber}</td>
+                  <tr
+                    key={payment.id}
+                    className="transition-colors hover:bg-surface-hover"
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                      {payment.receiptNumber}
+                    </td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{payment.studentFullName}</div>
-                      <div className="text-xs text-gray-400">{payment.studentPhoneNumber}</div>
+                      <div className="font-medium text-gray-900">
+                        {payment.studentFullName}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {payment.studentPhoneNumber}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-gray-700">{payment.className}</div>
-                      {payment.courseName && <div className="text-xs text-gray-400">{payment.courseName}</div>}
+                      {payment.courseName && (
+                        <div className="text-xs text-gray-400">
+                          {payment.courseName}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="default">{PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}</Badge>
+                      <Badge variant="default">
+                        {PAYMENT_METHOD_LABELS[payment.method] ??
+                          payment.method}
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">{formatMoney(payment.amount)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                      {formatMoney(payment.amount)}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${FEE_STATUS_COLORS[payment.feeRecordStatus]}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${FEE_STATUS_COLORS[payment.feeRecordStatus]}`}
+                      >
                         {FEE_STATUS_LABELS[payment.feeRecordStatus]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-500 text-xs">
-                      {new Date(payment.createdAt).toLocaleDateString("vi-VN")}<br />
-                      {new Date(payment.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(payment.createdAt).toLocaleDateString("vi-VN")}
+                      <br />
+                      {new Date(payment.createdAt).toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link to={`/cashier/payments/${payment.id}/receipt`} className="text-xs font-medium text-primary hover:underline">Xem</Link>
+                      <Link
+                        to={`/cashier/payments/${payment.id}/receipt`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Xem
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -119,10 +166,27 @@ const CashierPaymentHistoryPage = () => {
             </table>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Tổng: {page.totalElements} giao dịch | Trang {page.number + 1}/{page.totalPages}</span>
+            <span className="text-gray-500">
+              Tổng: {page.totalElements} giao dịch | Trang {page.number + 1}/
+              {page.totalPages}
+            </span>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)}>Trước</Button>
-              <Button variant="secondary" size="sm" disabled={currentPage >= page.totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)}>Sau</Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage === 0}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                Trước
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage >= page.totalPages - 1}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Sau
+              </Button>
             </div>
           </div>
         </>

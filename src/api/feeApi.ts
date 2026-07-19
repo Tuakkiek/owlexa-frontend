@@ -87,11 +87,15 @@ export const feeApi = {
     paymentId: number,
   ): Promise<PaymentResponse> => {
     const prefix = role === "cashier" ? "/cashier" : "/owner";
-    const response = await axiosClient.get(`${prefix}/payments/${paymentId}/receipt`);
+    const response = await axiosClient.get(
+      `${prefix}/payments/${paymentId}/receipt`,
+    );
     return response.data;
   },
 
-  getRevenueSummary: async (role: "owner" | "cashier"): Promise<RevenueSummary> => {
+  getRevenueSummary: async (
+    role: "owner" | "cashier",
+  ): Promise<RevenueSummary> => {
     const prefix = role === "cashier" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/dashboard/revenue`);
     return response.data;
