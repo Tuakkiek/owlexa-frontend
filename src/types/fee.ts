@@ -31,6 +31,22 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   SEPAY: "SePay",
 };
 
+export type PaymentStatus = "PENDING" | "ACTIVE" | "VOIDED" | "EXPIRED";
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  PENDING: "Đang chờ",
+  ACTIVE: "Thành công",
+  VOIDED: "Đã hủy",
+  EXPIRED: "Hết hạn",
+};
+
+export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
+  PENDING: "text-amber-600 bg-amber-50",
+  ACTIVE: "text-emerald-600 bg-emerald-50",
+  VOIDED: "text-red-600 bg-red-50",
+  EXPIRED: "text-gray-500 bg-gray-100",
+};
+
 export interface FeeRecordResponse {
   id: number;
   studentUserId: number;
@@ -46,6 +62,7 @@ export interface FeeRecordResponse {
   month: string;
   dueDate: string;
   status: FeeStatus;
+  enrollmentStatus?: "PENDING" | "ACTIVE" | "DROPPED" | "SUSPENDED";
   createdAt: string;
 }
 
@@ -73,12 +90,27 @@ export interface PaymentResponse {
   note?: string;
   collectedByUserId: number;
   collectedByUserName: string;
-  status: "ACTIVE" | "VOIDED";
+  status: PaymentStatus;
   createdAt: string;
+  expiresAt?: string;
   feeRecordAmount: Money;
   feeRecordPaidAmount: Money;
   feeRecordRemainingAmount: Money;
   feeRecordStatus: FeeStatus;
+}
+
+export interface BankTransferQrResponse {
+  paymentId: number;
+  paymentCode: string;
+  amount: Money;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  transferContent: string;
+  qrContent: string;
+  qrImage: string | null;
+  expiresAt: string;
+  status: "PENDING" | "PAID" | "EXPIRED" | "CANCELLED";
 }
 
 export interface PaymentPage {

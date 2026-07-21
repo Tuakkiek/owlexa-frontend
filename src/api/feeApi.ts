@@ -5,6 +5,7 @@ import type {
   PaymentResponse,
   PaymentPage,
   RevenueSummary,
+  BankTransferQrResponse,
 } from "../types/fee";
 
 export interface FeeGenerateRequest {
@@ -27,6 +28,12 @@ export const feeApi = {
   getOverdueFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
     const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/fee-records/overdue`);
+    return response.data;
+  },
+
+  getPendingFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/fee-records/pending`);
     return response.data;
   },
 
@@ -60,6 +67,22 @@ export const feeApi = {
       `/cashier/fee-record/${feeRecordId}/payments/cash`,
       request,
     );
+    return response.data;
+  },
+
+  createBankTransfer: async (
+    feeRecordId: number,
+    request: CashPaymentRequest,
+  ): Promise<PaymentResponse> => {
+    const response = await axiosClient.post(
+      `/cashier/fee-record/${feeRecordId}/payments/bank-transfer`,
+      request,
+    );
+    return response.data;
+  },
+
+  getPaymentQr: async (paymentId: number): Promise<BankTransferQrResponse> => {
+    const response = await axiosClient.get(`/cashier/payments/${paymentId}/qr`);
     return response.data;
   },
 
