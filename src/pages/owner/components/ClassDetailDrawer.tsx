@@ -218,6 +218,28 @@ export const ClassDetailDrawer = ({
     onRefresh();
   };
 
+  const handleSuspend = async (enrollment: EnrollmentResponse) => {
+    if (
+      !window.confirm(
+        `Tạm dừng học sinh "${enrollment.studentFullName}"? Học sinh sẽ không thể tham gia lớp cho đến khi được kích hoạt lại.`,
+      )
+    )
+      return;
+    await enrollmentApi.suspend(cls.id, enrollment.studentUserId);
+    loadEnrollments();
+    onRefresh();
+  };
+
+  const handleReactivate = async (enrollment: EnrollmentResponse) => {
+    if (
+      !window.confirm(`Kích hoạt lại học sinh "${enrollment.studentFullName}"?`)
+    )
+      return;
+    await enrollmentApi.reactivate(cls.id, enrollment.studentUserId);
+    loadEnrollments();
+    onRefresh();
+  };
+
   const handleGenerateFee = async (month: string, dueDate: string) => {
     await feeApi.generateFeeForClass(cls.id, { month, dueDate });
     setIsGenerateFeeModalOpen(false);
@@ -505,7 +527,9 @@ export const ClassDetailDrawer = ({
                                 ? "success"
                                 : e.status === "PENDING"
                                   ? "warning"
-                                  : "default"
+                                  : e.status === "SUSPENDED"
+                                    ? "error"
+                                    : "default"
                             }
                           >
                             {ENROLLMENT_STATUS_LABELS[e.status] ?? e.status}
@@ -534,13 +558,40 @@ export const ClassDetailDrawer = ({
                                 </button>
                               </>
                             )}
-                            {e.status !== "PENDING" && (
-                              <button
-                                className="text-xs text-red-600 underline"
-                                onClick={() => handleDrop(e)}
-                              >
-                                Xóa khỏi lớp
-                              </button>
+                            {e.status === "ACTIVE" && (
+                              <>
+                                <button
+                                  className="text-xs text-amber-600 underline"
+                                  onClick={() => handleSuspend(e)}
+                                >
+                                  Tạm dừng
+                                </button>
+                                <button
+                                  className="text-xs text-red-600 underline"
+                                  onClick={() => handleDrop(e)}
+                                >
+                                  Xóa khỏi lớp
+                                </button>
+                              </>
+                            )}
+                            {e.status === "SUSPENDED" && (
+                              <>
+                                <button
+                                  className="text-xs text-emerald-600 underline"
+                                  onClick={() => handleReactivate(e)}
+                                >
+                                  Kích hoạt lại
+                                </button>
+                                <button
+                                  className="text-xs text-red-600 underline"
+                                  onClick={() => handleDrop(e)}
+                                >
+                                  Xóa khỏi lớp
+                                </button>
+                              </>
+                            )}
+                            {e.status === "DROPPED" && (
+                              <span className="text-xs text-gray-400">—</span>
                             )}
                           </div>
                         </td>

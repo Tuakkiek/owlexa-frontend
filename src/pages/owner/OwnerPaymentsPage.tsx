@@ -14,6 +14,8 @@ import {
   FEE_STATUS_COLORS,
   FEE_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_STATUS_COLORS,
 } from "../../types/fee";
 import { Link } from "react-router-dom";
 import axiosClient from "../../api/axiosClient";
@@ -36,6 +38,9 @@ export const OwnerPaymentsPage = () => {
   const [refundReason, setRefundReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [filterMethod, setFilterMethod] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
 
   const loadPayments = useCallback(
     async (pageNum: number, searchQuery: string) => {
@@ -48,6 +53,11 @@ export const OwnerPaymentsPage = () => {
           sort: "createdAt,desc",
         };
         if (searchQuery) params.student = searchQuery;
+        if (filterMethod) params.method = filterMethod;
+        if (filterStartDate)
+          params.startDate = new Date(filterStartDate).toISOString();
+        if (filterEndDate)
+          params.endDate = new Date(filterEndDate).toISOString();
         const result = await feeApi.getPaymentsPaginated("owner", params);
         setPage(result);
       } catch (err: any) {
@@ -128,6 +138,35 @@ export const OwnerPaymentsPage = () => {
         <Button onClick={handleSearch} variant="secondary" size="sm">
           Tìm
         </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <select
+          className="rounded-input border border-gray-300 p-2 text-sm"
+          value={filterMethod}
+          onChange={(e) => setFilterMethod(e.target.value)}
+        >
+          <option value="">Tất cả phương thức</option>
+          <option value="CASH">Tiền mặt</option>
+          <option value="BANK_TRANSFER">Chuyển khoản</option>
+          <option value="QR_CODE">QR Code</option>
+          <option value="ONLINE">Online</option>
+          <option value="SEPAY">SePay</option>
+        </select>
+        <input
+          type="date"
+          className="rounded-input border border-gray-300 p-2 text-sm"
+          value={filterStartDate}
+          onChange={(e) => setFilterStartDate(e.target.value)}
+          placeholder="Từ ngày"
+        />
+        <input
+          type="date"
+          className="rounded-input border border-gray-300 p-2 text-sm"
+          value={filterEndDate}
+          onChange={(e) => setFilterEndDate(e.target.value)}
+          placeholder="Đến ngày"
+        />
       </div>
 
       {isLoading ? (
@@ -213,15 +252,9 @@ export const OwnerPaymentsPage = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          (payment as any).status === "VOIDED"
-                            ? "bg-red-50 text-red-700"
-                            : "bg-emerald-50 text-emerald-700"
-                        }`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[payment.status]}`}
                       >
-                        {(payment as any).status === "VOIDED"
-                          ? "Đã hủy"
-                          : "Active"}
+                        {PAYMENT_STATUS_LABELS[payment.status]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -232,31 +265,32 @@ export const OwnerPaymentsPage = () => {
                         >
                           BL
                         </Link>
-                        {(payment as any).status !== "VOIDED" && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setShowRefundModal(payment);
-                                setActionError("");
-                                setRefundAmount("");
-                                setRefundReason("");
-                              }}
-                              className="text-xs font-medium text-amber-600 hover:underline"
-                            >
-                              Hoàn
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowVoidModal(payment);
-                                setActionError("");
-                                setVoidReason("");
-                              }}
-                              className="text-xs font-medium text-red-600 hover:underline"
-                            >
-                              Hủy
-                            </button>
-                          </>
-                        )}
+                        {payment.status !== "VOIDED" &&
+                          payment.status !== "EXPIRED" && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setShowRefundModal(payment);
+                                  setActionError("");
+                                  setRefundAmount("");
+                                  setRefundReason("");
+                                }}
+                                className="text-xs font-medium text-amber-600 hover:underline"
+                              >
+                                Hoàn
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowVoidModal(payment);
+                                  setActionError("");
+                                  setVoidReason("");
+                                }}
+                                className="text-xs font-medium text-red-600 hover:underline"
+                              >
+                                Hủy
+                              </button>
+                            </>
+                          )}
                       </div>
                     </td>
                   </tr>

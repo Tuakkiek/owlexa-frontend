@@ -14,6 +14,8 @@ import {
   FEE_STATUS_COLORS,
   FEE_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_STATUS_COLORS,
 } from "../../types/fee";
 import { Link } from "react-router-dom";
 
@@ -99,6 +101,7 @@ const CashierPaymentHistoryPage = () => {
                   <th className="px-4 py-3">Phương thức</th>
                   <th className="px-4 py-3 text-right">Số tiền</th>
                   <th className="px-4 py-3">Trạng thái</th>
+                  <th className="px-4 py-3 text-center">TT</th>
                   <th className="px-4 py-3 text-right">Ngày</th>
                   <th className="px-4 py-3 text-right">BL</th>
                 </tr>
@@ -142,6 +145,13 @@ const CashierPaymentHistoryPage = () => {
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${FEE_STATUS_COLORS[payment.feeRecordStatus]}`}
                       >
                         {FEE_STATUS_LABELS[payment.feeRecordStatus]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[payment.status]}`}
+                      >
+                        {PAYMENT_STATUS_LABELS[payment.status]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-500 text-xs">

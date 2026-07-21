@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { feeApi } from "../../api/feeApi";
 import type { FeeRecordResponse, PaymentResponse } from "../../types/fee";
+import {
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_STATUS_COLORS,
+} from "../../types/fee";
 import { formatMoney, remainingBalance } from "../../utils/money";
 
 const StudentFeesPage = () => {
@@ -52,6 +58,52 @@ const StudentFeesPage = () => {
     return () => clearInterval(interval);
   }, [isPolling]);
 
+  // ── QR helpers for student self-service ──────────────────────────────
+  const getTransferContentForFee = (record: FeeRecordResponse): string => {
+    // Find a pending bank transfer payment for this fee record
+    const pendingPayment = payments.find(
+      (p) =>
+        p.feeRecordId === record.id &&
+        p.status === "PENDING" &&
+        (p.method === "BANK_TRANSFER" || p.method === "SEPAY"),
+    );
+    if (pendingPayment?.sepayRef) {
+      return pendingPayment.sepayRef + " thanh toan hoc phi";
+    }
+    // Fallback: use fee record ID as reference with OWX prefix
+    return "OWX" + String(record.id).padStart(6, "0") + " thanh toan hoc phi";
+  };
+
+  const getQrContentForFee = (record: FeeRecordResponse): string => {
+    const pendingPayment = payments.find(
+      (p) =>
+        p.feeRecordId === record.id &&
+        p.status === "PENDING" &&
+        (p.method === "BANK_TRANSFER" || p.method === "SEPAY"),
+    );
+    if (pendingPayment) {
+      // Use the backend-provided qrContent if available, otherwise construct it
+      return (
+        "STK:" +
+        " " +
+        "ND:" +
+        (pendingPayment.sepayRef || "") +
+        " thanh toan hoc phi" +
+        " " +
+        "ST:" +
+        pendingPayment.amount
+      );
+    }
+    return (
+      "STK: " +
+      "ND:OWX" +
+      String(record.id).padStart(6, "0") +
+      " thanh toan hoc phi" +
+      " ST:" +
+      record.amount
+    );
+  };
+
   const unpaidFees = useMemo(
     () => fees.filter((f) => f.status !== "PAID"),
     [fees],
@@ -76,6 +128,20 @@ const StudentFeesPage = () => {
           {isLoading ? "Đang tải..." : "Làm mới"}
         </button>
       </div>
+
+      {/* SUSPENDED enrollment warning */}
+      {fees.some((f) => f.enrollmentStatus === "SUSPENDED") && (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm">
+          <p className="font-bold text-red-700">
+            ⚠️ Tài khoản của bạn đang bị tạm dừng
+          </p>
+          <p className="mt-1 text-red-600">
+            Bạn có hóa đơn chưa thanh toán quá hạn. Vui lòng thanh toán để tiếp
+            tục tham gia lớp học. Lịch sử học tập, điểm danh và bài tập của bạn
+            vẫn được giữ nguyên.
+          </p>
+        </div>
+      )}
 
       {/* Hóa đơn chưa thanh toán */}
       {unpaidFees.length > 0 && (
@@ -139,21 +205,30 @@ const StudentFeesPage = () => {
                       <p className="text-xs font-bold mb-2 text-center uppercase">
                         Quét QR để thanh toán
                       </p>
-                      <div className="flex justify-center rounded-lg border p-2 bg-white w-40 h-40 mx-auto items-center">
-                        <span className="text-xs text-gray-400">
-                          QR Code Sepay
-                        </span>
+                      <div className="flex justify-center rounded-lg border bg-white p-2">
+                        <QRCodeSVG
+                          value={getQrContentForFee(record)}
+                          size={140}
+                          level="M"
+                        />
                       </div>
                       <p className="text-xs text-center mt-2">
-                        Chuyển khoản: {formatMoney(String(remaining))}
+                        Số tiền: {formatMoney(String(remaining))}
+                      </p>
+                      <p className="text-xs text-center text-gray-400 font-mono break-all">
+                        ND: {getTransferContentForFee(record)}
+                      </p>
+                      <p className="text-xs text-center text-gray-400 mt-1">
+                        Mã QR hết hạn sau 30 phút. Sau khi chuyển khoản, nhấn
+                        nút bên dưới để kiểm tra.
                       </p>
                       <button
                         onClick={() => {
                           setIsPolling(true);
                         }}
-                        className="mt-2 w-full rounded-lg border border-gray-300 py-1 text-xs"
+                        className="mt-2 w-full rounded-lg border border-gray-300 py-1.5 text-xs font-medium hover:bg-gray-100"
                       >
-                        Đã thanh toán
+                        Đã thanh toán — Kiểm tra
                       </button>
                     </div>
                   )}
@@ -216,12 +291,25 @@ const StudentFeesPage = () => {
                 className="border-b pb-2 last:border-0 last:pb-0 flex justify-between items-center"
               >
                 <div>
-                  <p className="font-medium">
-                    {new Date(payment.createdAt).toLocaleDateString("vi-VN")}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      {new Date(payment.createdAt).toLocaleDateString("vi-VN")}
+                    </p>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[payment.status]}`}
+                    >
+                      {PAYMENT_STATUS_LABELS[payment.status]}
+                    </span>
+                  </div>
                   <p className="text-xs text-gray-500">
-                    {payment.method} {payment.note && `| ${payment.note}`}
+                    {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
+                    {payment.note && ` — ${payment.note}`}
                   </p>
+                  {payment.sepayRef && (
+                    <p className="text-xs font-mono text-gray-400">
+                      Mã: {payment.sepayRef}
+                    </p>
+                  )}
                 </div>
                 <div className="font-bold">{formatMoney(payment.amount)}</div>
               </div>
