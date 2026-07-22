@@ -276,15 +276,25 @@ export const PaymentDialog = ({
     return (
       <Modal isOpen={isOpen} onClose={handleClose} title={getTitle()}>
         <div className="space-y-5">
-          {/* QR Code */}
+          {/* QR Code — VietQR image from backend API */}
           <div className="flex flex-col items-center">
             <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <QRCodeSVG
-                value={qrData.qrContent}
-                size={200}
-                level="M"
-                includeMargin
-              />
+              {qrData.qrImage ? (
+                <img
+                  src={qrData.qrImage}
+                  alt={`VietQR ${qrData.paymentCode}`}
+                  width={200}
+                  height={200}
+                  className="block"
+                />
+              ) : (
+                <QRCodeSVG
+                  value={qrData.qrContent}
+                  size={200}
+                  level="M"
+                  includeMargin
+                />
+              )}
             </div>
             <p className="mt-2 text-xs font-mono text-gray-500">
               {qrData.paymentCode}

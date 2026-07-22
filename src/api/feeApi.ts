@@ -86,6 +86,28 @@ export const feeApi = {
     return response.data;
   },
 
+  // ── Student self-service QR ───────────────────────────────────────────
+
+  /** Creates a QR payment for the FULL remaining balance. No amount parameter — backend is the source of truth. */
+  createStudentQrPayment: async (
+    feeRecordId: number,
+  ): Promise<PaymentResponse> => {
+    const response = await axiosClient.post(
+      `/student/fee-record/${feeRecordId}/payments/qr`,
+    );
+    return response.data;
+  },
+
+  /** Gets QR display data for a student-owned payment. */
+  getStudentPaymentQr: async (
+    paymentId: number,
+  ): Promise<BankTransferQrResponse> => {
+    const response = await axiosClient.get(
+      `/student/payments/${paymentId}/qr`,
+    );
+    return response.data;
+  },
+
   getMyFees: async (): Promise<FeeRecordResponse[]> => {
     const response = await axiosClient.get("/fee-records/me");
     return response.data;
