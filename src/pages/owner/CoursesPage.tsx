@@ -46,8 +46,7 @@ const CoursesPage = () => {
     return courses.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q) ||
-        (c.level ?? "").toLowerCase().includes(q),
+        c.code.toLowerCase().includes(q),
     );
   }, [courses, query]);
 
@@ -93,7 +92,7 @@ const CoursesPage = () => {
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder="Tìm theo tên, mã hoặc cấp độ..."
+        placeholder="Tìm theo tên hoặc mã..."
       />
 
       {isLoading ? (
@@ -109,7 +108,6 @@ const CoursesPage = () => {
               <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
                 <th className="px-6 py-3">Mã</th>
                 <th className="px-6 py-3">Tên khóa học</th>
-                <th className="px-6 py-3">Cấp độ</th>
                 <th className="px-6 py-3">Học phí mặc định</th>
                 <th className="px-6 py-3">Trạng thái</th>
                 <th className="px-6 py-3 text-right">Thao tác</th>
@@ -122,9 +120,6 @@ const CoursesPage = () => {
                     {course.code}
                   </td>
                   <td className="px-6 py-4 text-gray-900">{course.name}</td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {course.level ?? "—"}
-                  </td>
                   <td className="px-6 py-4 text-gray-900">
                     {course.defaultMonthlyFee != null
                       ? new Intl.NumberFormat("vi-VN", {

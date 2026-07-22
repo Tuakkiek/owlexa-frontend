@@ -8,11 +8,6 @@ import type {
   BankTransferQrResponse,
 } from "../types/fee";
 
-export interface FeeGenerateRequest {
-  month: string;
-  dueDate: string;
-}
-
 export interface PaymentFilterParams {
   student?: string;
   cashierId?: number;
@@ -34,28 +29,6 @@ export const feeApi = {
   getPendingFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
     const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/fee-records/pending`);
-    return response.data;
-  },
-
-  findAllByClass: async (
-    classId: number,
-    month: string,
-  ): Promise<FeeRecordResponse[]> => {
-    const response = await axiosClient.get(
-      `/owner/classes/${classId}/fee-records`,
-      { params: { month } },
-    );
-    return response.data;
-  },
-
-  generateFeeForClass: async (
-    classId: number,
-    request: FeeGenerateRequest,
-  ): Promise<FeeRecordResponse[]> => {
-    const response = await axiosClient.post(
-      `/owner/classes/${classId}/fee-records/generate`,
-      request,
-    );
     return response.data;
   },
 
@@ -91,9 +64,35 @@ export const feeApi = {
   /** Creates a QR payment for the FULL remaining balance. No amount parameter — backend is the source of truth. */
   createStudentQrPayment: async (
     feeRecordId: number,
+    idempotencyKey?: string,
   ): Promise<PaymentResponse> => {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers["Idempotency-Key"] = idempotencyKey;
+    }
     const response = await axiosClient.post(
       `/student/fee-record/${feeRecordId}/payments/qr`,
+      null,
+      { headers },
+    );
+    return response.data;
+  },
+
+  /** Gets the current pending payment for a fee record. Returns 204 (no content) if none exists. */
+  getCurrentPendingPayment: async (
+    feeRecordId: number,
+  ): Promise<PaymentResponse | null> => {
+    const response = await axiosClient.get(
+      `/student/fee-record/${feeRecordId}/payments/pending`,
+      { validateStatus: (status) => status === 200 || status === 204 },
+    );
+    return response.data || null;
+  },
+
+  /** Cancels a student's own pending payment. */
+  cancelPayment: async (paymentId: number): Promise<PaymentResponse> => {
+    const response = await axiosClient.post(
+      `/student/payments/${paymentId}/cancel`,
     );
     return response.data;
   },
@@ -102,9 +101,7 @@ export const feeApi = {
   getStudentPaymentQr: async (
     paymentId: number,
   ): Promise<BankTransferQrResponse> => {
-    const response = await axiosClient.get(
-      `/student/payments/${paymentId}/qr`,
-    );
+    const response = await axiosClient.get(`/student/payments/${paymentId}/qr`);
     return response.data;
   },
 

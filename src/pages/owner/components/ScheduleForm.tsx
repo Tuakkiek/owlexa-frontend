@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
-import { Input } from "../../../components/ui/Input";
 import { roomApi } from "../../../api/roomApi";
-import type { ScheduleRequest } from "../../../types/schedule";
+import type { ScheduleRequest, ScheduleType } from "../../../types/schedule";
 import type { TeacherResponse } from "../../../types/teacher";
 import type { RoomResponse } from "../../../types/room";
 import { DAY_LABELS } from "../../../types/schedule";
@@ -45,9 +44,12 @@ export const ScheduleForm = ({
   const [startTime, setStartTime] = useState(initialData?.startTime ?? "08:00");
   const [endTime, setEndTime] = useState(initialData?.endTime ?? "10:00");
   const [roomId, setRoomId] = useState<number | "">(initialData?.roomId ?? "");
+  const [type, setType] = useState<ScheduleType>(initialData?.type ?? "THEORY_CLASS");
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<string | null>(null);
 
   useEffect(() => {
     roomApi
@@ -72,6 +74,11 @@ export const ScheduleForm = ({
     if (initialData?.roomId) {
       setRoomId(initialData.roomId);
     }
+    if (initialData?.type) {
+      setType(initialData.type);
+    }
+    setSubmitError(null);
+    setErrorField(null);
   }, [initialData]);
 
   const validate = (): boolean => {
@@ -83,8 +90,14 @@ export const ScheduleForm = ({
     return Object.keys(errs).length === 0;
   };
 
+  const clearErrors = () => {
+    setSubmitError(null);
+    setErrorField(null);
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    clearErrors();
     if (!validate() || !teacherId || !roomId) return;
     try {
       setIsLoading(true);
@@ -94,7 +107,22 @@ export const ScheduleForm = ({
         dayOfWeek,
         startTime,
         endTime,
+        type,
       });
+    } catch (err: any) {
+      const data = err?.response?.data;
+      if (data && data.code) {
+        setSubmitError(data.message);
+        if (data.code === "ROOM_CONFLICT") {
+          setErrorField("roomId");
+        } else if (data.code === "TEACHER_CONFLICT") {
+          setErrorField("teacherId");
+        } else if (data.code === "INVALID_TIME_RANGE") {
+          setErrorField("time");
+        }
+      } else {
+        setSubmitError(data?.message || err?.message || "Đã xảy ra lỗi không xác định.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -102,16 +130,25 @@ export const ScheduleForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {submitError && (
+        <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700 font-medium">
+          ❌ {submitError}
+        </div>
+      )}
+
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
           Giáo viên
         </label>
         <select
           value={teacherId}
-          onChange={(e) =>
-            setTeacherId(e.target.value ? Number(e.target.value) : "")
-          }
-          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
+          onChange={(e) => {
+            setTeacherId(e.target.value ? Number(e.target.value) : "");
+            clearErrors();
+          }}
+          className={`w-full border px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-primary ${
+            errorField === "teacherId" ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+          }`}
         >
           <option value="">-- Chọn giáo viên --</option>
           {teachers.map((t) => (
@@ -127,11 +164,33 @@ export const ScheduleForm = ({
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
+          Loại lịch học
+        </label>
+        <select
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value as ScheduleType);
+            clearErrors();
+          }}
+          className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
+        >
+          <option value="THEORY_CLASS">Lịch học lý thuyết (Theory Class)</option>
+          <option value="ONLINE_CLASS">Lịch học trực tuyến (Online Class)</option>
+          <option value="EXAM">Lịch thi (Exam)</option>
+          <option value="CANCELLED">Lịch tạm ngưng (Cancelled)</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
           Thứ trong tuần
         </label>
         <select
           value={dayOfWeek}
-          onChange={(e) => setDayOfWeek(Number(e.target.value))}
+          onChange={(e) => {
+            setDayOfWeek(Number(e.target.value));
+            clearErrors();
+          }}
           className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
         >
           {DAYS.map((d) => (
@@ -149,8 +208,13 @@ export const ScheduleForm = ({
           </label>
           <select
             value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
+            onChange={(e) => {
+              setStartTime(e.target.value);
+              clearErrors();
+            }}
+            className={`w-full border px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-primary ${
+              errorField === "time" ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+            }`}
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -165,8 +229,13 @@ export const ScheduleForm = ({
           </label>
           <select
             value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-full border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none"
+            onChange={(e) => {
+              setEndTime(e.target.value);
+              clearErrors();
+            }}
+            className={`w-full border px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-primary ${
+              errorField === "time" ? "border-red-500 bg-red-50" : "border-gray-300 bg-white"
+            }`}
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -184,11 +253,12 @@ export const ScheduleForm = ({
         </label>
         <select
           value={roomId}
-          onChange={(e) =>
-            setRoomId(e.target.value ? Number(e.target.value) : "")
-          }
+          onChange={(e) => {
+            setRoomId(e.target.value ? Number(e.target.value) : "");
+            clearErrors();
+          }}
           className={`w-full border bg-white px-3 py-2 text-sm focus:outline-none focus:border-primary ${
-            errors.roomId ? "border-red-400" : "border-gray-300"
+            errors.roomId || errorField === "roomId" ? "border-red-500 bg-red-50" : "border-gray-300"
           }`}
         >
           <option value="">-- Chọn phòng học --</option>

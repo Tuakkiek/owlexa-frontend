@@ -17,7 +17,6 @@ export const CourseForm = ({
 }: CourseFormProps) => {
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [level, setLevel] = useState("");
   const [description, setDescription] = useState("");
   const [defaultMonthlyFee, setDefaultMonthlyFee] = useState("");
   const [defaultMaxStudents, setDefaultMaxStudents] = useState("");
@@ -29,7 +28,6 @@ export const CourseForm = ({
     if (initialData) {
       setCode(initialData.code);
       setName(initialData.name);
-      setLevel(initialData.level ?? "");
       setDescription(initialData.description ?? "");
       setDefaultMonthlyFee(initialData.defaultMonthlyFee?.toString() ?? "");
       setDefaultMaxStudents(initialData.defaultMaxStudents?.toString() ?? "");
@@ -55,7 +53,6 @@ export const CourseForm = ({
       await onSubmit({
         code: code.trim(),
         name: name.trim(),
-        level: level.trim() || undefined,
         description: description.trim() || undefined,
         defaultMonthlyFee: defaultMonthlyFee
           ? Number(defaultMonthlyFee)
@@ -96,16 +93,6 @@ export const CourseForm = ({
         />
       </div>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Cấp độ
-        </label>
-        <Input
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
-          placeholder="VD: B1, B2, C1"
-        />
-      </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
