@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { ClassRequest, ClassResponse } from "../types/class";
+import type { ClassRequest, ClassResponse, ClassStatus } from "../types/class";
 import type { TeacherClassStudents } from "../types/teacherClassStudents";
 
 const BASE_URL = "/owner/classes";
@@ -48,30 +48,19 @@ export const classApi = {
     await axiosClient.delete(`${BASE_URL}/${classId}`);
   },
 
-  // ── Lifecycle transitions ────────────────────────────────────────────────
+  // ── Lifecycle: Update Status (any status → any status) ──────────────
 
-  openForEnrollment: async (classId: number): Promise<ClassResponse> => {
-    const response = await axiosClient.patch(`${BASE_URL}/${classId}/open`);
-    return response.data;
-  },
-
-  startClass: async (classId: number): Promise<ClassResponse> => {
-    const response = await axiosClient.patch(`${BASE_URL}/${classId}/start`);
-    return response.data;
-  },
-
-  finishClass: async (classId: number): Promise<ClassResponse> => {
-    const response = await axiosClient.patch(`${BASE_URL}/${classId}/finish`);
-    return response.data;
-  },
-
-  archiveClass: async (classId: number): Promise<ClassResponse> => {
-    const response = await axiosClient.patch(`${BASE_URL}/${classId}/archive`);
-    return response.data;
-  },
-
-  cancelClass: async (classId: number): Promise<ClassResponse> => {
-    const response = await axiosClient.patch(`${BASE_URL}/${classId}/cancel`);
+  updateStatus: async (
+    classId: number,
+    newStatus: ClassStatus,
+  ): Promise<ClassResponse> => {
+    const response = await axiosClient.patch(
+      `${BASE_URL}/${classId}/status`,
+      newStatus,
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
     return response.data;
   },
 };

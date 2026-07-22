@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { feeApi } from "../../api/feeApi";
-import { CollectFeeModal } from "../owner/components/CollectFeeModal";
+import { PaymentDialog } from "../../components/payment/PaymentDialog";
 import {
   PageHeader,
   SearchInput,
   LoadingSkeleton,
 } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
-import type { FeeRecordResponse, CashPaymentRequest } from "../../types/fee";
+import type { FeeRecordResponse } from "../../types/fee";
 import { formatMoney, remainingBalance } from "../../utils/money";
 
 const CashierPaymentsPage = () => {
@@ -16,12 +16,12 @@ const CashierPaymentsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFeeRecord, setSelectedFeeRecord] =
     useState<FeeRecordResponse | null>(null);
-  const [isCollectModalOpen, setIsCollectModalOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const loadFees = useCallback(async () => {
     try {
       setIsLoading(true);
-      setFees(await feeApi.getOverdueFees("CASHIER"));
+      setFees(await feeApi.getPendingFees("CASHIER"));
     } catch (error) {
       console.error("Failed to load fees:", error);
     } finally {
@@ -39,13 +39,9 @@ const CashierPaymentsPage = () => {
       f.studentPhoneNumber.includes(searchQuery),
   );
 
-  const handleCollectCash = async (
-    feeRecordId: number,
-    data: CashPaymentRequest,
-  ) => {
-    await feeApi.collectCash(feeRecordId, data);
+  const handlePaymentComplete = useCallback(() => {
     loadFees();
-  };
+  }, [loadFees]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -120,7 +116,7 @@ const CashierPaymentsPage = () => {
                 <button
                   onClick={() => {
                     setSelectedFeeRecord(fee);
-                    setIsCollectModalOpen(true);
+                    setIsPaymentDialogOpen(true);
                   }}
                   className="mt-4 w-full rounded-btn border border-surface-border bg-white py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-surface-hover"
                 >
@@ -132,11 +128,11 @@ const CashierPaymentsPage = () => {
         </div>
       )}
 
-      <CollectFeeModal
-        isOpen={isCollectModalOpen}
-        onClose={() => setIsCollectModalOpen(false)}
+      <PaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
         feeRecord={selectedFeeRecord}
-        onSubmit={handleCollectCash}
+        onPaymentComplete={handlePaymentComplete}
       />
     </div>
   );

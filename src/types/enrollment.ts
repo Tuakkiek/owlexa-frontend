@@ -1,9 +1,10 @@
-export type EnrollmentStatus = "PENDING" | "ACTIVE" | "DROPPED";
+export type EnrollmentStatus = "PENDING" | "ACTIVE" | "DROPPED" | "SUSPENDED";
 
 export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
   PENDING: "Chờ duyệt",
   ACTIVE: "Đang học",
   DROPPED: "Đã rời lớp",
+  SUSPENDED: "Tạm dừng",
 };
 
 export interface EnrollmentResponse {

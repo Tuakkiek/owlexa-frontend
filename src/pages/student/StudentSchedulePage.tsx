@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { scheduleApi } from "../../api/scheduleApi";
 import type { ScheduleResponse } from "../../types/schedule";
-import { DAY_LABELS } from "../../types/schedule";
+import { DAY_LABELS, SCHEDULE_TYPE_LABELS } from "../../types/schedule";
 
 export const StudentSchedulePage = () => {
   const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
@@ -90,10 +90,13 @@ export const StudentSchedulePage = () => {
                         {" : "}
                         <span>{s.className}</span>
                       </div>
-                      <div className="text-xs text-gray-600">
-                        Giáo viên: {s.teacherUserFullName} | Phòng: {s.roomName}
-                        {!s.isActive && (
-                          <span className="ml-2 text-red-500">(Tạm dừng)</span>
+                      <div className="text-xs text-gray-600 flex items-center gap-2 mt-1">
+                        <span>Giáo viên: {s.teacherUserFullName} | Phòng: {s.roomName}</span>
+                        <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700">
+                          {SCHEDULE_TYPE_LABELS[s.type]}
+                        </span>
+                        {s.type === "CANCELLED" && (
+                          <span className="text-red-500 font-bold">(Tạm ngưng)</span>
                         )}
                       </div>
                     </div>

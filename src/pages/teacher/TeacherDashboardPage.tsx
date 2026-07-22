@@ -10,7 +10,7 @@ import {
 } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import type { ScheduleResponse } from "../../types/schedule";
-import { DAY_LABELS } from "../../types/schedule";
+import { DAY_LABELS, SCHEDULE_TYPE_LABELS } from "../../types/schedule";
 
 export default function TeacherDashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -54,7 +54,7 @@ export default function TeacherDashboardPage() {
     [grouped],
   );
   const activeSchedules = useMemo(
-    () => schedules.filter((s) => s.isActive),
+    () => schedules.filter((s) => s.type !== "CANCELLED"),
     [schedules],
   );
   const classCount = useMemo(
@@ -138,8 +138,8 @@ export default function TeacherDashboardPage() {
                               {schedule.startTime.slice(0, 5)} -{" "}
                               {schedule.endTime.slice(0, 5)}
                             </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                              {schedule.isActive ? "Đang mở" : "Tạm dừng"}
+                            <p className="mt-1 text-xs font-medium text-primary">
+                              {SCHEDULE_TYPE_LABELS[schedule.type]}
                             </p>
                           </div>
                         </div>
@@ -166,15 +166,15 @@ export default function TeacherDashboardPage() {
             ) : (
               todaySchedules.map((schedule) => (
                 <div
-                  key={schedule.id}
-                  className="rounded-btn border border-surface-border bg-surface-hover px-4 py-3"
+                   key={schedule.id}
+                   className="rounded-btn border border-surface-border bg-surface-hover px-4 py-3"
                 >
                   <p className="font-semibold text-gray-900">
                     {schedule.className}
                   </p>
                   <p className="mt-1 text-sm text-gray-500">
                     {schedule.startTime.slice(0, 5)} -{" "}
-                    {schedule.endTime.slice(0, 5)} · Phòng {schedule.roomName}
+                    {schedule.endTime.slice(0, 5)} · Phòng {schedule.roomName} · {SCHEDULE_TYPE_LABELS[schedule.type]}
                   </p>
                 </div>
               ))

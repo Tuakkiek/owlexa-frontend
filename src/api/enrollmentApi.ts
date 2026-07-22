@@ -44,4 +44,16 @@ export const enrollmentApi = {
       `/owner/classes/${classId}/enrollments/${studentUserId}/reject`,
     );
   },
+
+  suspend: async (classId: number, studentUserId: number): Promise<void> => {
+    await axiosClient.patch(
+      `/owner/classes/${classId}/enrollments/${studentUserId}/suspend`,
+    );
+  },
+
+  reactivate: async (classId: number, studentUserId: number): Promise<void> => {
+    await axiosClient.patch(
+      `/owner/classes/${classId}/enrollments/${studentUserId}/reactivate`,
+    );
+  },
 };
