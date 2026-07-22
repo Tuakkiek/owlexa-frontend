@@ -1,5 +1,11 @@
 import axiosClient from "./axiosClient";
-import type { CourseRequest, CourseResponse } from "../types/course";
+import type {
+  CourseRequest,
+  CourseResponse,
+  CourseStatisticsResponse,
+  CourseClassResponse,
+  CourseDeleteValidationResponse,
+} from "../types/course";
 
 const BASE_URL = "/owner/courses";
 
@@ -16,6 +22,21 @@ export const courseApi = {
 
   findById: async (courseId: number): Promise<CourseResponse> => {
     const response = await axiosClient.get(`${BASE_URL}/${courseId}`);
+    return response.data;
+  },
+
+  getStatistics: async (courseId: number): Promise<CourseStatisticsResponse> => {
+    const response = await axiosClient.get(`${BASE_URL}/${courseId}/statistics`);
+    return response.data;
+  },
+
+  getClasses: async (courseId: number): Promise<CourseClassResponse[]> => {
+    const response = await axiosClient.get(`${BASE_URL}/${courseId}/classes`);
+    return response.data;
+  },
+
+  validateDelete: async (courseId: number): Promise<CourseDeleteValidationResponse> => {
+    const response = await axiosClient.get(`${BASE_URL}/${courseId}/delete-validation`);
     return response.data;
   },
 

@@ -20,3 +20,33 @@ export interface CourseResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CourseStatisticsResponse {
+  totalClasses: number;
+  totalEnrolledStudents: number;
+  activeClasses: number;
+  finishedClasses: number;
+  plannedClasses: number;
+}
+
+export interface CourseClassResponse {
+  id: number;
+  name: string;
+  teachers: string[];
+  status: 'PLANNED' | 'ACTIVE' | 'FINISHED';
+  studentCount: number;
+  scheduleCount: number;
+}
+
+export interface CourseDependencyDto {
+  className: string;
+  status: string;
+  teacherNames: string;
+  studentCount: number;
+}
+
+export interface CourseDeleteValidationResponse {
+  canDelete: boolean;
+  message: string;
+  dependencies: CourseDependencyDto[];
+}

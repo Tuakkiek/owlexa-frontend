@@ -9,6 +9,7 @@ import {
   Badge,
 } from "../../components/ui/SharedComponents";
 import { CourseForm } from "./components/CourseForm";
+import { CourseDetailDrawer } from "./components/CourseDetailDrawer";
 import { courseApi } from "../../api/courseApi";
 import type { CourseRequest, CourseResponse } from "../../types/course";
 
@@ -21,6 +22,7 @@ const CoursesPage = () => {
   const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(
     null,
   );
+  const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
 
   const loadCourses = useCallback(async () => {
     try {
@@ -72,8 +74,19 @@ const CoursesPage = () => {
   };
 
   const handleDelete = async (course: CourseResponse) => {
-    if (!window.confirm(`Xóa khóa học "${course.name}"?`)) return;
     try {
+      const validation = await courseApi.validateDelete(course.id);
+      if (!validation.canDelete) {
+        let msg = `${validation.message}\n\nĐang được liên kết bởi các lớp học:\n`;
+        validation.dependencies.forEach((d) => {
+          msg += `- Lớp ${d.className} (Sĩ số: ${d.studentCount}, Trạng thái: ${d.status})\n`;
+        });
+        msg += `\nVui lòng điều chỉnh hoặc xóa các lớp học này trước khi xóa khóa học. Bạn cũng có thể Tắt kích hoạt khóa học này thay vì xóa.`;
+        alert(msg);
+        return;
+      }
+
+      if (!window.confirm(`Xóa khóa học "${course.name}"?`)) return;
       await courseApi.delete(course.id);
       await loadCourses();
     } catch (err: any) {
@@ -115,7 +128,11 @@ const CoursesPage = () => {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filtered.map((course) => (
-                <tr key={course.id} className="hover:bg-surface-hover">
+                <tr
+                  key={course.id}
+                  className="hover:bg-surface-hover cursor-pointer"
+                  onClick={() => setSelectedCourse(course)}
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {course.code}
                   </td>
@@ -134,7 +151,7 @@ const CoursesPage = () => {
                       {course.isActive ? "Hoạt động" : "Không hoạt động"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <button
                         className="text-xs text-blue-600 underline"
@@ -174,6 +191,22 @@ const CoursesPage = () => {
           }}
         />
       </Modal>
+
+      {selectedCourse && (
+        <CourseDetailDrawer
+          course={selectedCourse}
+          onClose={() => setSelectedCourse(null)}
+          onRefresh={async () => {
+            await loadCourses();
+            try {
+              const updated = await courseApi.findById(selectedCourse.id);
+              setSelectedCourse(updated);
+            } catch {
+              setSelectedCourse(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

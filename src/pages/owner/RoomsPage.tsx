@@ -9,6 +9,7 @@ import {
   Badge,
 } from "../../components/ui/SharedComponents";
 import { RoomForm } from "./components/RoomForm";
+import { RoomDetailDrawer } from "./components/RoomDetailDrawer";
 import { roomApi } from "../../api/roomApi";
 import type { RoomRequest, RoomResponse } from "../../types/room";
 
@@ -19,6 +20,7 @@ const RoomsPage = () => {
   const [query, setQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomResponse | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
 
   const loadRooms = useCallback(async () => {
     try {
@@ -69,8 +71,19 @@ const RoomsPage = () => {
   };
 
   const handleDelete = async (room: RoomResponse) => {
-    if (!window.confirm(`Xóa phòng "${room.name}"?`)) return;
     try {
+      const validation = await roomApi.validateDelete(room.id);
+      if (!validation.canDelete) {
+        let msg = `${validation.message}\n\nĐang được sử dụng bởi các lịch học:\n`;
+        validation.dependencies.forEach((d) => {
+          msg += `- Lớp ${d.className} (${d.dayOfWeek} ${d.timeRange})\n`;
+        });
+        msg += `\nVui lòng điều chỉnh hoặc hủy các lịch học này trước khi xóa. Bạn cũng có thể Tắt kích hoạt phòng học này thay vì xóa.`;
+        alert(msg);
+        return;
+      }
+
+      if (!window.confirm(`Xóa phòng "${room.name}"?`)) return;
       await roomApi.delete(room.id);
       await loadRooms();
     } catch (err: any) {
@@ -115,7 +128,11 @@ const RoomsPage = () => {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filtered.map((room) => (
-                <tr key={room.id} className="hover:bg-surface-hover">
+                <tr
+                  key={room.id}
+                  className="hover:bg-surface-hover cursor-pointer"
+                  onClick={() => setSelectedRoom(room)}
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {room.code}
                   </td>
@@ -128,7 +145,7 @@ const RoomsPage = () => {
                       {room.isActive ? "Hoạt động" : "Không hoạt động"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <button
                         className="text-xs text-blue-600 underline"
@@ -168,6 +185,22 @@ const RoomsPage = () => {
           }}
         />
       </Modal>
+
+      {selectedRoom && (
+        <RoomDetailDrawer
+          room={selectedRoom}
+          onClose={() => setSelectedRoom(null)}
+          onRefresh={async () => {
+            await loadRooms();
+            try {
+              const updated = await roomApi.findById(selectedRoom.id);
+              setSelectedRoom(updated);
+            } catch {
+              setSelectedRoom(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

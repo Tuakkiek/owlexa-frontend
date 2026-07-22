@@ -21,6 +21,9 @@ import type { ClassResponse, ClassStatus } from "../../../types/class";
 import { CLASS_STATUS_LABELS } from "../../../types/class";
 import { DAY_LABELS } from "../../../types/schedule";
 import { formatCurrency } from "../../../utils/money";
+import { courseApi } from "../../../api/courseApi";
+import type { CourseResponse } from "../../../types/course";
+
 
 const SCHEDULE_TYPE_COLORS: Record<ScheduleType, string> = {
   THEORY_CLASS: "bg-emerald-50 border-emerald-200",
@@ -54,6 +57,56 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const [isDocumentUploadModalOpen, setIsDocumentUploadModalOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ClassStatus>(cls.status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(cls.name);
+  const [editMaxStudents, setEditMaxStudents] = useState(cls.maxStudents ?? 30);
+  const [editMonthlyFee, setEditMonthlyFee] = useState(cls.monthFee ?? 0);
+  const [editCourseId, setEditCourseId] = useState<number | undefined>(cls.courseId || undefined);
+  const [editStatus, setEditStatus] = useState<ClassStatus>(cls.status);
+  const [courses, setCourses] = useState<CourseResponse[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    courseApi.findAll().then(setCourses).catch(() => {});
+  }, []);
+
+  const resetEditState = useCallback(() => {
+    setEditName(cls.name);
+    setEditMaxStudents(cls.maxStudents ?? 30);
+    setEditMonthlyFee(cls.monthFee ?? 0);
+    setEditCourseId(cls.courseId || undefined);
+    setEditStatus(cls.status);
+  }, [cls]);
+
+  useEffect(() => {
+    resetEditState();
+  }, [resetEditState]);
+
+  const handleSaveBasicInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      alert("Tên lớp không được để trống");
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await classApi.update(cls.id, {
+        name: editName.trim(),
+        courseId: editCourseId || null as any,
+        maxStudent: editMaxStudents,
+        monthlyFee: editMonthlyFee,
+        status: editStatus
+      });
+      setIsEditing(false);
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.response?.data?.message ?? "Không thể lưu thông tin lớp.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   const loadSchedules = useCallback(async () => {
     setIsLoadingSchedules(true);
@@ -196,46 +249,161 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative ml-auto flex h-full w-full max-w-2xl flex-col bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="flex items-center justify-between border-b px-6 py-4 bg-gray-50">
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900">{cls.name}</h2>
+            <h2 className="text-xl font-bold text-gray-900">Chi tiết lớp học</h2>
+          </div>
+          <div className="flex gap-2">
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="rounded-lg bg-primary text-white hover:bg-primary-hover px-4 py-1.5 text-sm font-medium transition-colors"
+              >
+                Chỉnh sửa
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium bg-white hover:bg-gray-100 transition-colors"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+
+        {/* Edit or Details Summary Form */}
+        {isEditing ? (
+          <form onSubmit={handleSaveBasicInfo} className="border-b bg-gray-50/50 p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-950 uppercase tracking-wider">Sửa thông tin cơ bản</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Tên lớp *</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Khóa học</label>
+                <select
+                  value={editCourseId || ""}
+                  onChange={(e) => setEditCourseId(e.target.value ? Number(e.target.value) : undefined)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
+                >
+                  <option value="">-- Không chọn --</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Sĩ số tối đa</label>
+                <input
+                  type="number"
+                  value={editMaxStudents}
+                  onChange={(e) => setEditMaxStudents(Number(e.target.value))}
+                  min={1}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Học phí hàng tháng (VNĐ)</label>
+                <input
+                  type="number"
+                  value={editMonthlyFee}
+                  onChange={(e) => setEditMonthlyFee(Number(e.target.value))}
+                  min={0}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700">Trạng thái</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as ClassStatus)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
+                >
+                  {CLASS_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {CLASS_STATUS_LABELS[status]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(false);
+                  resetEditState();
+                }}
+                className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="rounded-lg bg-primary text-white hover:bg-primary-hover px-4 py-1.5 text-sm font-medium"
+              >
+                {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="border-b bg-gray-50/50 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <h3 className="text-lg font-bold text-gray-950">{cls.name}</h3>
               <Badge
                 variant={cls.status === "ACTIVE" ? "success" : cls.status === "PLANNED" ? "warning" : "default"}
               >
                 {CLASS_STATUS_LABELS[cls.status] ?? cls.status}
               </Badge>
             </div>
-            <p className="mt-1 text-sm text-gray-500">
-              {cls.courseName ? `${cls.courseName} · ` : ""}
-              {formatCurrency(cls.monthFee)}/tháng · Tối đa {cls.maxStudents} học sinh
-            </p>
+            
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Khóa học:</span>
+                <span className="font-medium text-gray-950">{cls.courseName || "Chưa gán"}</span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Học phí:</span>
+                <span className="font-medium text-gray-955">{formatCurrency(cls.monthFee)}/tháng</span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Sĩ số tối đa:</span>
+                <span className="font-medium text-gray-950">{cls.maxStudents} học sinh</span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Học sinh đăng ký:</span>
+                <span className="font-medium text-gray-950">{enrollments.length} học sinh</span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Số lịch học trong tuần:</span>
+                <span className="font-medium text-gray-955">{schedules.length} buổi</span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5">
+                <span className="text-gray-500">Giáo viên gán:</span>
+                <span className="font-medium text-gray-950 text-right truncate max-w-[180px]" title={schedules.map(s => s.teacherUserFullName).filter((name, idx, self) => name && self.indexOf(name) === idx).join(", ")}>
+                  {schedules.map(s => s.teacherUserFullName).filter((name, idx, self) => name && self.indexOf(name) === idx).join(", ") || "Chưa có"}
+                </span>
+              </div>
+              <div className="flex justify-between border-b pb-1.5 col-span-2">
+                <span className="text-gray-500">Ngày tạo lớp:</span>
+                <span className="font-medium text-gray-955">
+                  {cls.createdAt ? new Date(cls.createdAt).toLocaleDateString("vi-VN") : "—"}
+                </span>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 px-3 py-1 text-sm hover:bg-gray-100"
-          >
-            Đóng
-          </button>
-        </div>
+        )}
 
-        {/* Status Selector - replaces lifecycle buttons */}
-        <div className="flex items-center gap-3 border-b px-6 py-3">
-          <label className="text-sm font-medium text-gray-700">Trạng thái:</label>
-          <select
-            value={selectedStatus}
-            onChange={(e) => handleStatusChange(e.target.value as ClassStatus)}
-            disabled={isUpdatingStatus}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 focus:border-primary focus:outline-none disabled:opacity-50"
-          >
-            {CLASS_STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {CLASS_STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          {isUpdatingStatus && <span className="text-xs text-gray-500">Đang cập nhật...</span>}
-        </div>
 
         {/* Tabs */}
         <div className="flex border-b text-sm">
