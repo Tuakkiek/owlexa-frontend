@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { ScheduleRequest, ScheduleResponse } from "../types/schedule";
+import type { ScheduleRequest, ScheduleResponse, ScheduleType } from "../types/schedule";
 
 export const scheduleApi = {
   // ── Owner: all schedules in center ──
@@ -55,12 +55,15 @@ export const scheduleApi = {
     );
   },
 
-  toggleActive: async (
+  updateType: async (
     classId: number,
     scheduleId: number,
+    type: ScheduleType,
   ): Promise<ScheduleResponse> => {
     const response = await axiosClient.patch(
-      `/owner/classes/${classId}/schedules/${scheduleId}/toggle`,
+      `/owner/classes/${classId}/schedules/${scheduleId}/type`,
+      type,
+      { headers: { "Content-Type": "application/json" } }
     );
     return response.data;
   },

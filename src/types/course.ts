@@ -1,7 +1,6 @@
 export interface CourseRequest {
   code: string;
   name: string;
-  level?: string;
   description?: string;
   defaultDuration?: number;
   defaultMonthlyFee?: number;
@@ -13,7 +12,6 @@ export interface CourseResponse {
   id: number;
   code: string;
   name: string;
-  level: string | null;
   description: string | null;
   defaultDuration: number | null;
   defaultMonthlyFee: number | null;

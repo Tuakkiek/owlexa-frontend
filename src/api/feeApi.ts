@@ -8,11 +8,6 @@ import type {
   BankTransferQrResponse,
 } from "../types/fee";
 
-export interface FeeGenerateRequest {
-  month: string;
-  dueDate: string;
-}
-
 export interface PaymentFilterParams {
   student?: string;
   cashierId?: number;
@@ -34,28 +29,6 @@ export const feeApi = {
   getPendingFees: async (roleName?: string): Promise<FeeRecordResponse[]> => {
     const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/fee-records/pending`);
-    return response.data;
-  },
-
-  findAllByClass: async (
-    classId: number,
-    month: string,
-  ): Promise<FeeRecordResponse[]> => {
-    const response = await axiosClient.get(
-      `/owner/classes/${classId}/fee-records`,
-      { params: { month } },
-    );
-    return response.data;
-  },
-
-  generateFeeForClass: async (
-    classId: number,
-    request: FeeGenerateRequest,
-  ): Promise<FeeRecordResponse[]> => {
-    const response = await axiosClient.post(
-      `/owner/classes/${classId}/fee-records/generate`,
-      request,
-    );
     return response.data;
   },
 

@@ -16,9 +16,8 @@ import { CLASS_STATUS_LABELS } from "../../types/class";
 
 const STATUS_FILTERS: Array<{ key: string; label: string }> = [
   { key: "ALL", label: "Tất cả" },
-  { key: "PLANNING", label: "Lên kế hoạch" },
-  { key: "OPEN", label: "Mở đăng ký" },
-  { key: "IN_PROGRESS", label: "Đang học" },
+  { key: "PLANNED", label: "Đã lên kế hoạch" },
+  { key: "ACTIVE", label: "Đang hoạt động" },
   { key: "FINISHED", label: "Đã kết thúc" },
 ];
 
@@ -55,8 +54,7 @@ export const ClassesPage = () => {
       const q = searchQuery.toLowerCase();
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.vstepLevel.toLowerCase().includes(q),
+          c.name.toLowerCase().includes(q)
       );
     }
     if (statusFilter !== "ALL") {
@@ -92,7 +90,7 @@ export const ClassesPage = () => {
       <SearchInput
         value={searchQuery}
         onChange={setSearchQuery}
-        placeholder="Tìm theo tên lớp hoặc cấp độ..."
+        placeholder="Tìm theo tên lớp..."
       />
 
       <FilterTabs
@@ -133,8 +131,6 @@ export const ClassesPage = () => {
               <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <th className="px-6 py-3">Tên lớp</th>
                 <th className="px-6 py-3">Khóa học</th>
-                <th className="px-6 py-3">Giáo viên</th>
-                <th className="px-6 py-3">Cấp độ</th>
                 <th className="px-6 py-3 text-right">Sĩ số</th>
                 <th className="px-6 py-3 text-center">Trạng thái</th>
                 <th className="px-6 py-3 text-right">Thao tác</th>
@@ -153,10 +149,6 @@ export const ClassesPage = () => {
                   <td className="px-6 py-4 text-gray-600">
                     {cls.courseName ?? "—"}
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {cls.teacherFullName ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{cls.vstepLevel}</td>
                   <td className="px-6 py-4 text-right text-gray-600">
                     {cls.maxStudents}
                   </td>
@@ -208,8 +200,6 @@ export const ClassesPage = () => {
               ? {
                   name: editingClass.name,
                   courseId: editingClass.courseId ?? undefined,
-                  teacherUserId: editingClass.teacherUserId ?? undefined,
-                  vstepLevel: editingClass.vstepLevel,
                   maxStudent: editingClass.maxStudents,
                   monthlyFee: editingClass.monthFee,
                 }

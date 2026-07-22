@@ -1,3 +1,12 @@
+export type ScheduleType = "THEORY_CLASS" | "ONLINE_CLASS" | "EXAM" | "CANCELLED";
+
+export const SCHEDULE_TYPE_LABELS: Record<ScheduleType, string> = {
+  THEORY_CLASS: "Lịch học lý thuyết",
+  ONLINE_CLASS: "Lịch học trực tuyến",
+  EXAM: "Lịch thi",
+  CANCELLED: "Lịch tạm ngưng",
+};
+
 export interface ScheduleResponse {
   id: number;
   classId: number;
@@ -12,7 +21,7 @@ export interface ScheduleResponse {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  isActive: boolean;
+  type: ScheduleType;
   createdAt: string;
 }
 
@@ -22,6 +31,7 @@ export interface ScheduleRequest {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  type?: ScheduleType;
 }
 
 export const DAY_LABELS: Record<number, string> = {
