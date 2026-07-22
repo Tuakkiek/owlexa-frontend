@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { feeApi } from "../../api/feeApi";
-import type { FeeRecordResponse, PaymentResponse } from "../../types/fee";
+import type {
+  FeeRecordResponse,
+  PaymentResponse,
+  BankTransferQrResponse,
+} from "../../types/fee";
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -15,6 +18,9 @@ const StudentFeesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFeeId, setSelectedFeeId] = useState<number | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [qrCache, setQrCache] = useState<
+    Record<number, BankTransferQrResponse | null>
+  >({});
 
   const loadData = useCallback(async () => {
     try {
@@ -58,9 +64,64 @@ const StudentFeesPage = () => {
     return () => clearInterval(interval);
   }, [isPolling]);
 
-  // ── QR helpers for student self-service ──────────────────────────────
+  // ── QR: fetch or create VietQR for a fee record ──────────────────────
+  const loadQrForFee = useCallback(
+    async (record: FeeRecordResponse) => {
+      // Find a pending bank-transfer/SEPAY payment for this fee record
+      const pendingPayment = payments.find(
+        (p) =>
+          p.feeRecordId === record.id &&
+          p.status === "PENDING" &&
+          (p.method === "BANK_TRANSFER" || p.method === "SEPAY"),
+      );
+
+      // Helper: fetch QR given a payment ID
+      const fetchQr = async (paymentId: number) => {
+        try {
+          const qr = await feeApi.getStudentPaymentQr(paymentId);
+          setQrCache((prev) => ({ ...prev, [record.id]: qr }));
+        } catch {
+          setQrCache((prev) => ({ ...prev, [record.id]: null }));
+        }
+      };
+
+      if (pendingPayment) {
+        // Existing PENDING payment — fetch its QR
+        await fetchQr(pendingPayment.id);
+      } else {
+        // No pending payment exists — create one for the FULL remaining balance
+        try {
+          const newPayment = await feeApi.createStudentQrPayment(record.id);
+          // Refresh the payments list so subsequent renders see the new payment
+          const updatedPayments = await feeApi.getMyPayments();
+          setPayments(updatedPayments);
+          await fetchQr(newPayment.id);
+        } catch {
+          setQrCache((prev) => ({ ...prev, [record.id]: null }));
+        }
+      }
+    },
+    [payments],
+  );
+
+  // Load QR when a fee is selected
+  const handleSelectFee = useCallback(
+    (recordId: number) => {
+      if (selectedFeeId === recordId) {
+        setSelectedFeeId(null);
+        return;
+      }
+      setSelectedFeeId(recordId);
+      const record = fees.find((f) => f.id === recordId);
+      if (record && !qrCache[recordId]) {
+        loadQrForFee(record);
+      }
+    },
+    [selectedFeeId, fees, qrCache, loadQrForFee],
+  );
+
+  // Get transfer content for display (preserves SePay compatibility)
   const getTransferContentForFee = (record: FeeRecordResponse): string => {
-    // Find a pending bank transfer payment for this fee record
     const pendingPayment = payments.find(
       (p) =>
         p.feeRecordId === record.id &&
@@ -70,38 +131,7 @@ const StudentFeesPage = () => {
     if (pendingPayment?.sepayRef) {
       return pendingPayment.sepayRef + " thanh toan hoc phi";
     }
-    // Fallback: use fee record ID as reference with OWX prefix
     return "OWX" + String(record.id).padStart(6, "0") + " thanh toan hoc phi";
-  };
-
-  const getQrContentForFee = (record: FeeRecordResponse): string => {
-    const pendingPayment = payments.find(
-      (p) =>
-        p.feeRecordId === record.id &&
-        p.status === "PENDING" &&
-        (p.method === "BANK_TRANSFER" || p.method === "SEPAY"),
-    );
-    if (pendingPayment) {
-      // Use the backend-provided qrContent if available, otherwise construct it
-      return (
-        "STK:" +
-        " " +
-        "ND:" +
-        (pendingPayment.sepayRef || "") +
-        " thanh toan hoc phi" +
-        " " +
-        "ST:" +
-        pendingPayment.amount
-      );
-    }
-    return (
-      "STK: " +
-      "ND:OWX" +
-      String(record.id).padStart(6, "0") +
-      " thanh toan hoc phi" +
-      " ST:" +
-      record.amount
-    );
   };
 
   const unpaidFees = useMemo(
@@ -189,35 +219,50 @@ const StudentFeesPage = () => {
                   </div>
 
                   <button
-                    onClick={() =>
-                      setSelectedFeeId(
-                        selectedFeeId === record.id ? null : record.id,
-                      )
-                    }
+                    onClick={() => handleSelectFee(record.id)}
                     className="rounded-lg w-full border border-gray-300 py-1 text-xs font-medium"
                   >
                     {selectedFeeId === record.id ? "Đóng" : "Thanh toán QR"}
                   </button>
 
-                  {/* QR Code Display */}
+                  {/* QR Code Display — VietQR from backend */}
                   {selectedFeeId === record.id && (
                     <div className="mt-3 rounded-lg border p-3 bg-gray-50">
-                      <p className="text-xs font-bold mb-2 text-center uppercase">
-                        Quét QR để thanh toán
-                      </p>
-                      <div className="flex justify-center rounded-lg border bg-white p-2">
-                        <QRCodeSVG
-                          value={getQrContentForFee(record)}
-                          size={140}
-                          level="M"
-                        />
-                      </div>
-                      <p className="text-xs text-center mt-2">
-                        Số tiền: {formatMoney(String(remaining))}
-                      </p>
-                      <p className="text-xs text-center text-gray-400 font-mono break-all">
-                        ND: {getTransferContentForFee(record)}
-                      </p>
+                      {qrCache[record.id]?.qrImage ? (
+                        <>
+                          <p className="text-xs font-bold mb-2 text-center uppercase">
+                            Quét QR để thanh toán
+                          </p>
+                          <div className="flex justify-center rounded-lg border bg-white p-2">
+                            <img
+                              src={qrCache[record.id]!.qrImage!}
+                              alt={`VietQR ${qrCache[record.id]!.paymentCode}`}
+                              width={160}
+                              height={160}
+                              className="block"
+                            />
+                          </div>
+                          <p className="text-xs text-center mt-2">
+                            Số tiền:{" "}
+                            {formatMoney(String(qrCache[record.id]!.amount))}
+                          </p>
+                          <p className="text-xs text-center text-gray-400 font-mono break-all">
+                            ND: {getTransferContentForFee(record)}
+                          </p>
+                        </>
+                      ) : qrCache[record.id] === null ? (
+                        <div className="text-center py-4">
+                          <p className="text-xs text-gray-500">
+                            Không thể tạo mã QR. Vui lòng thử lại sau.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <p className="text-xs text-gray-400">
+                            Đang tải mã QR...
+                          </p>
+                        </div>
+                      )}
                       <p className="text-xs text-center text-gray-400 mt-1">
                         Mã QR hết hạn sau 30 phút. Sau khi chuyển khoản, nhấn
                         nút bên dưới để kiểm tra.
