@@ -24,6 +24,7 @@ interface PaymentDialogProps {
 
 type DialogStep =
   | "input"
+  | "confirm-transfer"
   | "cash-success"
   | "qr-waiting"
   | "qr-success"
@@ -31,6 +32,23 @@ type DialogStep =
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_POLL_DURATION_MS = 5 * 60 * 1000; // 5 minutes max polling
+
+/** Format remaining time as mm:ss */
+const formatCountdown = (expiresAt: string): string => {
+  const remaining = new Date(expiresAt).getTime() - Date.now();
+  if (remaining <= 0) return "00:00";
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+};
+
+/** Get remaining seconds from expiresAt */
+const getRemainingSeconds = (expiresAt: string): number => {
+  return Math.max(
+    0,
+    Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
+  );
+};
 
 export const PaymentDialog = ({
   isOpen,
@@ -50,8 +68,11 @@ export const PaymentDialog = ({
   const [pendingPayment, setPendingPayment] = useState<PaymentResponse | null>(
     null,
   );
+  const [countdown, setCountdown] = useState("");
+
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStartRef = useRef<number>(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Reset on open ──
   useEffect(() => {
@@ -64,13 +85,15 @@ export const PaymentDialog = ({
       setStep("input");
       setQrData(null);
       setPendingPayment(null);
+      setCountdown("");
     }
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
     };
   }, [isOpen, feeRecord]);
 
-  // ── Poll helpers (must be before any early return) ──
+  // ── Poll helpers ──
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -78,8 +101,41 @@ export const PaymentDialog = ({
     }
   }, []);
 
+  const stopCountdown = useCallback(() => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    }
+  }, []);
+
+  const stopAll = useCallback(() => {
+    stopPolling();
+    stopCountdown();
+  }, [stopPolling, stopCountdown]);
+
+  // ── Countdown timer ──
+  const startCountdown = useCallback(
+    (expiresAt: string) => {
+      stopCountdown();
+      setCountdown(formatCountdown(expiresAt));
+
+      countdownRef.current = setInterval(() => {
+        const remaining = getRemainingSeconds(expiresAt);
+        if (remaining <= 0) {
+          setCountdown("00:00");
+          stopCountdown();
+          setStep("qr-expired");
+          stopPolling();
+        } else {
+          setCountdown(formatCountdown(expiresAt));
+        }
+      }, 1000);
+    },
+    [stopCountdown, stopPolling],
+  );
+
   const startPolling = useCallback(
-    (paymentId: number) => {
+    (paymentId: number, expiresAt: string) => {
       stopPolling();
       pollStartRef.current = Date.now();
 
@@ -90,15 +146,25 @@ export const PaymentDialog = ({
             return;
           }
 
+          // Check if expired
+          if (getRemainingSeconds(expiresAt) <= 0) {
+            stopPolling();
+            stopCountdown();
+            setStep("qr-expired");
+            return;
+          }
+
           const qr = await feeApi.getPaymentQr(paymentId);
           setQrData(qr);
 
           if (qr.status === "PAID") {
             stopPolling();
+            stopCountdown();
             setStep("qr-success");
             onPaymentComplete();
           } else if (qr.status === "EXPIRED" || qr.status === "CANCELLED") {
             stopPolling();
+            stopCountdown();
             setStep("qr-expired");
           }
         } catch {
@@ -109,8 +175,13 @@ export const PaymentDialog = ({
       poll();
       pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
     },
-    [stopPolling, onPaymentComplete],
+    [stopPolling, stopCountdown, onPaymentComplete],
   );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopAll();
+  }, [stopAll]);
 
   // ── ALL hooks above this line. Early returns below are safe now. ──
 
@@ -149,19 +220,8 @@ export const PaymentDialog = ({
         onPaymentComplete();
         setTimeout(() => onClose(), 1500);
       } else {
-        // Bank Transfer
-        const payment = await feeApi.createBankTransfer(
-          feeRecord.id,
-          requestData,
-        );
-        setPendingPayment(payment);
-
-        const qr = await feeApi.getPaymentQr(payment.id);
-        setQrData(qr);
-        setStep("qr-waiting");
-
-        // Start polling for payment confirmation
-        startPolling(payment.id);
+        // Bank Transfer — requires confirmation step first
+        setStep("confirm-transfer");
       }
     } catch (err: any) {
       setError(
@@ -172,9 +232,50 @@ export const PaymentDialog = ({
     }
   };
 
+  // ── Confirm and create bank transfer + QR ──
+  const handleConfirmTransfer = async () => {
+    setError("");
+    setIsLoading(true);
+
+    const requestData: CashPaymentRequest = {
+      amount: String(amount),
+      method,
+      note: note || undefined,
+    };
+
+    try {
+      const payment = await feeApi.createBankTransfer(
+        feeRecord.id,
+        requestData,
+      );
+      setPendingPayment(payment);
+
+      const qr = await feeApi.getPaymentQr(payment.id);
+      setQrData(qr);
+      setStep("qr-waiting");
+
+      // Start countdown if we have expiration
+      if (payment.expiresAt) {
+        startCountdown(payment.expiresAt);
+      }
+
+      // Start polling for payment confirmation
+      if (payment.expiresAt) {
+        startPolling(payment.id, payment.expiresAt);
+      }
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ??
+          "Không thể tạo giao dịch. Vui lòng thử lại.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // ── Close handler ──
   const handleClose = () => {
-    stopPolling();
+    stopAll();
     onClose();
   };
 
@@ -183,6 +284,8 @@ export const PaymentDialog = ({
     switch (step) {
       case "cash-success":
         return "Thanh toán thành công";
+      case "confirm-transfer":
+        return "Xác nhận chuyển khoản";
       case "qr-waiting":
         return "Chờ thanh toán chuyển khoản";
       case "qr-success":
@@ -193,6 +296,61 @@ export const PaymentDialog = ({
         return "Ghi nhận thanh toán";
     }
   };
+
+  // ── Render: Confirm transfer step ──
+  if (step === "confirm-transfer") {
+    return (
+      <Modal isOpen={isOpen} onClose={handleClose} title={getTitle()}>
+        <div className="py-4 space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              Bạn sắp tạo giao dịch chuyển khoản
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {formatMoney(String(amount))}
+            </p>
+          </div>
+          <div className="rounded-lg border bg-gray-50 p-3 space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Học sinh:</span>
+              <span className="font-medium">{feeRecord.studentFullName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Lớp:</span>
+              <span className="font-medium">{feeRecord.className}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Tháng:</span>
+              <span className="font-medium">{feeRecord.month}</span>
+            </div>
+          </div>
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              {error}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleConfirmTransfer}
+              disabled={isLoading}
+              className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Đang tạo..." : "Xác nhận"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("input")}
+              disabled={isLoading}
+              className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+            >
+              Quay lại
+            </button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   // ── Render: Success states ──
   if (step === "cash-success" || step === "qr-success") {
@@ -225,9 +383,6 @@ export const PaymentDialog = ({
               : `Đã nhận ${formatMoney(String(amount))} qua chuyển khoản`}
           </p>
           {step === "qr-success" && (
-            <p className="mt-1 text-xs text-gray-400">Đang đóng...</p>
-          )}
-          {step === "qr-success" && (
             <Button variant="primary" className="mt-4" onClick={handleClose}>
               Đóng
             </Button>
@@ -258,7 +413,7 @@ export const PaymentDialog = ({
             </svg>
           </div>
           <p className="text-lg font-semibold text-amber-700">
-            Mã QR đã hết hạn
+            QR Code Expired
           </p>
           <p className="mt-1 text-sm text-gray-500">
             Vui lòng tạo giao dịch mới nếu học sinh chưa thanh toán.
@@ -275,7 +430,7 @@ export const PaymentDialog = ({
   if (step === "qr-waiting" && qrData) {
     return (
       <Modal isOpen={isOpen} onClose={handleClose} title={getTitle()}>
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* QR Code — VietQR image from backend API */}
           <div className="flex flex-col items-center">
             <div className="rounded-lg border border-gray-200 bg-white p-4">
@@ -300,6 +455,24 @@ export const PaymentDialog = ({
               {qrData.paymentCode}
             </p>
           </div>
+
+          {/* Countdown */}
+          {countdown && (
+            <div className="text-center">
+              <p className="text-xs text-gray-500">Thời gian còn lại</p>
+              <p
+                className={`text-xl font-bold font-mono ${
+                  getRemainingSeconds(
+                    pendingPayment?.expiresAt || qrData.expiresAt,
+                  ) < 60
+                    ? "text-red-600 animate-pulse"
+                    : "text-gray-900"
+                }`}
+              >
+                {countdown}
+              </p>
+            </div>
+          )}
 
           {/* Bank Info */}
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
@@ -346,11 +519,7 @@ export const PaymentDialog = ({
           </div>
 
           <p className="text-xs text-gray-400 text-center">
-            Mã QR hết hạn lúc{" "}
-            {qrData.expiresAt
-              ? new Date(qrData.expiresAt).toLocaleTimeString("vi-VN")
-              : "—"}
-            . Trạng thái sẽ tự động cập nhật khi nhận được thanh toán.
+            Trạng thái sẽ tự động cập nhật khi nhận được thanh toán.
           </p>
 
           <div className="flex justify-end gap-2 border-t pt-4">
@@ -484,11 +653,20 @@ export const PaymentDialog = ({
 
         {/* Actions */}
         <div className="flex justify-end gap-2 border-t pt-4">
-          <Button type="button" variant="secondary" onClick={handleClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+            disabled={isLoading}
+          >
             Hủy
           </Button>
-          <Button type="submit" isLoading={isLoading}>
-            {method === "BANK_TRANSFER" ? "Tạo mã QR" : "Xác nhận thu tiền"}
+          <Button type="submit" isLoading={isLoading} disabled={isLoading}>
+            {isLoading
+              ? "Đang xử lý..."
+              : method === "BANK_TRANSFER"
+                ? "Tiếp tục"
+                : "Xác nhận thu tiền"}
           </Button>
         </div>
       </form>
