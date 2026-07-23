@@ -20,6 +20,14 @@ export const TemporaryPasswordDialog = ({
   roleLabel,
 }: TemporaryPasswordDialogProps) => {
   const [copied, setCopied] = useState(false);
+  const roleLabelVi =
+    roleLabel === "Teacher"
+      ? "giáo viên"
+      : roleLabel === "Student"
+        ? "học sinh"
+        : roleLabel === "Cashier"
+          ? "thu ngân"
+          : roleLabel;
 
   const handleCopy = async () => {
     try {
@@ -50,13 +58,13 @@ export const TemporaryPasswordDialog = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={`${roleLabel} created successfully`}
+      title={`Tạo tài khoản ${roleLabelVi} thành công`}
     >
       <div className="space-y-5">
         {/* Success banner */}
         <div className="rounded-input border border-emerald-200 bg-emerald-50 px-4 py-3">
           <p className="text-sm font-medium text-emerald-800">
-            {roleLabel} has been created successfully.
+            Đã tạo tài khoản {roleLabelVi} thành công.
           </p>
         </div>
 
@@ -64,7 +72,7 @@ export const TemporaryPasswordDialog = ({
         <div className="space-y-3">
           <div className="rounded-input border border-surface-border bg-surface-hover px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              Full Name
+              Họ và tên
             </p>
             <p className="mt-0.5 text-sm font-semibold text-gray-900">
               {fullName}
@@ -73,7 +81,7 @@ export const TemporaryPasswordDialog = ({
 
           <div className="rounded-input border border-surface-border bg-surface-hover px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              Phone Number
+              Số điện thoại
             </p>
             <p className="mt-0.5 text-sm font-semibold text-gray-900">
               {phoneNumber}
@@ -82,7 +90,7 @@ export const TemporaryPasswordDialog = ({
 
           <div className="rounded-input border border-amber-200 bg-amber-50 px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
-              Temporary Password
+              Mật khẩu tạm thời
             </p>
             <p className="mt-1 font-mono text-lg font-bold tracking-wider text-amber-900">
               {temporaryPassword}
@@ -94,7 +102,7 @@ export const TemporaryPasswordDialog = ({
                 size="sm"
                 onClick={handleCopy}
               >
-                {copied ? "✓ Copied" : "Copy Password"}
+                {copied ? "✓ Đã sao chép" : "Sao chép mật khẩu"}
               </Button>
             </div>
           </div>
@@ -118,12 +126,12 @@ export const TemporaryPasswordDialog = ({
             </svg>
             <div className="text-xs text-red-700">
               <p className="font-semibold">
-                This password will only be shown once.
+                Mật khẩu này chỉ hiển thị một lần duy nhất.
               </p>
               <p className="mt-1">
-                Please send it to the {roleLabel.toLowerCase()} immediately. If
-                lost, you must use <strong>Reset Password</strong> to generate a
-                new one.
+                Vui lòng gửi cho {roleLabelVi} ngay lập tức. Nếu
+                làm mất, bạn phải sử dụng chức năng <strong>Đặt lại mật khẩu</strong> để tạo
+                mật khẩu mới.
               </p>
             </div>
           </div>
@@ -132,7 +140,7 @@ export const TemporaryPasswordDialog = ({
         {/* Close button */}
         <div className="flex justify-end border-t border-surface-border pt-4">
           <Button type="button" variant="secondary" onClick={handleClose}>
-            Close
+            Đóng
           </Button>
         </div>
       </div>

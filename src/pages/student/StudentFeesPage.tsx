@@ -435,7 +435,7 @@ const StudentFeesPage = () => {
       {fees.some((f) => f.enrollmentStatus === "SUSPENDED") && (
         <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm">
           <p className="font-bold text-red-700">
-            ⚠️ Tài khoản của bạn đang bị tạm dừng
+            Tài khoản của bạn đang bị tạm dừng
           </p>
           <p className="mt-1 text-red-600">
             Bạn có hóa đơn chưa thanh toán quá hạn. Vui lòng thanh toán để tiếp
@@ -464,7 +464,7 @@ const StudentFeesPage = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-1">
                   <p className="font-bold text-amber-800">
-                    🕐 Bạn có một giao dịch chưa hoàn tất
+                    Bạn có một giao dịch chưa hoàn tất
                   </p>
                   <div className="text-xs text-amber-700 space-y-0.5">
                     <p>

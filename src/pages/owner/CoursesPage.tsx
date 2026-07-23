@@ -9,10 +9,17 @@ import {
   Badge,
 } from "../../components/ui/SharedComponents";
 import { CourseForm } from "./components/CourseForm";
+import { CourseDetailDrawer } from "./components/CourseDetailDrawer";
 import { courseApi } from "../../api/courseApi";
 import type { CourseRequest, CourseResponse } from "../../types/course";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 const CoursesPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,6 +28,7 @@ const CoursesPage = () => {
   const [editingCourse, setEditingCourse] = useState<CourseResponse | null>(
     null,
   );
+  const [selectedCourse, setSelectedCourse] = useState<CourseResponse | null>(null);
 
   const loadCourses = useCallback(async () => {
     try {
@@ -62,22 +70,62 @@ const CoursesPage = () => {
 
   const handleSave = async (request: CourseRequest) => {
     if (editingCourse) {
-      await courseApi.update(editingCourse.id, request);
+      const confirmed = await confirm({
+        title: "Cập nhật khóa học?",
+        message: `Bạn có chắc chắn muốn cập nhật thông tin khóa học "${editingCourse.name}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+
+      try {
+        await courseApi.update(editingCourse.id, request);
+        toast.success("Cập nhật khóa học thành công.");
+        setIsModalOpen(false);
+        setEditingCourse(null);
+        await loadCourses();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể cập nhật khóa học.");
+      }
     } else {
-      await courseApi.create(request);
+      try {
+        await courseApi.create(request);
+        toast.success("Tạo khóa học thành công.");
+        setIsModalOpen(false);
+        setEditingCourse(null);
+        await loadCourses();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể tạo khóa học.");
+      }
     }
-    setIsModalOpen(false);
-    setEditingCourse(null);
-    await loadCourses();
   };
 
   const handleDelete = async (course: CourseResponse) => {
-    if (!window.confirm(`Xóa khóa học "${course.name}"?`)) return;
     try {
+      const validation = await courseApi.validateDelete(course.id);
+      if (!validation.canDelete) {
+        let msg = `${validation.message}\n\nĐang được liên kết bởi các lớp học:\n`;
+        validation.dependencies.forEach((d) => {
+          msg += `- Lớp ${d.className} (Sĩ số: ${d.studentCount}, Trạng thái: ${d.status})\n`;
+        });
+        msg += `\nVui lòng điều chỉnh hoặc xóa các lớp học này trước khi xóa khóa học. Bạn cũng có thể Tắt kích hoạt khóa học này thay vì xóa.`;
+        toast.warning(msg);
+        return;
+      }
+
+      const confirmed = await confirm({
+        title: "Xóa khóa học?",
+        message: `Bạn có chắc chắn muốn xóa khóa học "${course.name}" không?`,
+        confirmText: "Xóa",
+        variant: "danger",
+      });
+      if (!confirmed) return;
+
       await courseApi.delete(course.id);
+      toast.success("Xóa khóa học thành công.");
       await loadCourses();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể xóa khóa học.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa khóa học.");
     }
   };
 
@@ -115,7 +163,11 @@ const CoursesPage = () => {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filtered.map((course) => (
-                <tr key={course.id} className="hover:bg-surface-hover">
+                <tr
+                  key={course.id}
+                  className="hover:bg-surface-hover cursor-pointer"
+                  onClick={() => setSelectedCourse(course)}
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {course.code}
                   </td>
@@ -134,7 +186,7 @@ const CoursesPage = () => {
                       {course.isActive ? "Hoạt động" : "Không hoạt động"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <button
                         className="text-xs text-blue-600 underline"
@@ -174,6 +226,22 @@ const CoursesPage = () => {
           }}
         />
       </Modal>
+
+      {selectedCourse && (
+        <CourseDetailDrawer
+          course={selectedCourse}
+          onClose={() => setSelectedCourse(null)}
+          onRefresh={async () => {
+            await loadCourses();
+            try {
+              const updated = await courseApi.findById(selectedCourse.id);
+              setSelectedCourse(updated);
+            } catch {
+              setSelectedCourse(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

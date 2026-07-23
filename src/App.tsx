@@ -44,9 +44,14 @@ import SessionManagementPage from "./pages/owner/SessionManagementPage";
 import AccountPage from "./pages/account/AccountPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
+import { ToastProvider } from "./components/ui/Toast";
+import { ConfirmProvider } from "./components/ui/ConfirmDialog";
+
 function App() {
   return (
-    <BrowserRouter>
+    <ToastProvider>
+      <ConfirmProvider>
+        <BrowserRouter>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -250,19 +255,21 @@ function App() {
             <div className="flex h-screen items-center justify-center bg-surface-page text-center">
               <div>
                 <h1 className="text-4xl font-semibold text-gray-900">404</h1>
-                <p className="mt-2 text-sm text-gray-500">Page not found</p>
+                <p className="mt-2 text-sm text-gray-500">Không tìm thấy trang</p>
                 <a
                   href="/login"
                   className="mt-4 inline-block text-sm font-medium text-primary hover:text-primary-hover transition-colors"
                 >
-                  Go to Login
+                  Quay lại đăng nhập
                 </a>
               </div>
             </div>
           }
         />
       </Routes>
-    </BrowserRouter>
+        </BrowserRouter>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }
 

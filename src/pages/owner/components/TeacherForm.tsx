@@ -82,7 +82,7 @@ export const TeacherForm = ({
         type="email"
         value={formData.email}
         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        error={fieldError === "email" ? "Email already exists" : errors.email}
+        error={fieldError === "email" ? "Email đã tồn tại" : errors.email}
         placeholder="VD: nguyenvana@email.com"
       />
 
@@ -94,7 +94,7 @@ export const TeacherForm = ({
         }
         error={
           fieldError === "phoneNumber"
-            ? "Phone number already exists"
+            ? "Số điện thoại đã tồn tại"
             : errors.phoneNumber
         }
         placeholder="0912345678"

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Badge, EmptyState, ErrorBanner } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import axiosClient from "../../api/axiosClient";
 import { formatMoney } from "../../utils/money";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 
 type InstStatus = "PENDING" | "PARTIALLY_PAID" | "PAID" | "OVERDUE";
 
@@ -10,6 +13,8 @@ interface InstallmentItem {
   id: number; feeRecordId: number; dueDate: string;
   expectedAmount: number; paidAmount: number; remainingAmount: number; status: InstStatus;
 }
+
+interface ScheduleEntry { dueDate: string; expectedAmount: string; }
 
 const STATUS_LABELS: Record<InstStatus, string> = {
   PENDING: "Chờ", PARTIALLY_PAID: "Một phần", PAID: "Đã trả", OVERDUE: "Quá hạn",
@@ -19,14 +24,18 @@ const STATUS_VARIANTS: Record<InstStatus, "warning" | "info" | "success" | "erro
 };
 
 const InstallmentManagementPage = () => {
-  const [feeRecordId, setFeeRecordId] = useState("");
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
+  const [searchParams] = useSearchParams();
+  const [feeRecordId, setFeeRecordId] = useState(searchParams.get("feeRecordId") ?? "");
   const [installments, setInstallments] = useState<InstallmentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Schedule form
   const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [scheduleEntries, setScheduleEntries] = useState<{ dueDate: string; expectedAmount: string }[]>([
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([
     { dueDate: "", expectedAmount: "" },
   ]);
   const [scheduleError, setScheduleError] = useState("");
@@ -54,21 +63,53 @@ const InstallmentManagementPage = () => {
     try { setSubmitting(true); setScheduleError("");
       const payload = { installments: scheduleEntries.map(e => ({ dueDate: e.dueDate, expectedAmount: Number(e.expectedAmount) })) };
       await axiosClient.post(`/owner/fee-record/${feeRecordId}/installments`, payload);
+      toast.success("Tạo lịch kỳ hạn thành công.");
       setShowScheduleForm(false); setScheduleEntries([{ dueDate: "", expectedAmount: "" }]); load();
-    } catch (err: any) { setScheduleError(err?.response?.data?.message ?? "Lỗi"); }
+    } catch (err: any) {
+      setScheduleError(err?.response?.data?.message ?? "Lỗi");
+      toast.error(err?.response?.data?.message ?? "Lỗi tạo lịch kỳ hạn.");
+    }
     finally { setSubmitting(false); }
   };
 
   const handleUpdate = async () => {
     if (!editId || !editDueDate || Number(editAmount) <= 0) return;
-    try { await axiosClient.put(`/owner/installments/${editId}`, { dueDate: editDueDate, expectedAmount: Number(editAmount) }); setEditId(null); load(); }
-    catch (err: any) { setError(err?.response?.data?.message ?? "Lỗi cập nhật"); }
+    const confirmed = await confirm({
+      title: "Cập nhật kỳ hạn?",
+      message: "Bạn có chắc chắn muốn cập nhật thông tin kỳ hạn này?",
+      confirmText: "Lưu thay đổi",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
+    try {
+      await axiosClient.put(`/owner/installments/${editId}`, { dueDate: editDueDate, expectedAmount: Number(editAmount) });
+      toast.success("Cập nhật kỳ hạn thành công.");
+      setEditId(null);
+      load();
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Lỗi cập nhật");
+      toast.error(err?.response?.data?.message ?? "Không thể cập nhật kỳ hạn.");
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Xóa kỳ hạn này?")) return;
-    try { await axiosClient.delete(`/owner/installments/${id}`); load(); }
-    catch (err: any) { setError(err?.response?.data?.message ?? "Lỗi xóa"); }
+    const confirmed = await confirm({
+      title: "Xóa kỳ hạn?",
+      message: "Bạn có chắc chắn muốn xóa kỳ hạn này?",
+      confirmText: "Xóa",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await axiosClient.delete(`/owner/installments/${id}`);
+      toast.success("Xóa kỳ hạn thành công.");
+      load();
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Lỗi xóa");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa kỳ hạn.");
+    }
   };
 
   return (

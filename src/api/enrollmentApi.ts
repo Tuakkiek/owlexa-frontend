@@ -12,6 +12,13 @@ export const enrollmentApi = {
     return response.data;
   },
 
+  findDroppedByClass: async (classId: number): Promise<EnrollmentResponse[]> => {
+    const response = await axiosClient.get(
+      `/owner/classes/${classId}/enrollments/dropped`,
+    );
+    return response.data;
+  },
+
   enroll: async (
     classId: number,
     request: EnrollmentRequest,

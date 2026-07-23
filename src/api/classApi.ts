@@ -10,6 +10,11 @@ export const classApi = {
     return response.data;
   },
 
+  findById: async (classId: number): Promise<ClassResponse> => {
+    const response = await axiosClient.get(`${BASE_URL}/${classId}`);
+    return response.data;
+  },
+
   findMyClasses: async (): Promise<ClassResponse[]> => {
     const response = await axiosClient.get("/teacher/classes/me");
     return response.data;

@@ -13,6 +13,8 @@ import { BulkAddTeacherForm } from "./components/BulkAddTeacherForm";
 import { TeacherSalaryModal } from "./components/TeacherSalaryModal";
 import { PermissionModal } from "../../components/permission/PermissionModal";
 import { TemporaryPasswordDialog } from "../../components/ui/TemporaryPasswordDialog";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 import { teacherApi } from "../../api/teacherApi";
 import type {
   TeacherResponse,
@@ -37,6 +39,9 @@ const formatSalary = (
 };
 
 export const TeachersPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -98,6 +103,7 @@ export const TeachersPage = () => {
       const created = await teacherApi.create(data);
       setIsAddModalOpen(false);
       setFieldError(null);
+      toast.success("Thêm giáo viên thành công.");
       if (created.temporaryPassword) {
         setCreatedUser({
           fullName: created.fullName,
@@ -110,6 +116,7 @@ export const TeachersPage = () => {
       const message =
         err?.response?.data?.message ?? "Không thể tạo giáo viên.";
       setError(message);
+      toast.error(`${message}`);
       if (message.includes("Email")) {
         setFieldError("email");
       } else if (message.includes("Phone")) {
@@ -119,17 +126,27 @@ export const TeachersPage = () => {
   };
   const handleUpdate = async (data: TeacherRequest) => {
     if (!editingTeacher) return;
+    const confirmed = await confirm({
+      title: "Chỉnh sửa giáo viên?",
+      message: `Xác nhận cập nhật thông tin cho giáo viên "${editingTeacher.fullName}"?`,
+      confirmText: "Lưu thay đổi",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
     try {
       setError("");
       setFieldError(null);
       await teacherApi.update(editingTeacher.userId, data);
       setEditingTeacher(null);
       setFieldError(null);
+      toast.success("Cập nhật thông tin giáo viên thành công.");
       loadTeachers();
     } catch (err: any) {
       const message =
         err?.response?.data?.message ?? "Không thể cập nhật giáo viên.";
       setError(message);
+      toast.error(`${message}`);
       if (message.includes("Email")) {
         setFieldError("email");
       } else if (message.includes("Phone")) {
@@ -138,17 +155,34 @@ export const TeachersPage = () => {
     }
   };
   const handleDelete = async (teacher: TeacherResponse) => {
-    if (!window.confirm(`Gỡ giáo viên "${teacher.fullName}" khỏi trung tâm?`))
-      return;
-    await teacherApi.delete(teacher.userId);
-    loadTeachers();
+    const confirmed = await confirm({
+      title: "Gỡ giáo viên khỏi trung tâm?",
+      message: `Bạn có chắc chắn muốn gỡ giáo viên "${teacher.fullName}" khỏi trung tâm không?`,
+      confirmText: "Gỡ",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await teacherApi.delete(teacher.userId);
+      toast.success("Đã gỡ giáo viên khỏi trung tâm thành công.");
+      loadTeachers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể gỡ giáo viên.");
+    }
   };
   const handleBulkCreate = async (
     data: BulkTeacherRequest,
   ): Promise<BulkTeacherResult[]> => {
-    const results = await teacherApi.bulkCreate(data);
-    loadTeachers();
-    return results;
+    try {
+      const results = await teacherApi.bulkCreate(data);
+      toast.success("Nhập danh sách giáo viên thành công.");
+      loadTeachers();
+      return results;
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể nhập danh sách giáo viên.");
+      throw err;
+    }
   };
   const handleSalarySaved = useCallback((updated: TeacherSalaryResponse) => {
     setTeachers((current) =>

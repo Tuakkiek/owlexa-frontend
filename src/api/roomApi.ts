@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { RoomRequest, RoomResponse } from "../types/room";
+import type { RoomRequest, RoomResponse, RoomScheduleSummaryResponse, RoomDeleteValidationResponse } from "../types/room";
 
 const BASE_URL = "/owner/rooms";
 
@@ -11,6 +11,16 @@ export const roomApi = {
 
   findById: async (roomId: number): Promise<RoomResponse> => {
     const response = await axiosClient.get(`${BASE_URL}/${roomId}`);
+    return response.data;
+  },
+
+  getScheduleSummary: async (roomId: number): Promise<RoomScheduleSummaryResponse[]> => {
+    const response = await axiosClient.get(`${BASE_URL}/${roomId}/schedule-summary`);
+    return response.data;
+  },
+
+  validateDelete: async (roomId: number): Promise<RoomDeleteValidationResponse> => {
+    const response = await axiosClient.get(`${BASE_URL}/${roomId}/delete-validation`);
     return response.data;
   },
 

@@ -9,16 +9,24 @@ import {
   Badge,
 } from "../../components/ui/SharedComponents";
 import { RoomForm } from "./components/RoomForm";
+import { RoomDetailDrawer } from "./components/RoomDetailDrawer";
 import { roomApi } from "../../api/roomApi";
 import type { RoomRequest, RoomResponse } from "../../types/room";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 const RoomsPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomResponse | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<RoomResponse | null>(null);
 
   const loadRooms = useCallback(async () => {
     try {
@@ -41,10 +49,7 @@ const RoomsPage = () => {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     if (!q) return rooms;
-    return rooms.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q),
-    );
+    return rooms.filter((r) => r.name.toLowerCase().includes(q));
   }, [rooms, query]);
 
   const openCreate = () => {
@@ -59,22 +64,62 @@ const RoomsPage = () => {
 
   const handleSave = async (request: RoomRequest) => {
     if (editingRoom) {
-      await roomApi.update(editingRoom.id, request);
+      const confirmed = await confirm({
+        title: "Cập nhật phòng học?",
+        message: `Bạn có chắc chắn muốn cập nhật phòng "${editingRoom.name}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+
+      try {
+        await roomApi.update(editingRoom.id, request);
+        toast.success("Cập nhật phòng học thành công.");
+        setIsModalOpen(false);
+        setEditingRoom(null);
+        await loadRooms();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể cập nhật phòng học.");
+      }
     } else {
-      await roomApi.create(request);
+      try {
+        await roomApi.create(request);
+        toast.success("Tạo phòng học thành công.");
+        setIsModalOpen(false);
+        setEditingRoom(null);
+        await loadRooms();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể tạo phòng học.");
+      }
     }
-    setIsModalOpen(false);
-    setEditingRoom(null);
-    await loadRooms();
   };
 
   const handleDelete = async (room: RoomResponse) => {
-    if (!window.confirm(`Xóa phòng "${room.name}"?`)) return;
     try {
+      const validation = await roomApi.validateDelete(room.id);
+      if (!validation.canDelete) {
+        let msg = `${validation.message}\n\nĐang được sử dụng bởi các lịch học:\n`;
+        validation.dependencies.forEach((d) => {
+          msg += `- Lớp ${d.className} (${d.dayOfWeek} ${d.timeRange})\n`;
+        });
+        msg += `\nVui lòng điều chỉnh hoặc hủy các lịch học này trước khi xóa. Bạn cũng có thể Tắt kích hoạt phòng học này thay vì xóa.`;
+        toast.warning(msg);
+        return;
+      }
+
+      const confirmed = await confirm({
+        title: "Xóa phòng học?",
+        message: `Bạn có chắc chắn muốn xóa phòng học "${room.name}" không?`,
+        confirmText: "Xóa",
+        variant: "danger",
+      });
+      if (!confirmed) return;
+
       await roomApi.delete(room.id);
+      toast.success("Xóa phòng học thành công.");
       await loadRooms();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể xóa phòng học.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa phòng học.");
     }
   };
 
@@ -115,7 +160,11 @@ const RoomsPage = () => {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {filtered.map((room) => (
-                <tr key={room.id} className="hover:bg-surface-hover">
+                <tr
+                  key={room.id}
+                  className="hover:bg-surface-hover cursor-pointer"
+                  onClick={() => setSelectedRoom(room)}
+                >
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {room.code}
                   </td>
@@ -128,7 +177,7 @@ const RoomsPage = () => {
                       {room.isActive ? "Hoạt động" : "Không hoạt động"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <button
                         className="text-xs text-blue-600 underline"
@@ -168,6 +217,22 @@ const RoomsPage = () => {
           }}
         />
       </Modal>
+
+      {selectedRoom && (
+        <RoomDetailDrawer
+          room={selectedRoom}
+          onClose={() => setSelectedRoom(null)}
+          onRefresh={async () => {
+            await loadRooms();
+            try {
+              const updated = await roomApi.findById(selectedRoom.id);
+              setSelectedRoom(updated);
+            } catch {
+              setSelectedRoom(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
