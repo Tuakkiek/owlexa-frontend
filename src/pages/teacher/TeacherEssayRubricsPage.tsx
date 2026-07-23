@@ -171,7 +171,7 @@ const TeacherEssayRubricsPage = () => {
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-            <p className="font-medium">ℹ️ Hệ thống rubric mặc định:</p>
+            <p className="font-medium">Hệ thống rubric mặc định:</p>
             <ul className="mt-2 space-y-1 text-xs">
               <li>
                 • <strong>Content & Ideas</strong> (40%): Nội dung, triển khai ý

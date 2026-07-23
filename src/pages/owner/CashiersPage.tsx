@@ -15,7 +15,13 @@ import type { CashierRequest, CashierResponse } from "../../types/cashier";
 
 const emptyForm: CashierRequest = { fullName: "", email: "", phoneNumber: "" };
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 export const CashiersPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [cashiers, setCashiers] = useState<CashierResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -63,9 +69,9 @@ export const CashiersPage = () => {
     const keyword = query.trim().toLowerCase();
     if (!keyword) return cashiers;
     return cashiers.filter(
-      (c) =>
-        c.fullName.toLowerCase().includes(keyword) ||
-        c.phoneNumber.includes(keyword),
+      (cashier) =>
+        cashier.fullName.toLowerCase().includes(keyword) ||
+        cashier.phoneNumber.toLowerCase().includes(keyword),
     );
   }, [cashiers, query]);
 
@@ -78,26 +84,38 @@ export const CashiersPage = () => {
   };
   const openEdit = (cashier: CashierResponse) => {
     setEditingCashier(cashier);
-    setFieldError(null);
-    setError("");
     setForm({
       fullName: cashier.fullName,
       phoneNumber: cashier.phoneNumber,
       email: "",
     });
+    setFieldError(null);
+    setError("");
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (editingCashier) {
+      const confirmed = await confirm({
+        title: "Cập nhật thu ngân?",
+        message: `Bạn có chắc chắn muốn cập nhật thu ngân "${editingCashier.fullName}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setIsSaving(true);
       setError("");
       setFieldError(null);
       if (editingCashier) {
         await cashierApi.update(editingCashier.userId, form);
+        toast.success("Cập nhật thông tin thu ngân thành công.");
       } else {
         const created = await cashierApi.create(form);
+        toast.success("Tạo tài khoản thu ngân thành công.");
         if (created.temporaryPassword) {
           setCreatedUser({
             fullName: created.fullName,
@@ -107,13 +125,12 @@ export const CashiersPage = () => {
         }
       }
       await loadCashiers();
-      if (editingCashier) {
-        setIsModalOpen(false);
-        setFieldError(null);
-      }
+      setIsModalOpen(false);
+      setFieldError(null);
     } catch (err: any) {
       const message = err?.response?.data?.message ?? "Không thể lưu thu ngân.";
       setError(message);
+      toast.error(`${message}`);
       if (message.includes("Email")) {
         setFieldError("email");
       } else if (message.includes("Phone")) {
@@ -125,10 +142,21 @@ export const CashiersPage = () => {
   };
 
   const handleDelete = async (cashier: CashierResponse) => {
-    if (!window.confirm(`Gỡ thu ngân "${cashier.fullName}" khỏi trung tâm?`))
-      return;
-    await cashierApi.delete(cashier.userId);
-    await loadCashiers();
+    const confirmed = await confirm({
+      title: "Gỡ thu ngân?",
+      message: `Bạn có chắc chắn muốn gỡ thu ngân "${cashier.fullName}" khỏi trung tâm?`,
+      confirmText: "Gỡ thu ngân",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await cashierApi.delete(cashier.userId);
+      toast.success("Đã gỡ thu ngân thành công.");
+      await loadCashiers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể gỡ thu ngân.");
+    }
   };
 
   return (

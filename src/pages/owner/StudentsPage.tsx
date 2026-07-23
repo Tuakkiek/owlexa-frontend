@@ -19,7 +19,13 @@ import type {
   BulkStudentResult,
 } from "../../types/student";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 export const StudentsPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [students, setStudents] = useState<StudentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,6 +83,7 @@ export const StudentsPage = () => {
       const created = await studentApi.create(data);
       setIsAddModalOpen(false);
       setFieldError(null);
+      toast.success("Thêm học sinh thành công.");
       if (created.temporaryPassword) {
         setCreatedUser({
           fullName: created.fullName,
@@ -88,6 +95,7 @@ export const StudentsPage = () => {
     } catch (err: any) {
       const message = err?.response?.data?.message ?? "Không thể tạo học sinh.";
       setError(message);
+      toast.error(`${message}`);
       if (message.includes("Email")) {
         setFieldError("email");
       } else if (message.includes("Phone")) {
@@ -95,19 +103,30 @@ export const StudentsPage = () => {
       }
     }
   };
+
   const handleUpdate = async (data: StudentRequest) => {
     if (!editingStudent) return;
+    const confirmed = await confirm({
+      title: "Chỉnh sửa học sinh?",
+      message: `Xác nhận cập nhật thông tin cho học sinh "${editingStudent.fullName}"?`,
+      confirmText: "Lưu thay đổi",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
     try {
       setError("");
       setFieldError(null);
       await studentApi.update(editingStudent.userId, data);
       setEditingStudent(null);
       setFieldError(null);
+      toast.success("Cập nhật thông tin học sinh thành công.");
       loadStudents();
     } catch (err: any) {
       const message =
         err?.response?.data?.message ?? "Không thể cập nhật học sinh.";
       setError(message);
+      toast.error(`${message}`);
       if (message.includes("Email")) {
         setFieldError("email");
       } else if (message.includes("Phone")) {
@@ -115,18 +134,37 @@ export const StudentsPage = () => {
       }
     }
   };
+
   const handleDelete = async (student: StudentResponse) => {
-    if (!window.confirm(`Gỡ học sinh "${student.fullName}" khỏi trung tâm?`))
-      return;
-    await studentApi.delete(student.userId);
-    loadStudents();
+    const confirmed = await confirm({
+      title: "Gỡ học sinh khỏi trung tâm?",
+      message: `Bạn có chắc chắn muốn gỡ học sinh "${student.fullName}" khỏi trung tâm?`,
+      confirmText: "Gỡ học sinh",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await studentApi.delete(student.userId);
+      toast.success("Đã xóa học sinh khỏi trung tâm thành công.");
+      loadStudents();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể gỡ học sinh.");
+    }
   };
+
   const handleBulkCreate = async (
     data: BulkStudentRequest,
   ): Promise<BulkStudentResult[]> => {
-    const results = await studentApi.bulkCreate(data);
-    loadStudents();
-    return results;
+    try {
+      const results = await studentApi.bulkCreate(data);
+      toast.success("Nhập danh sách học sinh thành công.");
+      loadStudents();
+      return results;
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể nhập danh sách học sinh.");
+      throw err;
+    }
   };
 
   return (

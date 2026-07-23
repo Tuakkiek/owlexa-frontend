@@ -6,8 +6,12 @@ import {
   ErrorBanner,
   LoadingSkeleton,
 } from "../../components/ui/SharedComponents";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 
 const AccountPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
   // ── Account info ──────────────────────────────────────────────────────
   const [account, setAccount] = useState<AccountResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +80,14 @@ const AccountPage = () => {
       setEditError("Họ và tên không được để trống.");
       return;
     }
+    const confirmed = await confirm({
+      title: "Cập nhật hồ sơ?",
+      message: "Bạn có chắc chắn muốn lưu thay đổi hồ sơ cá nhân?",
+      confirmText: "Lưu thay đổi",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
     try {
       setIsSaving(true);
       setEditError("");
@@ -86,12 +98,13 @@ const AccountPage = () => {
       });
       setAccount(updated);
       applyAccountUpdate(updated);
+      toast.success("Cập nhật hồ sơ thành công.");
       setEditSuccess("Cập nhật hồ sơ thành công.");
       setIsEditing(false);
     } catch (err: any) {
-      setEditError(
-        err?.response?.data?.message ?? "Không thể cập nhật hồ sơ.",
-      );
+      const msg = err?.response?.data?.message ?? "Không thể cập nhật hồ sơ.";
+      setEditError(msg);
+      toast.error(`${msg}`);
     } finally {
       setIsSaving(false);
     }
@@ -127,6 +140,14 @@ const AccountPage = () => {
       setPasswordError("Mật khẩu xác nhận không khớp.");
       return;
     }
+    const confirmed = await confirm({
+      title: "Đổi mật khẩu?",
+      message: "Bạn có chắc chắn muốn đổi mật khẩu tài khoản?",
+      confirmText: "Đổi mật khẩu",
+      variant: "warning",
+    });
+    if (!confirmed) return;
+
     try {
       setIsChangingPassword(true);
       setPasswordError("");
@@ -135,14 +156,12 @@ const AccountPage = () => {
         currentPassword,
         newPassword,
       });
+      toast.success("Đổi mật khẩu thành công.");
       setPasswordSuccess("Đổi mật khẩu thành công.");
-      setTimeout(() => {
-        closePasswordModal();
-      }, 1500);
     } catch (err: any) {
-      setPasswordError(
-        err?.response?.data?.message ?? "Không thể đổi mật khẩu.",
-      );
+      const msg = err?.response?.data?.message ?? "Không thể đổi mật khẩu.";
+      setPasswordError(msg);
+      toast.error(`${msg}`);
     } finally {
       setIsChangingPassword(false);
     }

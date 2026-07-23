@@ -132,7 +132,7 @@ export const ScheduleForm = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       {submitError && (
         <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700 font-medium">
-          ❌ {submitError}
+          {submitError}
         </div>
       )}
 

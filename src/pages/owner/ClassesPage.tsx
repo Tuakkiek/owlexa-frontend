@@ -14,6 +14,9 @@ import { classApi } from "../../api/classApi";
 import type { ClassResponse, ClassRequest } from "../../types/class";
 import { CLASS_STATUS_LABELS } from "../../types/class";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 const STATUS_FILTERS: Array<{ key: string; label: string }> = [
   { key: "ALL", label: "Tất cả" },
   { key: "PLANNED", label: "Đã lên kế hoạch" },
@@ -22,6 +25,9 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 ];
 
 export const ClassesPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [classes, setClasses] = useState<ClassResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,21 +70,53 @@ export const ClassesPage = () => {
   }, [classes, searchQuery, statusFilter]);
 
   const handleCreate = async (data: ClassRequest) => {
-    await classApi.create(data);
-    setIsAddModalOpen(false);
-    loadClasses();
-  };
-  const handleUpdate = async (data: ClassRequest) => {
-    if (editingClass) {
-      await classApi.update(editingClass.id, data);
-      setEditingClass(null);
+    try {
+      await classApi.create(data);
+      setIsAddModalOpen(false);
+      toast.success("Tạo lớp học thành công.");
       loadClasses();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể tạo lớp học.");
     }
   };
+
+  const handleUpdate = async (data: ClassRequest) => {
+    if (!editingClass) return;
+    const confirmed = await confirm({
+      title: "Cập nhật lớp học?",
+      message: `Bạn có chắc chắn muốn cập nhật thông tin lớp học "${editingClass.name}" không?`,
+      confirmText: "Cập nhật",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
+    try {
+      await classApi.update(editingClass.id, data);
+      setEditingClass(null);
+      setIsAddModalOpen(false);
+      toast.success("Cập nhật thông tin lớp học thành công.");
+      loadClasses();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể cập nhật thông tin lớp học.");
+    }
+  };
+
   const handleDelete = async (cls: ClassResponse) => {
-    if (!window.confirm(`Xóa lớp "${cls.name}"?`)) return;
-    await classApi.delete(cls.id);
-    loadClasses();
+    const confirmed = await confirm({
+      title: "Xóa lớp học?",
+      message: `Bạn có chắc chắn muốn xóa lớp học "${cls.name}" không?`,
+      confirmText: "Xóa",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await classApi.delete(cls.id);
+      toast.success("Xóa lớp học thành công.");
+      loadClasses();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể xóa lớp học.");
+    }
   };
 
   return (

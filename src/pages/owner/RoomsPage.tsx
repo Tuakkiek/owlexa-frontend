@@ -13,7 +13,13 @@ import { RoomDetailDrawer } from "./components/RoomDetailDrawer";
 import { roomApi } from "../../api/roomApi";
 import type { RoomRequest, RoomResponse } from "../../types/room";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 const RoomsPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,10 +49,7 @@ const RoomsPage = () => {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     if (!q) return rooms;
-    return rooms.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q),
-    );
+    return rooms.filter((r) => r.name.toLowerCase().includes(q));
   }, [rooms, query]);
 
   const openCreate = () => {
@@ -61,13 +64,34 @@ const RoomsPage = () => {
 
   const handleSave = async (request: RoomRequest) => {
     if (editingRoom) {
-      await roomApi.update(editingRoom.id, request);
+      const confirmed = await confirm({
+        title: "Cập nhật phòng học?",
+        message: `Bạn có chắc chắn muốn cập nhật phòng "${editingRoom.name}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+
+      try {
+        await roomApi.update(editingRoom.id, request);
+        toast.success("Cập nhật phòng học thành công.");
+        setIsModalOpen(false);
+        setEditingRoom(null);
+        await loadRooms();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể cập nhật phòng học.");
+      }
     } else {
-      await roomApi.create(request);
+      try {
+        await roomApi.create(request);
+        toast.success("Tạo phòng học thành công.");
+        setIsModalOpen(false);
+        setEditingRoom(null);
+        await loadRooms();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message ?? "Không thể tạo phòng học.");
+      }
     }
-    setIsModalOpen(false);
-    setEditingRoom(null);
-    await loadRooms();
   };
 
   const handleDelete = async (room: RoomResponse) => {
@@ -79,15 +103,23 @@ const RoomsPage = () => {
           msg += `- Lớp ${d.className} (${d.dayOfWeek} ${d.timeRange})\n`;
         });
         msg += `\nVui lòng điều chỉnh hoặc hủy các lịch học này trước khi xóa. Bạn cũng có thể Tắt kích hoạt phòng học này thay vì xóa.`;
-        alert(msg);
+        toast.warning(msg);
         return;
       }
 
-      if (!window.confirm(`Xóa phòng "${room.name}"?`)) return;
+      const confirmed = await confirm({
+        title: "Xóa phòng học?",
+        message: `Bạn có chắc chắn muốn xóa phòng học "${room.name}" không?`,
+        confirmText: "Xóa",
+        variant: "danger",
+      });
+      if (!confirmed) return;
+
       await roomApi.delete(room.id);
+      toast.success("Xóa phòng học thành công.");
       await loadRooms();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể xóa phòng học.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa phòng học.");
     }
   };
 

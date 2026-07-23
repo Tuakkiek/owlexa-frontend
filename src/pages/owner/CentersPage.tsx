@@ -11,6 +11,9 @@ import {
 import { centerApi } from "../../api/centerApi";
 import type { CenterRequest, CenterResponse } from "../../types/center";
 
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
+
 const emptyForm: CenterRequest = { name: "", subdomain: "" };
 
 const normalizeSubdomain = (value: string) =>
@@ -21,6 +24,9 @@ const normalizeSubdomain = (value: string) =>
     .replace(/[^a-z0-9-]/g, "");
 
 export const CentersPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [centers, setCenters] = useState<CenterResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,27 +79,54 @@ export const CentersPage = () => {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (editingCenter) {
+      const confirmed = await confirm({
+        title: "Cập nhật trung tâm?",
+        message: `Bạn có chắc chắn muốn cập nhật thông tin trung tâm "${editingCenter.name}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setIsSaving(true);
       const payload = {
         ...form,
         subdomain: normalizeSubdomain(form.subdomain),
       };
-      if (editingCenter) await centerApi.update(editingCenter.id, payload);
-      else await centerApi.create(payload);
+      if (editingCenter) {
+        await centerApi.update(editingCenter.id, payload);
+        toast.success("Cập nhật trung tâm thành công.");
+      } else {
+        await centerApi.create(payload);
+        toast.success("Tạo trung tâm thành công.");
+      }
       setIsModalOpen(false);
       await loadCenters();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể lưu trung tâm.");
+      toast.error(err?.response?.data?.message ?? "Không thể lưu trung tâm.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (center: CenterResponse) => {
-    if (!window.confirm(`Xóa trung tâm "${center.name}"?`)) return;
-    await centerApi.delete(center.id);
-    await loadCenters();
+    const confirmed = await confirm({
+      title: "Xóa trung tâm?",
+      message: `Bạn có chắc chắn muốn xóa trung tâm "${center.name}"?`,
+      confirmText: "Xóa",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await centerApi.delete(center.id);
+      toast.success("Xóa trung tâm thành công.");
+      await loadCenters();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể xóa trung tâm.");
+    }
   };
 
   return (

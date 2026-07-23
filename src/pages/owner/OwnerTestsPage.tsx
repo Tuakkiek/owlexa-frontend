@@ -4,6 +4,8 @@ import testApi from "../../api/testApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 import type {
   MockTest,
   MockTestQuestion,
@@ -71,6 +73,9 @@ const LEVEL_LABELS: Record<MockTest["level"], string> = {
 };
 
 export default function OwnerTestsPage() {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+  
   const [tests, setTests] = useState<MockTest[]>([]);
   const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
   const [questions, setQuestions] = useState<MockTestQuestion[]>([]);
@@ -182,6 +187,16 @@ export default function OwnerTestsPage() {
 
   const handleSaveTest = async (event: FormEvent) => {
     event.preventDefault();
+    if (editingTest) {
+      const confirmed = await confirm({
+        title: "Cập nhật đề thi?",
+        message: `Bạn có chắc chắn muốn cập nhật đề thi "${editingTest.title}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setIsSavingTest(true);
       const payload = {
@@ -194,28 +209,41 @@ export default function OwnerTestsPage() {
         ? await testApi.updateTest(editingTest.id, payload)
         : await testApi.createTest(payload);
 
+      if (editingTest) {
+        toast.success("Cập nhật đề thi thành công.");
+      } else {
+        toast.success("Tạo đề thi thành công.");
+      }
+
       setIsTestModalOpen(false);
       setSelectedTestId(saved.id);
       await loadTests();
       await loadDetails(saved.id);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể lưu đề thi.");
+      toast.error(err?.response?.data?.message ?? "Không thể lưu đề thi.");
     } finally {
       setIsSavingTest(false);
     }
   };
 
   const handleDeleteTest = async (test: MockTest) => {
-    if (!window.confirm(`Xóa đề thi "${test.title}"?`)) return;
+    const confirmed = await confirm({
+      title: "Xóa đề thi?",
+      message: `Bạn có chắc chắn muốn xóa đề thi "${test.title}"?`,
+      confirmText: "Xóa đề thi",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     try {
       await testApi.deleteTest(test.id);
       if (selectedTestId === test.id) {
         setSelectedTestId(null);
       }
+      toast.success("Xóa đề thi thành công.");
       await loadTests();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể xóa đề thi.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa đề thi.");
     }
   };
 
@@ -259,15 +287,17 @@ export default function OwnerTestsPage() {
           editingQuestion.id,
           payload,
         );
+        toast.success("Cập nhật câu hỏi thành công.");
       } else {
         await testApi.addQuestion(selectedTestId, payload);
+        toast.success("Thêm câu hỏi thành công.");
       }
 
       setIsQuestionModalOpen(false);
       await loadDetails(selectedTestId);
       await loadTests();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể lưu câu hỏi.");
+      toast.error(err?.response?.data?.message ?? "Không thể lưu câu hỏi.");
     } finally {
       setIsSavingQuestion(false);
     }
@@ -275,14 +305,21 @@ export default function OwnerTestsPage() {
 
   const handleDeleteQuestion = async (question: MockTestQuestion) => {
     if (!selectedTestId) return;
-    if (!window.confirm("Xóa câu hỏi này?")) return;
+    const confirmed = await confirm({
+      title: "Xóa câu hỏi?",
+      message: "Bạn có chắc chắn muốn xóa câu hỏi này?",
+      confirmText: "Xóa câu hỏi",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     try {
       await testApi.deleteQuestion(selectedTestId, question.id);
+      toast.success("Xóa câu hỏi thành công.");
       await loadDetails(selectedTestId);
       await loadTests();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể xóa câu hỏi.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa câu hỏi.");
     }
   };
 
