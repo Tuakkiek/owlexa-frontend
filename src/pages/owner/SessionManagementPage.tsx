@@ -6,8 +6,13 @@ import {
   EmptyState,
   LoadingSkeleton,
 } from "../../components/ui/SharedComponents";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 
 const SessionManagementPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,29 +40,42 @@ const SessionManagementPage = () => {
   }, [loadSessions]);
 
   const handleRevoke = async (sessionId: string) => {
-    if (!window.confirm("Bạn có chắc muốn đăng xuất phiên này?")) return;
+    const confirmed = await confirm({
+      title: "Đăng xuất phiên?",
+      message: "Bạn có chắc chắn muốn đăng xuất khỏi phiên này?",
+      confirmText: "Đăng xuất",
+      variant: "warning",
+    });
+    if (!confirmed) return;
+
     try {
       setRevokingId(sessionId);
       await authApi.revokeSession(sessionId);
       setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      toast.success("Hủy phiên đăng nhập thành công.");
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Không thể hủy phiên đăng nhập.",
-      );
+      toast.error(err?.response?.data?.message ?? "Không thể hủy phiên đăng nhập.");
     } finally {
       setRevokingId(null);
     }
   };
 
   const handleRevokeAll = async () => {
-    if (!window.confirm("Bạn có chắc muốn đăng xuất tất cả các phiên khác?"))
-      return;
+    const confirmed = await confirm({
+      title: "Đăng xuất tất cả phiên khác?",
+      message: "Bạn có chắc chắn muốn đăng xuất tất cả các phiên làm việc khác?",
+      confirmText: "Đăng xuất tất cả",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
     try {
       setIsRevokingAll(true);
       await authApi.revokeAllSessions();
+      toast.success("Hủy tất cả các phiên đăng nhập khác thành công.");
       loadSessions();
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể hủy tất cả phiên.");
+      toast.error(err?.response?.data?.message ?? "Không thể hủy tất cả phiên.");
     } finally {
       setIsRevokingAll(false);
     }

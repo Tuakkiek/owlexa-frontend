@@ -17,3 +17,26 @@ export interface RoomResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface RoomScheduleSummaryResponse {
+  id: number;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  className: string;
+  teacherName: string;
+  type: string;
+}
+
+export interface RoomDependencyDto {
+  className: string;
+  teacherName: string;
+  dayOfWeek: string;
+  timeRange: string;
+}
+
+export interface RoomDeleteValidationResponse {
+  canDelete: boolean;
+  message: string;
+  dependencies: RoomDependencyDto[];
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   PageHeader,
   Badge,
@@ -7,6 +8,8 @@ import {
 import { Button } from "../../components/ui/Button";
 import axiosClient from "../../api/axiosClient";
 import { formatMoney } from "../../utils/money";
+import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { useToast } from "../../components/ui/Toast";
 
 interface DiscountItem {
   id: number;
@@ -20,29 +23,34 @@ interface DiscountItem {
 }
 
 const DiscountManagementPage = () => {
+  const confirm = useConfirm();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const [feeRecordId, setFeeRecordId] = useState(searchParams.get("feeRecordId") || "");
+
   const [discounts, setDiscounts] = useState<DiscountItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
-  const [feeRecordId, setFeeRecordId] = useState("");
   const [name, setName] = useState("");
-  const [type, setType] = useState<"FIXED" | "PERCENTAGE">("FIXED");
+  const [type, setType] = useState<"FIXED" | "PERCENTAGE">("PERCENTAGE");
   const [value, setValue] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
-    if (!feeRecordId) {
-      setLoading(false);
-      return;
-    }
     try {
       setLoading(true);
-      const res = await axiosClient.get(
-        `/owner/fee-record/${feeRecordId}/discounts`,
-      );
-      setDiscounts(res.data);
+      if (feeRecordId) {
+        const res = await axiosClient.get(
+          `/owner/fee-record/${feeRecordId}/discounts`,
+        );
+        setDiscounts(res.data);
+      } else {
+        const res = await axiosClient.get("/owner/discounts");
+        setDiscounts(res.data);
+      }
     } catch {
       setDiscounts([]);
     } finally {
@@ -55,7 +63,7 @@ const DiscountManagementPage = () => {
   }, [load]);
 
   const handleSubmit = async () => {
-    if (!name || !value || !feeRecordId) {
+    if (!name || !value) {
       setError("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -68,6 +76,16 @@ const DiscountManagementPage = () => {
       setError("Giá trị phải lớn hơn 0");
       return;
     }
+    if (editId) {
+      const confirmed = await confirm({
+        title: "Cập nhật chiết khấu?",
+        message: `Xác nhận cập nhật chiết khấu "${name}"?`,
+        confirmText: "Lưu thay đổi",
+        variant: "primary",
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setSubmitting(true);
       setError("");
@@ -79,11 +97,13 @@ const DiscountManagementPage = () => {
       };
       if (editId) {
         await axiosClient.put(`/owner/discounts/${editId}`, payload);
+        toast.success("Cập nhật chiết khấu thành công.");
       } else {
         await axiosClient.post(
           `/owner/fee-record/${feeRecordId}/discounts`,
           payload,
         );
+        toast.success("Áp dụng chiết khấu thành công.");
       }
       setShowForm(false);
       setName("");
@@ -93,15 +113,28 @@ const DiscountManagementPage = () => {
       load();
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Lỗi");
+      toast.error(err?.response?.data?.message ?? "Lỗi khi lưu chiết khấu.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Xóa chiết khấu này?")) return;
-    await axiosClient.delete(`/owner/discounts/${id}`);
-    load();
+    const confirmed = await confirm({
+      title: "Xóa chiết khấu?",
+      message: "Bạn có chắc chắn muốn xóa chiết khấu này?",
+      confirmText: "Xóa",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
+    try {
+      await axiosClient.delete(`/owner/discounts/${id}`);
+      toast.success("Xóa chiết khấu thành công.");
+      load();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể xóa chiết khấu.");
+    }
   };
 
   const openEdit = (d: DiscountItem) => {

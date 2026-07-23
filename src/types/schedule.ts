@@ -43,3 +43,14 @@ export const DAY_LABELS: Record<number, string> = {
   5: "Thứ Sáu",
   6: "Thứ Bảy",
 };
+
+/** For backend responses that return DayOfWeek as a Java enum string (e.g. "MONDAY") */
+export const DAY_OF_WEEK_LABELS: Record<string, string> = {
+  MONDAY: "Thứ Hai",
+  TUESDAY: "Thứ Ba",
+  WEDNESDAY: "Thứ Tư",
+  THURSDAY: "Thứ Năm",
+  FRIDAY: "Thứ Sáu",
+  SATURDAY: "Thứ Bảy",
+  SUNDAY: "Chủ Nhật",
+};
