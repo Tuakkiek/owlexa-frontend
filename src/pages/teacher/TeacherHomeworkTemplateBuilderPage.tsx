@@ -1,23 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import homeworkApi from "../../api/homeworkApi";
 import { Button } from "../../components/ui/Button";
-import { PageHeader, ErrorBanner, LoadingSkeleton, Badge } from "../../components/ui/SharedComponents";
+import { PageHeader, ErrorBanner, LoadingSkeleton } from "../../components/ui/SharedComponents";
 import { useToast } from "../../components/ui/Toast";
-import { QuestionCard } from "./components/QuestionCard";
-import { TemplatePreview } from "./components/TemplatePreview";
-import type { TeacherHomeworkTemplateSaveRequest, HomeworkQuestion, HomeworkType, HomeworkDifficulty, HomeworkQuestionType } from "../../types/homework";
-
-const INITIAL_FORM: TeacherHomeworkTemplateSaveRequest = {
-  title: "",
-  description: "",
-  instructions: "",
-  homeworkType: "MIXED",
-  estimatedTime: 0,
-  difficulty: "MEDIUM",
-  maxScore: 0,
-  questions: [],
-};
 
 export default function TeacherHomeworkTemplateBuilderPage() {
   const { id } = useParams();
@@ -26,57 +12,38 @@ export default function TeacherHomeworkTemplateBuilderPage() {
   
   const isEditing = id && id !== "new";
   const [isLoading, setIsLoading] = useState(isEditing);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   
-  // Data state
-  const [formData, setFormData] = useState<TeacherHomeworkTemplateSaveRequest>(INITIAL_FORM);
-  const [originalData, setOriginalData] = useState<string>(JSON.stringify(INITIAL_FORM));
+  const [homeworkType, setHomeworkType] = useState<"QUIZ" | "ESSAY" | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [estimatedTime, setEstimatedTime] = useState<number>(30);
   
-  // Meta state (loaded from library)
-  const [templateVersion, setTemplateVersion] = useState(1);
-  const [parentTemplateId, setParentTemplateId] = useState<number | null>(null);
-  const [templateStatus, setTemplateStatus] = useState<string>("DRAFT");
-  
-  // UI state
-  const [expandedQuestions, setExpandedQuestions] = useState<Record<number, boolean>>({});
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [showValidationSummary, setShowValidationSummary] = useState(false);
-  const [mode, setMode] = useState<"EDIT" | "PREVIEW">("EDIT");
+  // Essay specific
+  const [essayPrompt, setEssayPrompt] = useState("");
+  const [gradingCriteriaId, setGradingCriteriaId] = useState<number | "">("");
+  const [criteriaList, setCriteriaList] = useState<any[]>([]);
 
-  // Unsaved changes check
-  const hasUnsavedChanges = useMemo(() => {
-    return JSON.stringify(formData) !== originalData;
-  }, [formData, originalData]);
-
-
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [hasUnsavedChanges]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formData]);
+  // Quiz specific
+  const [questionsJson, setQuestionsJson] = useState("");
+  const [showSample, setShowSample] = useState(false);
 
   useEffect(() => {
     if (isEditing) {
       loadTemplate();
     }
+    loadCriteriaList();
   }, [id]);
+
+  const loadCriteriaList = async () => {
+    try {
+      const data = await homeworkApi.getGradingCriteriaList();
+      setCriteriaList(data.content || []);
+    } catch (e) {
+      console.error("Failed to load criteria list", e);
+    }
+  };
 
   const loadTemplate = async () => {
     try {
@@ -84,24 +51,20 @@ export default function TeacherHomeworkTemplateBuilderPage() {
       const library = await homeworkApi.getTemplateLibrary();
       const template = library.find(t => t.id === Number(id));
       if (template) {
-        const d = {
-          title: template.title,
-          description: template.description,
-          instructions: template.instructions,
-          homeworkType: template.homeworkType,
-          estimatedTime: template.estimatedTime,
-          difficulty: template.difficulty,
-          maxScore: template.maxScore,
-          questions: template.questions || [],
-        };
-        setFormData(d);
-        setOriginalData(JSON.stringify(d));
-        setTemplateVersion(template.version);
-        setParentTemplateId(template.parentTemplateId || null);
-        setTemplateStatus(template.status || "DRAFT");
+        setTitle(template.title);
+        setDescription(template.description || "");
+        setHomeworkType(template.homeworkType === "QUIZ" || template.homeworkType === "ESSAY" ? template.homeworkType : null);
+        setEstimatedTime(template.estimatedTime || 30);
         
-        if (d.questions.length > 0) {
-          setExpandedQuestions({ 0: true });
+        if (template.homeworkType === "ESSAY") {
+          setEssayPrompt(template.instructions || "");
+          // Ideally gradingCriteriaId would be returned from API
+          // For MVP we just load it if available
+          setGradingCriteriaId(template.gradingCriteriaId || "");
+        } else if (template.homeworkType === "QUIZ") {
+          // Editing Quiz JSON is harder if we don't have the original JSON
+          // In a real MVP we might just fetch the questions and reconstruct JSON, but for now we leave it empty to re-paste
+          setQuestionsJson("");
         }
       } else {
         setError("Không tìm thấy mẫu bài tập.");
@@ -113,113 +76,41 @@ export default function TeacherHomeworkTemplateBuilderPage() {
     }
   };
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    if (!formData.title.trim()) {
-      errors.title = "Tiêu đề không được để trống";
-    }
-    if (formData.estimatedTime && formData.estimatedTime < 0) {
-      errors.estimatedTime = "Thời gian không hợp lệ";
-    }
-
-    const titles = new Set<string>();
-    formData.questions?.forEach((q, idx) => {
-      if (!q.questionText?.trim()) {
-        errors[`q_${idx}_questionText`] = "Nội dung câu hỏi không được để trống";
-      } else {
-        if (titles.has(q.questionText.trim())) {
-          errors[`q_${idx}_questionText`] = "Trùng lặp nội dung câu hỏi";
-        }
-        titles.add(q.questionText.trim());
-      }
-      
-      if (q.maxScore < 0) {
-        errors[`q_${idx}_maxScore`] = "Điểm không được âm";
-      }
-
-      if (q.type === "MULTIPLE_CHOICE") {
-        if (!q.options || q.options.length < 2) {
-          errors[`q_${idx}_options`] = "Phải có ít nhất 2 đáp án";
-        } else {
-          let hasCorrect = false;
-          q.options.forEach((opt, oIdx) => {
-            if (!opt.optionText.trim()) {
-              errors[`q_${idx}_optionText_${oIdx}`] = "Đáp án không được để trống";
-            }
-            if (opt.isCorrect) hasCorrect = true;
-          });
-          if (!hasCorrect) {
-            errors[`q_${idx}_options`] = "Phải có ít nhất 1 đáp án đúng";
-          }
-        }
-      }
-
-      if (q.type === "ESSAY") {
-        if (!q.rubric?.criteria || q.rubric.criteria.length === 0) {
-          errors[`q_${idx}_rubric`] = "Phải có ít nhất 1 tiêu chí chấm điểm";
-        } else {
-          q.rubric.criteria.forEach((crit, cIdx) => {
-            if (!crit.name.trim()) {
-              errors[`q_${idx}_criterionName_${cIdx}`] = "Tên tiêu chí không được trống";
-            }
-            if (crit.maxScore < 0) {
-              errors[`q_${idx}_criterionScore_${cIdx}`] = "Điểm không được âm";
-            }
-          });
-        }
-      }
-    });
-
-    setValidationErrors(errors);
-    return errors;
-  };
-
-  const scrollToError = (fieldPath: string) => {
-    setShowValidationSummary(false);
-    
-    // Switch to edit mode if we are in preview
-    if (mode !== "EDIT") setMode("EDIT");
-
-    // fieldPath example: q_2_options or title
-    setTimeout(() => {
-      if (fieldPath.startsWith("q_")) {
-        const parts = fieldPath.split("_");
-        const idx = parseInt(parts[1], 10);
-        // ensure question is expanded
-        setExpandedQuestions(prev => ({ ...prev, [idx]: true }));
-        
-        setTimeout(() => {
-          const el = document.getElementById(`question-${idx}`);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
-      } else {
-        const el = document.getElementById(`field-${fieldPath}`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }, 100);
-  };
-
   const handleSave = async () => {
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setShowValidationSummary(true);
+    if (!title.trim()) {
+      showToast("Vui lòng nhập tiêu đề", "error");
       return;
     }
-    setError("");
 
-    const calculatedScore = formData.questions?.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0) || 0;
-    
-    const payload = {
-      ...formData,
-      maxScore: calculatedScore,
-      questions: formData.questions?.map((q, idx) => ({
-        ...q,
-        sortOrder: idx,
-      })),
+    if (homeworkType === "ESSAY" && !essayPrompt.trim()) {
+      showToast("Vui lòng nhập đề bài Essay", "error");
+      return;
+    }
+
+    if (homeworkType === "ESSAY" && !gradingCriteriaId) {
+      showToast("Vui lòng chọn tiêu chí chấm bài", "error");
+      return;
+    }
+
+    if (homeworkType === "QUIZ" && !questionsJson.trim() && !isEditing) {
+      showToast("Vui lòng dán JSON câu hỏi", "error");
+      return;
+    }
+
+    const payload: any = {
+      title,
+      description,
+      homeworkType,
+      estimatedTime,
+      difficulty: "MEDIUM",
+      maxScore: 100, // MVP default
+      instructions: homeworkType === "ESSAY" ? essayPrompt : "",
+      gradingCriteriaId: homeworkType === "ESSAY" ? Number(gradingCriteriaId) : null,
+      questionsJson: homeworkType === "QUIZ" ? questionsJson : null,
     };
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       if (isEditing) {
         await homeworkApi.updateTemplate(Number(id), payload);
         showToast("Cập nhật mẫu bài tập thành công", "success");
@@ -227,385 +118,180 @@ export default function TeacherHomeworkTemplateBuilderPage() {
         await homeworkApi.createTemplate(payload);
         showToast("Tạo mẫu bài tập thành công", "success");
       }
-      setOriginalData(JSON.stringify(payload));
       navigate("/teacher/homework-templates");
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Lỗi khi lưu mẫu bài tập");
+      showToast(err?.response?.data?.message || "Lỗi khi lưu mẫu bài tập", "error");
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  // Question CRUD Handlers...
-  const addQuestion = useCallback(() => {
-    setFormData(prev => {
-      const qLen = prev.questions?.length || 0;
-      setExpandedQuestions(e => ({ ...e, [qLen]: true }));
-      return {
-        ...prev,
-        questions: [
-          ...(prev.questions || []),
-          {
-            type: "MULTIPLE_CHOICE" as HomeworkQuestionType,
-            questionText: "",
-            maxScore: 10,
-            sortOrder: qLen,
-            options: [
-              { optionText: "", isCorrect: true, sortOrder: 0 },
-              { optionText: "", isCorrect: false, sortOrder: 1 },
-            ]
-          }
-        ]
-      };
-    });
-  }, []);
+  const sampleJson = `{
+  "questions": [
+    {
+      "question": "What is the capital of France?",
+      "options": ["London", "Paris", "Berlin", "Madrid"],
+      "correctAnswer": 1
+    },
+    {
+      "question": "2 + 2 = ?",
+      "options": ["3", "4", "5", "6"],
+      "correctAnswer": 1
+    }
+  ]
+}`;
 
-  const updateQuestion = useCallback((index: number, updates: Partial<HomeworkQuestion>) => {
-    setFormData(prev => {
-      const qList = [...(prev.questions || [])];
-      qList[index] = { ...qList[index], ...updates };
-      const newMaxScore = qList.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0);
-      return { ...prev, questions: qList, maxScore: newMaxScore };
-    });
-  }, []);
-
-  const duplicateQuestion = useCallback((index: number) => {
-    setFormData(prev => {
-      const qList = [...(prev.questions || [])];
-      const qToDuplicate = { ...qList[index] };
-      qToDuplicate.questionText = qToDuplicate.questionText + " (Bản sao)";
-      if (qToDuplicate.options) qToDuplicate.options = qToDuplicate.options.map(o => ({...o}));
-      if (qToDuplicate.rubric) {
-        qToDuplicate.rubric = { criteria: qToDuplicate.rubric.criteria?.map(c => ({...c})) || [] };
-      }
-      qList.splice(index + 1, 0, qToDuplicate);
-      qList.forEach((q, i) => q.sortOrder = i);
-      const newMaxScore = qList.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0);
-      setExpandedQuestions(e => ({ ...e, [index + 1]: true }));
-      return { ...prev, questions: qList, maxScore: newMaxScore };
-    });
-  }, []);
-
-  const deleteQuestion = useCallback((index: number) => {
-    setFormData(prev => {
-      const qList = [...(prev.questions || [])];
-      qList.splice(index, 1);
-      qList.forEach((q, i) => q.sortOrder = i);
-      const newMaxScore = qList.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0);
-      return { ...prev, questions: qList, maxScore: newMaxScore };
-    });
-  }, []);
-
-  const moveQuestion = useCallback((index: number, dir: -1 | 1) => {
-    setFormData(prev => {
-      const qList = [...(prev.questions || [])];
-      if (index + dir < 0 || index + dir >= qList.length) return prev;
-      const temp = qList[index];
-      qList[index] = qList[index + dir];
-      qList[index + dir] = temp;
-      qList.forEach((q, i) => q.sortOrder = i);
-      setExpandedQuestions(e => {
-        const next = { ...e };
-        const tempState = next[index];
-        next[index] = next[index + dir];
-        next[index + dir] = tempState;
-        return next;
-      });
-      return { ...prev, questions: qList };
-    });
-  }, []);
-
-  const moveQuestionUp = useCallback((index: number) => moveQuestion(index, -1), [moveQuestion]);
-  const moveQuestionDown = useCallback((index: number) => moveQuestion(index, 1), [moveQuestion]);
-
-  const toggleExpand = useCallback((index: number) => {
-    setExpandedQuestions(prev => ({ ...prev, [index]: !prev[index] }));
-  }, []);
-
-  if (isLoading && isEditing && formData.title === "") {
+  if (isLoading && isEditing && title === "") {
     return (
-      <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <LoadingSkeleton count={1} height="h-32" />
-        <LoadingSkeleton count={3} height="h-64" />
+      <div className="mx-auto max-w-3xl space-y-6 p-6">
+        <LoadingSkeleton count={3} height="h-32" />
       </div>
     );
   }
 
-  const calculatedTotalScore = formData.questions?.reduce((sum, q) => sum + (Number(q.maxScore) || 0), 0) || 0;
-
   return (
-    <div className="mx-auto max-w-full px-4 sm:px-6 lg:px-8 pb-20 pt-6">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pb-20 pt-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {isEditing ? "Chỉnh sửa mẫu bài tập" : "Tạo mẫu bài tập mới"}
-          </h1>
-          <div className="mt-1 flex items-center gap-2">
-            <p className="text-sm text-gray-500">Biên soạn nội dung bài tập, câu hỏi và barem điểm.</p>
-            {isEditing && (
-              <>
-                <span className="text-gray-300">•</span>
-                <Badge variant={templateStatus === "ACTIVE" ? "success" : templateStatus === "ARCHIVED" ? "error" : "info"}>
-                  {templateStatus === "ACTIVE" ? "Hoạt động" : templateStatus === "ARCHIVED" ? "Đã lưu trữ" : "Bản nháp"}
-                </Badge>
-              </>
-            )}
-          </div>
-        </div>
+        <PageHeader title={isEditing ? "Chỉnh sửa Đề thi" : "Tạo Đề thi mới"} />
         <div className="flex items-center gap-3">
-          <div className="flex rounded-md shadow-sm" role="group">
-            <button
-              type="button"
-              onClick={() => setMode("EDIT")}
-              className={`rounded-l-md border border-surface-border px-4 py-2 text-sm font-medium transition-colors ${mode === "EDIT" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-            >
-              Soạn thảo
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("PREVIEW")}
-              className={`rounded-r-md border border-l-0 border-surface-border px-4 py-2 text-sm font-medium transition-colors ${mode === "PREVIEW" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-            >
-              Xem thử
-            </button>
-          </div>
           <Button variant="secondary" onClick={() => navigate("/teacher/homework-templates")}>
             Hủy
           </Button>
-          <Button onClick={handleSave} isLoading={isLoading}>
-            Lưu mẫu (Ctrl+S)
+          <Button onClick={handleSave} isLoading={isSaving} disabled={!homeworkType}>
+            Lưu Đề thi
           </Button>
         </div>
       </div>
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="flex flex-col lg:flex-row gap-6 mt-6 items-start">
-        {/* LEFT NAV PANEL */}
-        <div className="hidden lg:block w-64 flex-shrink-0 sticky top-24">
-          <div className="rounded-card border border-surface-border bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Chuyển hướng nhanh</h3>
-            <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-              <button
-                onClick={() => scrollToError("title")}
-                className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-surface-hover rounded transition-colors"
-              >
-                Thông tin chung
-              </button>
-              {formData.questions?.map((q, idx) => {
-                const hasErr = Object.keys(validationErrors).some(k => k.startsWith(`q_${idx}_`));
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => scrollToError(`q_${idx}_`)}
-                    className="w-full flex items-center justify-between text-left px-3 py-2 text-xs text-gray-600 hover:bg-surface-hover rounded transition-colors"
-                  >
-                    <span className="truncate">Câu hỏi {idx + 1}</span>
-                    {hasErr && <span className="h-2 w-2 rounded-full bg-red-500"></span>}
-                  </button>
-                );
-              })}
-            </div>
-            {mode === "EDIT" && (
-              <Button size="sm" className="w-full mt-4" onClick={addQuestion}>+ Thêm câu hỏi</Button>
-            )}
+      {!homeworkType ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <h2 className="text-xl font-bold text-gray-900 mb-8">Chọn loại đề thi</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+            <button
+              onClick={() => setHomeworkType("QUIZ")}
+              className="flex flex-col items-center justify-center p-8 border-2 border-surface-border rounded-xl bg-white hover:border-primary hover:bg-primary-light transition-all cursor-pointer"
+            >
+              <div className="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Multiple Choice Quiz</h3>
+              <p className="text-sm text-gray-500 text-center mt-2">Đề thi trắc nghiệm tạo từ JSON</p>
+            </button>
+            <button
+              onClick={() => setHomeworkType("ESSAY")}
+              className="flex flex-col items-center justify-center p-8 border-2 border-surface-border rounded-xl bg-white hover:border-primary hover:bg-primary-light transition-all cursor-pointer"
+            >
+              <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Essay</h3>
+              <p className="text-sm text-gray-500 text-center mt-2">Đề thi tự luận với AI Scoring</p>
+            </button>
           </div>
         </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <Button variant="secondary" size="sm" onClick={() => setHomeworkType(null)}>
+              Đổi loại đề
+            </Button>
+          </div>
 
-        {/* CENTER MAIN CONTENT */}
-        <div className="flex-1 min-w-0">
-          {mode === "PREVIEW" ? (
-            <TemplatePreview data={formData} />
-          ) : (
-            <div className="space-y-6">
-              {/* General Info */}
-              <section id="field-title" className="rounded-card border border-surface-border bg-white p-6">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">Thông tin chung</h2>
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Tiêu đề *</label>
-                    <input
-                      type="text"
-                      className={`w-full rounded-input border ${validationErrors.title ? "border-red-300" : "border-surface-border"} bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary`}
-                      value={formData.title}
-                      onChange={e => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="VD: Bài tập cuối kỳ..."
-                    />
-                    {validationErrors.title && <p className="text-xs text-red-500">{validationErrors.title}</p>}
-                  </div>
-                  
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Mô tả / Hướng dẫn chung</label>
-                    <textarea
-                      className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-                      value={formData.instructions || formData.description}
-                      onChange={e => setFormData({ ...formData, instructions: e.target.value, description: e.target.value })}
-                      rows={3}
-                      placeholder="Nhập hướng dẫn làm bài cho học sinh..."
-                    />
-                  </div>
+          <div className="rounded-card border border-surface-border bg-white p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900 border-b border-surface-border pb-2 mb-4">Thông tin cơ bản</h2>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Tiêu đề *</label>
+              <input
+                type="text"
+                className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                placeholder="VD: Đề kiểm tra 15 phút..."
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Mô tả (Optional)</label>
+              <textarea
+                className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                rows={2}
+                placeholder="Nhập mô tả..."
+              />
+            </div>
+          </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Loại bài tập</label>
-                    <select
-                      className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-                      value={formData.homeworkType}
-                      onChange={e => setFormData({ ...formData, homeworkType: e.target.value as HomeworkType })}
-                    >
-                      <option value="QUIZ">Trắc nghiệm</option>
-                      <option value="ESSAY">Tự luận</option>
-                      <option value="MIXED">Hỗn hợp</option>
-                    </select>
-                  </div>
+          {homeworkType === "QUIZ" && (
+            <div className="rounded-card border border-surface-border bg-white p-6 space-y-4">
+              <div className="flex justify-between items-center border-b border-surface-border pb-2 mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Questions (JSON)</h2>
+                <Button size="sm" variant="secondary" onClick={() => setShowSample(!showSample)}>
+                  {showSample ? "Ẩn JSON Mẫu" : "Xem JSON Mẫu"}
+                </Button>
+              </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Độ khó</label>
-                    <select
-                      className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-                      value={formData.difficulty}
-                      onChange={e => setFormData({ ...formData, difficulty: e.target.value as HomeworkDifficulty })}
-                    >
-                      <option value="EASY">Dễ</option>
-                      <option value="MEDIUM">Trung bình</option>
-                      <option value="HARD">Khó</option>
-                    </select>
-                  </div>
-
-                  <div id="field-estimatedTime" className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Thời gian làm bài (Phút)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      className={`w-full rounded-input border ${validationErrors.estimatedTime ? "border-red-300" : "border-surface-border"} bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary`}
-                      value={formData.estimatedTime}
-                      onChange={e => setFormData({ ...formData, estimatedTime: Number(e.target.value) })}
-                    />
-                    {validationErrors.estimatedTime && <p className="text-xs text-red-500">{validationErrors.estimatedTime}</p>}
-                  </div>
+              {showSample && (
+                <div className="bg-gray-800 text-gray-200 p-4 rounded-md text-sm font-mono whitespace-pre-wrap">
+                  {sampleJson}
                 </div>
-              </section>
+              )}
 
-              {/* Questions */}
-              <section className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Danh sách câu hỏi
-                  </h2>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => {
-                      const ex: Record<number, boolean> = {};
-                      formData.questions?.forEach((_, i) => ex[i] = true);
-                      setExpandedQuestions(ex);
-                    }}>Mở tất cả</Button>
-                    <Button size="sm" variant="secondary" onClick={() => setExpandedQuestions({})}>Thu gọn</Button>
-                  </div>
-                </div>
-
-                {formData.questions?.length === 0 ? (
-                  <div className="rounded-card border border-dashed border-surface-border bg-surface-page py-12 text-center text-sm text-gray-500">
-                    Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {formData.questions?.map((q, idx) => {
-                      const qErrors = Object.keys(validationErrors)
-                        .filter(k => k.startsWith(`q_${idx}_`))
-                        .reduce((acc, k) => ({ ...acc, [k.replace(`q_${idx}_`, "")]: validationErrors[k] }), {});
-
-                      return (
-                        <div id={`question-${idx}`} key={idx}>
-                          <QuestionCard
-                            index={idx}
-                            total={formData.questions?.length || 0}
-                            question={q}
-                            isExpanded={!!expandedQuestions[idx]}
-                            onUpdate={updateQuestion}
-                            onDuplicate={duplicateQuestion}
-                            onDelete={deleteQuestion}
-                            onMoveUp={moveQuestionUp}
-                            onMoveDown={moveQuestionDown}
-                            onToggleExpand={toggleExpand}
-                            errors={qErrors}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Dán JSON chứa câu hỏi *</label>
+                <textarea
+                  className="w-full h-64 rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none font-mono focus:border-primary"
+                  value={questionsJson}
+                  onChange={e => setQuestionsJson(e.target.value)}
+                  placeholder={'{\n  "questions": [\n    ...\n  ]\n}'}
+                />
+                <p className="text-xs text-gray-500 mt-1">Backend sẽ parse chuỗi JSON này để tạo toàn bộ câu hỏi. Không cần giao diện kéo thả.</p>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* RIGHT SUMMARY PANEL */}
-        <div className="hidden lg:block w-72 flex-shrink-0 sticky top-24">
-          <div className="rounded-card border border-surface-border bg-white p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900 border-b border-surface-border pb-2">Tổng quan mẫu</h3>
-            
-            <div className="space-y-3">
-              {isEditing && (
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Phiên bản</span>
-                  <span className="font-medium text-gray-900">v{templateVersion}</span>
+          {homeworkType === "ESSAY" && (
+            <div className="rounded-card border border-surface-border bg-white p-6 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 border-b border-surface-border pb-2 mb-4">Essay Prompt</h2>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Đề bài (Rich Text) *</label>
+                  {/* Using standard textarea for MVP to emulate Rich Text editor quickly without setting up Tiptap dependency locally */}
+                  <textarea
+                    className="w-full h-40 rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    value={essayPrompt}
+                    onChange={e => setEssayPrompt(e.target.value)}
+                    placeholder="Write an essay about the advantages and disadvantages of online learning..."
+                  />
                 </div>
-              )}
-              {parentTemplateId && (
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Tạo từ</span>
-                  <span className="font-medium text-blue-600">Mẫu #{parentTemplateId}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">Số câu hỏi</span>
-                <span className="font-medium text-gray-900">{formData.questions?.length || 0}</span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">Tổng điểm</span>
-                <span className="font-semibold text-primary">{calculatedTotalScore}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-gray-500">Thời gian (phút)</span>
-                <span className="font-medium text-gray-900">{formData.estimatedTime || "-"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Validation Summary Modal */}
-      {showValidationSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg rounded-card bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-              <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Không thể lưu mẫu
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">Vui lòng sửa các lỗi sau trước khi lưu:</p>
-            <div className="max-h-64 overflow-y-auto space-y-2 rounded border border-surface-border bg-surface-page p-3">
-              {Object.entries(validationErrors).map(([key, msg]) => {
-                let displayKey = "Thông tin chung";
-                if (key.startsWith("q_")) {
-                  const idx = parseInt(key.split("_")[1], 10);
-                  displayKey = `Câu hỏi ${idx + 1}`;
-                }
-                return (
-                  <button
-                    key={key}
-                    onClick={() => scrollToError(key)}
-                    className="w-full text-left text-sm text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors flex items-start gap-2"
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 border-b border-surface-border pb-2 mb-4">Select Grading Criteria</h2>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Tiêu chí chấm bài *</label>
+                  <select
+                    className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+                    value={gradingCriteriaId}
+                    onChange={e => setGradingCriteriaId(Number(e.target.value))}
                   >
-                    <span>•</span>
-                    <span><strong>{displayKey}:</strong> {msg}</span>
-                  </button>
-                );
-              })}
+                    <option value="">-- Chọn tiêu chí chấm bài --</option>
+                    {criteriaList.map(c => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Tiêu chí này sẽ được gửi kèm bài làm của học sinh sang DeepSeek AI để chấm tự động.</p>
+                </div>
+              </div>
             </div>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={() => setShowValidationSummary(false)}>Đóng</Button>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

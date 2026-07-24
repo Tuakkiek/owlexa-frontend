@@ -1,18 +1,33 @@
 import axiosClient from "./axiosClient";
-import type { HomeworkTemplate, TeacherHomeworkTemplateSaveRequest, HomeworkType, HomeworkDifficulty } from "../types/homework";
+import type { HomeworkTemplate, TeacherHomeworkTemplateSaveRequest, HomeworkType } from "../types/homework";
 
 const homeworkApi = {
+  // Grading Criteria API
+  getGradingCriteriaList: async (keyword?: string, page = 0, size = 20): Promise<any> => {
+    const res = await axiosClient.get("/teacher/grading-criteria", { params: { keyword, page, size } });
+    return res.data;
+  },
+  createGradingCriteria: async (payload: { title: string; content: string }): Promise<any> => {
+    const res = await axiosClient.post("/teacher/grading-criteria", payload);
+    return res.data;
+  },
+  updateGradingCriteria: async (id: number, payload: { title: string; content: string }): Promise<any> => {
+    const res = await axiosClient.put(`/teacher/grading-criteria/${id}`, payload);
+    return res.data;
+  },
+  deleteGradingCriteria: async (id: number): Promise<void> => {
+    await axiosClient.delete(`/teacher/grading-criteria/${id}`);
+  },
+
   // Teacher: Get Template Library
   getTemplateLibrary: async (
     keyword?: string,
     type?: HomeworkType,
-    difficulty?: HomeworkDifficulty,
     archived?: boolean
   ): Promise<HomeworkTemplate[]> => {
     const params: Record<string, any> = {};
     if (keyword) params.keyword = keyword;
     if (type) params.type = type;
-    if (difficulty) params.difficulty = difficulty;
     if (archived !== undefined) params.archived = archived;
     
     const res = await axiosClient.get<HomeworkTemplate[]>("/teacher/homework-templates/library", {
@@ -93,14 +108,12 @@ const homeworkApi = {
   getOwnerTemplateLibrary: async (
     keyword?: string,
     type?: string,
-    difficulty?: string,
     page?: number,
     size?: number
   ): Promise<any> => {
     const params: Record<string, any> = {};
     if (keyword) params.keyword = keyword;
     if (type) params.type = type;
-    if (difficulty) params.difficulty = difficulty;
     if (page !== undefined) params.page = page;
     if (size !== undefined) params.size = size;
     const res = await axiosClient.get("/owner/homework-templates", { params });
