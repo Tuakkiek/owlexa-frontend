@@ -14,7 +14,7 @@ import {
 } from "../../components/ui/SharedComponents";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
-import type { HomeworkTemplate, HomeworkType, HomeworkDifficulty } from "../../types/homework";
+import type { HomeworkTemplate, HomeworkType } from "../../types/homework";
 
 const typeLabels: Record<HomeworkType, string> = {
   QUIZ: "Trắc nghiệm",
@@ -22,11 +22,7 @@ const typeLabels: Record<HomeworkType, string> = {
   MIXED: "Hỗn hợp",
 };
 
-const difficultyLabels: Record<HomeworkDifficulty, string> = {
-  EASY: "Dễ",
-  MEDIUM: "Trung bình",
-  HARD: "Khó",
-};
+
 
 const formatDateTime = (value: string | null) => {
   if (!value) return "-";
@@ -45,7 +41,7 @@ export default function TeacherHomeworkTemplatesPage() {
   // URL synced state
   const searchQuery = searchParams.get("keyword") || "";
   const selectedType = (searchParams.get("type") as HomeworkType) || "all";
-  const selectedDifficulty = (searchParams.get("difficulty") as HomeworkDifficulty) || "all";
+
   const showArchived = searchParams.get("archived") === "true";
   
   // Local state for debounce
@@ -76,7 +72,6 @@ export default function TeacherHomeworkTemplatesPage() {
       const data = await homeworkApi.getTemplateLibrary(
         searchQuery ? searchQuery : undefined,
         selectedType === "all" ? undefined : selectedType,
-        selectedDifficulty === "all" ? undefined : selectedDifficulty,
         showArchived
       );
       setTemplates(data);
@@ -85,7 +80,7 @@ export default function TeacherHomeworkTemplatesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, selectedType, selectedDifficulty, showArchived]);
+  }, [searchQuery, selectedType, showArchived]);
 
   // Sync local query to URL with debounce
   useEffect(() => {
@@ -193,16 +188,7 @@ export default function TeacherHomeworkTemplatesPage() {
               activeKey={selectedType}
               onChange={(key) => updateFilters({ type: key })}
             />
-            <FilterTabs
-              tabs={[
-                { key: "all", label: "Tất cả độ khó" },
-                { key: "EASY", label: "Dễ" },
-                { key: "MEDIUM", label: "Trung bình" },
-                { key: "HARD", label: "Khó" },
-              ]}
-              activeKey={selectedDifficulty}
-              onChange={(key) => updateFilters({ difficulty: key })}
-            />
+
           </div>
           <div className="relative max-w-sm w-full">
             <svg
@@ -245,7 +231,7 @@ export default function TeacherHomeworkTemplatesPage() {
                   <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <th className="px-6 py-3">Tiêu đề</th>
                     <th className="px-6 py-3">Loại</th>
-                    <th className="px-6 py-3">Độ khó</th>
+
                     <th className="px-6 py-3 text-center">Thời gian (phút)</th>
                     <th className="px-6 py-3 text-center">Trạng thái</th>
                     <th className="px-6 py-3 text-right">Ngày tạo</th>
@@ -266,9 +252,7 @@ export default function TeacherHomeworkTemplatesPage() {
                       <td className="px-6 py-4 text-gray-700">
                         {typeLabels[template.homeworkType]}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {template.difficulty ? difficultyLabels[template.difficulty] : "-"}
-                      </td>
+
                       <td className="px-6 py-4 text-center text-gray-700">
                         {template.estimatedTime ?? "-"}
                       </td>

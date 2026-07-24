@@ -53,7 +53,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Students", path: "/teacher/students", permission: "CLASS_VIEW" },
     { name: "Homework Templates", path: "/teacher/homework-templates" },
     { name: "Homework Assignments", path: "/teacher/homework-assignments" },
-    { name: "Essay Rubrics", path: "/teacher/essay-rubrics" },
+    { name: "Grading Criteria", path: "/teacher/grading-criteria" },
     { name: "Essay Review", path: "/teacher/essays", permission: "ESSAY_VIEW" },
     { name: "Mock Tests", path: "/teacher/tests", permission: "TEST_VIEW" },
   ],

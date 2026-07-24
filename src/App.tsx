@@ -29,6 +29,7 @@ import StudentHomeworkProgressPage from "./pages/student/StudentHomeworkProgress
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
 import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
+import TeacherGradingCriteriaPage from "./pages/teacher/TeacherGradingCriteriaPage";
 import TeacherEssayRubricsPage from "./pages/teacher/TeacherEssayRubricsPage";
 import TeacherEssayReviewPage from "./pages/teacher/TeacherEssayReviewPage";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
@@ -134,8 +135,8 @@ function App() {
             />
             <Route path="/teacher/students" element={<TeacherStudentsPage />} />
             <Route
-              path="/teacher/essay-rubrics"
-              element={<TeacherEssayRubricsPage />}
+              path="/teacher/grading-criteria"
+              element={<TeacherGradingCriteriaPage />}
             />
             <Route
               path="/teacher/essays"

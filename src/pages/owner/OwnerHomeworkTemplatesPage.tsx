@@ -11,7 +11,7 @@ import {
   LoadingSkeleton,
   EmptyState,
 } from "../../components/ui/SharedComponents";
-import type { HomeworkTemplate, HomeworkType, HomeworkDifficulty } from "../../types/homework";
+import type { HomeworkTemplate, HomeworkType } from "../../types/homework";
 
 const typeLabels: Record<HomeworkType, string> = {
   QUIZ: "Trắc nghiệm",
@@ -19,11 +19,7 @@ const typeLabels: Record<HomeworkType, string> = {
   MIXED: "Hỗn hợp",
 };
 
-const difficultyLabels: Record<HomeworkDifficulty, string> = {
-  EASY: "Dễ",
-  MEDIUM: "Trung bình",
-  HARD: "Khó",
-};
+
 
 const formatDateTime = (value: string | null) => {
   if (!value) return "-";
@@ -41,7 +37,6 @@ export default function OwnerHomeworkTemplatesPage() {
   
   const searchQuery = searchParams.get("keyword") || "";
   const selectedType = (searchParams.get("type") as HomeworkType) || "all";
-  const selectedDifficulty = (searchParams.get("difficulty") as HomeworkDifficulty) || "all";
   const currentPage = Number(searchParams.get("page")) || 0;
   const pageSize = 10;
   
@@ -74,7 +69,6 @@ export default function OwnerHomeworkTemplatesPage() {
       const data = await homeworkApi.getOwnerTemplateLibrary(
         searchQuery ? searchQuery : undefined,
         selectedType === "all" ? undefined : selectedType,
-        selectedDifficulty === "all" ? undefined : selectedDifficulty,
         currentPage,
         pageSize
       );
@@ -85,7 +79,7 @@ export default function OwnerHomeworkTemplatesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, selectedType, selectedDifficulty, currentPage, pageSize]);
+  }, [searchQuery, selectedType, currentPage, pageSize]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -125,16 +119,7 @@ export default function OwnerHomeworkTemplatesPage() {
               activeKey={selectedType}
               onChange={(key) => updateFilters({ type: key })}
             />
-            <FilterTabs
-              tabs={[
-                { key: "all", label: "Tất cả độ khó" },
-                { key: "EASY", label: "Dễ" },
-                { key: "MEDIUM", label: "Trung bình" },
-                { key: "HARD", label: "Khó" },
-              ]}
-              activeKey={selectedDifficulty}
-              onChange={(key) => updateFilters({ difficulty: key })}
-            />
+
           </div>
           <div className="relative max-w-sm w-full">
             <svg
@@ -173,7 +158,7 @@ export default function OwnerHomeworkTemplatesPage() {
                   <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <th className="px-6 py-3">Tiêu đề</th>
                     <th className="px-6 py-3">Loại</th>
-                    <th className="px-6 py-3">Độ khó</th>
+
                     <th className="px-6 py-3 text-center">Trạng thái</th>
                     <th className="px-6 py-3 text-right">Ngày tạo</th>
                   </tr>
@@ -192,9 +177,7 @@ export default function OwnerHomeworkTemplatesPage() {
                       <td className="px-6 py-4 text-gray-700">
                         {typeLabels[template.homeworkType]}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
-                        {template.difficulty ? difficultyLabels[template.difficulty] : "-"}
-                      </td>
+
                       <td className="px-6 py-4 text-center">
                         {template.status === "ARCHIVED" ? (
                           <Badge variant="error">Đã lưu trữ</Badge>

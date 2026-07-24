@@ -1,5 +1,4 @@
 export type HomeworkType = "QUIZ" | "ESSAY" | "MIXED";
-export type HomeworkDifficulty = "EASY" | "MEDIUM" | "HARD";
 export type HomeworkQuestionType = "MULTIPLE_CHOICE" | "ESSAY" | "FILE_UPLOAD";
 export type HomeworkAssignmentStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED" | "CANCELLED";
 export type HomeworkSubmissionStatus = "DRAFT" | "SUBMITTED" | "GRADING" | "GRADED";
@@ -44,7 +43,6 @@ export interface HomeworkTemplate {
   instructions?: string;
   homeworkType: HomeworkType;
   estimatedTime?: number;
-  difficulty?: HomeworkDifficulty;
   maxScore: number;
   parentTemplateId?: number;
   version: number;
@@ -65,7 +63,6 @@ export interface TeacherHomeworkTemplateSaveRequest {
   instructions?: string;
   homeworkType: HomeworkType;
   estimatedTime?: number;
-  difficulty?: HomeworkDifficulty;
   maxScore: number;
   parentTemplateId?: number;
   questions?: HomeworkQuestion[];
