@@ -25,17 +25,26 @@ import StudentEssayPage from "./pages/student/StudentEssayPage";
 import StudentTestsPage from "./pages/student/StudentTestsPage";
 import StudentTestTakingPage from "./pages/student/StudentTestTakingPage";
 import StudentTestResultsPage from "./pages/student/StudentTestResultsPage";
+import StudentHomeworkProgressPage from "./pages/student/StudentHomeworkProgressPage";
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
 import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
+import TeacherGradingCriteriaPage from "./pages/teacher/TeacherGradingCriteriaPage";
 import TeacherEssayRubricsPage from "./pages/teacher/TeacherEssayRubricsPage";
 import TeacherEssayReviewPage from "./pages/teacher/TeacherEssayReviewPage";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
 import OwnerTestsPage from "./pages/owner/OwnerTestsPage";
+import OwnerHomeworkTemplatesPage from "./pages/owner/OwnerHomeworkTemplatesPage";
+import OwnerHomeworkAssignmentsPage from "./pages/owner/OwnerHomeworkAssignmentsPage";
 import OwnerAttendancePage from "./pages/owner/OwnerAttendancePage";
 import OwnerTeacherAttendancePage from "./pages/owner/OwnerTeacherAttendancePage";
 import TeacherSchedulePage from "./pages/teacher/TeacherSchedulePage";
 import TeacherTestsPage from "./pages/teacher/TeacherTestsPage";
+import TeacherHomeworkTemplatesPage from "./pages/teacher/TeacherHomeworkTemplatesPage";
+import TeacherHomeworkTemplateBuilderPage from "./pages/teacher/TeacherHomeworkTemplateBuilderPage";
+import TeacherHomeworkAssignmentsPage from "./pages/teacher/TeacherHomeworkAssignmentsPage";
+import TeacherHomeworkAssignmentWizardPage from "./pages/teacher/TeacherHomeworkAssignmentWizardPage";
+import TeacherHomeworkAssignmentDetailsPage from "./pages/teacher/TeacherHomeworkAssignmentDetailsPage";
 import StudentSchedulePage from "./pages/student/StudentSchedulePage";
 import CashierPaymentsPage from "./pages/cashier/CashierPaymentsPage";
 import CashierPaymentHistoryPage from "./pages/cashier/CashierPaymentHistoryPage";
@@ -103,6 +112,8 @@ function App() {
               path="/owner/mock-tests"
               element={<Navigate to="/owner/tests" replace />}
             />
+            <Route path="/owner/homework-templates" element={<OwnerHomeworkTemplatesPage />} />
+            <Route path="/owner/homework-assignments" element={<OwnerHomeworkAssignmentsPage />} />
             <Route path="/owner/attendance" element={<OwnerAttendancePage />} />
             <Route
               path="/owner/teacher-attendance"
@@ -124,8 +135,8 @@ function App() {
             />
             <Route path="/teacher/students" element={<TeacherStudentsPage />} />
             <Route
-              path="/teacher/essay-rubrics"
-              element={<TeacherEssayRubricsPage />}
+              path="/teacher/grading-criteria"
+              element={<TeacherGradingCriteriaPage />}
             />
             <Route
               path="/teacher/essays"
@@ -135,6 +146,30 @@ function App() {
             <Route
               path="/teacher/mock-tests"
               element={<Navigate to="/teacher/tests" replace />}
+            />
+            <Route
+              path="/teacher/homework-templates"
+              element={<TeacherHomeworkTemplatesPage />}
+            />
+            <Route
+              path="/teacher/homework-templates/new"
+              element={<TeacherHomeworkTemplateBuilderPage />}
+            />
+            <Route
+              path="/teacher/homework-templates/:id"
+              element={<TeacherHomeworkTemplateBuilderPage />}
+            />
+            <Route
+              path="/teacher/homework-assignments"
+              element={<TeacherHomeworkAssignmentsPage />}
+            />
+            <Route
+              path="/teacher/homework-assignments/new"
+              element={<TeacherHomeworkAssignmentWizardPage />}
+            />
+            <Route
+              path="/teacher/homework-assignments/:id"
+              element={<TeacherHomeworkAssignmentDetailsPage />}
             />
           </Route>
 
@@ -181,6 +216,10 @@ function App() {
               element={
                 <Navigate to="/student/tests/results/:attemptId" replace />
               }
+            />
+            <Route
+              path="/student/homework-progress"
+              element={<StudentHomeworkProgressPage />}
             />
           </Route>
 

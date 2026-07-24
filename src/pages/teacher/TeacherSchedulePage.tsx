@@ -184,19 +184,19 @@ export default function TeacherSchedulePage() {
         <span className="text-gray-500">Chú thích lịch:</span>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-emerald-500" />
-          <span>Lý thuyết (Green)</span>
+          <span>Lý thuyết</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-blue-500" />
-          <span>Trực tuyến (Blue)</span>
+          <span>Trực tuyến</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-amber-500" />
-          <span>Lịch thi (Yellow)</span>
+          <span>Lịch thi</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-rose-500" />
-          <span>Tạm ngưng (Red)</span>
+          <span>Tạm ngưng</span>
         </div>
       </div>
     </div>
