@@ -81,14 +81,14 @@ export default function TeacherHomeworkAssignmentDetailsPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     try {
       setIsProcessing(true);
       await homeworkApi.deleteAssignment(Number(id));
-      showToast("Đã xóa bài tập.", "success");
+      showToast("Đã lưu trữ bài tập.", "success");
       navigate("/teacher/homework-assignments");
     } catch (err: any) {
-      showToast(err?.response?.data?.message ?? "Không thể xóa bài tập.", "error");
+      showToast(err?.response?.data?.message ?? "Không thể lưu trữ bài tập.", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -128,14 +128,17 @@ export default function TeacherHomeworkAssignmentDetailsPage() {
               >
                 <Button size="sm" isLoading={isProcessing}>Lên lịch phát hành</Button>
               </ConfirmDialog>
-              <ConfirmDialog
-                title="Xóa bài tập"
-                message="Bạn có chắc chắn muốn xóa bài tập nháp này không?"
-                onConfirm={handleDelete}
-              >
-                <Button variant="danger" size="sm" isLoading={isProcessing}>Xóa</Button>
-              </ConfirmDialog>
             </>
+          )}
+
+          {assignment.status !== "ARCHIVED" && (
+            <ConfirmDialog
+              title="Lưu trữ bài tập"
+              message="Bạn có chắc chắn muốn chuyển bài tập này vào lưu trữ không? Sẽ không thể phục hồi trạng thái cũ một cách trực tiếp."
+              onConfirm={handleArchive}
+            >
+              <Button variant="danger" size="sm" isLoading={isProcessing}>Lưu trữ</Button>
+            </ConfirmDialog>
           )}
 
           {assignment.status === "OPEN" && (

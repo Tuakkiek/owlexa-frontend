@@ -13,6 +13,7 @@ import {
   EmptyState,
 } from "../../components/ui/SharedComponents";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { Modal } from "../../components/ui/Modal";
 import { useToast } from "../../components/ui/Toast";
 import type { HomeworkAssignmentResponse, HomeworkAssignmentStatus } from "../../types/homework";
 import type { ClassResponse } from "../../types/class";
@@ -29,6 +30,13 @@ const statusLabels: Record<HomeworkAssignmentStatus, string> = {
 const formatDateTime = (value: string | null | undefined) => {
   if (!value) return "-";
   return new Date(value).toLocaleString("vi-VN");
+};
+
+const toLocalDatetimeString = (dateStr: string | null | undefined) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
 export default function TeacherHomeworkAssignmentsPage() {
@@ -52,6 +60,17 @@ export default function TeacherHomeworkAssignmentsPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<HomeworkAssignmentResponse | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    availableFrom: "",
+    dueDate: "",
+    closeAt: "",
+    status: "DRAFT" as HomeworkAssignmentStatus
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateFilters = useCallback((updates: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams);
@@ -111,18 +130,52 @@ export default function TeacherHomeworkAssignmentsPage() {
     loadData();
   }, [loadData]);
 
-  const handleDelete = async (id: number) => {
+  const handleArchive = async (id: number) => {
     try {
       await homeworkApi.deleteAssignment(id);
-      showToast("Xóa bài tập thành công.", "success");
+      showToast("Lưu trữ bài tập thành công.", "success");
       loadData();
     } catch (err: any) {
-      showToast(err?.response?.data?.message ?? "Không thể xóa bài tập.", "error");
+      showToast(err?.response?.data?.message ?? "Không thể lưu trữ bài tập.", "error");
     }
   };
 
   const handleViewDetails = (id: number) => {
     navigate(`/teacher/homework-assignments/${id}`);
+  };
+
+  const handleOpenEdit = (assignment: HomeworkAssignmentResponse) => {
+    setEditingAssignment(assignment);
+    setEditFormData({
+      availableFrom: toLocalDatetimeString(assignment.availableFrom),
+      dueDate: toLocalDatetimeString(assignment.dueDate),
+      closeAt: toLocalDatetimeString(assignment.closeAt),
+      status: assignment.status
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateAssignment = async () => {
+    if (!editingAssignment) return;
+    try {
+      setIsUpdating(true);
+      const payload = {
+        templateId: editingAssignment.templateId,
+        clazzId: editingAssignment.clazzId,
+        availableFrom: editFormData.availableFrom ? new Date(editFormData.availableFrom).toISOString() : null,
+        dueDate: editFormData.dueDate ? new Date(editFormData.dueDate).toISOString() : null,
+        closeAt: editFormData.closeAt ? new Date(editFormData.closeAt).toISOString() : null,
+        status: editFormData.status,
+      };
+      await homeworkApi.updateAssignment(editingAssignment.id, payload);
+      showToast("Cập nhật bài tập thành công.", "success");
+      setIsEditModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      showToast(err?.response?.data?.message ?? "Cập nhật thất bại.", "error");
+    } finally {
+      setIsUpdating(false);
+    }
   };
   
   // Client-side pagination logic
@@ -160,8 +213,8 @@ export default function TeacherHomeworkAssignmentsPage() {
           value={assignments.filter((a) => a.status === "CLOSED").length}
         />
         <StatCard
-          label="Bản nháp"
-          value={assignments.filter((a) => a.status === "DRAFT").length}
+          label="Đã lưu trữ"
+          value={assignments.filter((a) => a.status === "ARCHIVED").length}
         />
       </div>
 
@@ -171,10 +224,10 @@ export default function TeacherHomeworkAssignmentsPage() {
             <FilterTabs
               tabs={[
                 { key: "all", label: "Tất cả trạng thái" },
-                { key: "DRAFT", label: "Bản nháp" },
-                { key: "SCHEDULED", label: "Lên lịch" },
+                { key: "SCHEDULED", label: "Đã lên lịch" },
                 { key: "OPEN", label: "Đang mở" },
                 { key: "CLOSED", label: "Đã đóng" },
+                { key: "ARCHIVED", label: "Đã lưu trữ" },
               ]}
               activeKey={selectedStatus}
               onChange={(key) => updateFilters({ status: key })}
@@ -280,18 +333,25 @@ export default function TeacherHomeworkAssignmentsPage() {
                           <Button
                             variant="secondary"
                             size="sm"
+                            onClick={() => handleOpenEdit(assignment)}
+                          >
+                            Sửa
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => handleViewDetails(assignment.id)}
                           >
                             Chi tiết
                           </Button>
-                          {assignment.status === "DRAFT" && (
+                          {assignment.status !== "ARCHIVED" && (
                             <ConfirmDialog
-                              title="Xóa bài tập"
-                              message="Bạn có chắc chắn muốn xóa bài tập nháp này không?"
-                              onConfirm={() => handleDelete(assignment.id)}
+                              title="Lưu trữ bài tập"
+                              message="Bạn có chắc chắn muốn chuyển bài tập này vào lưu trữ không? Sẽ không thể phục hồi trạng thái cũ một cách trực tiếp."
+                              onConfirm={() => handleArchive(assignment.id)}
                             >
                               <Button variant="danger" size="sm">
-                                Xóa
+                                Lưu trữ
                               </Button>
                             </ConfirmDialog>
                           )}
@@ -332,6 +392,61 @@ export default function TeacherHomeworkAssignmentsPage() {
           </div>
         )}
       </section>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Chỉnh sửa Bài tập"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Trạng thái</label>
+            <select
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              value={editFormData.status}
+              onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value as HomeworkAssignmentStatus })}
+            >
+              <option value="SCHEDULED">Đã lên lịch</option>
+              <option value="OPEN">Đang mở</option>
+              <option value="CLOSED">Đã đóng</option>
+              <option value="ARCHIVED">Đã lưu trữ</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Thời gian mở bài</label>
+            <input
+              type="datetime-local"
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              value={editFormData.availableFrom}
+              onChange={(e) => setEditFormData({ ...editFormData, availableFrom: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Thời gian đến hạn (Đóng bài)</label>
+            <input
+              type="datetime-local"
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              value={editFormData.dueDate}
+              onChange={(e) => setEditFormData({ ...editFormData, dueDate: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Thời gian đóng hẳn (Không cho nộp muộn)</label>
+            <input
+              type="datetime-local"
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm outline-none focus:border-primary"
+              value={editFormData.closeAt}
+              onChange={(e) => setEditFormData({ ...editFormData, closeAt: e.target.value })}
+            />
+          </div>
+          
+          <div className="pt-4 flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>Hủy</Button>
+            <Button isLoading={isUpdating} onClick={handleUpdateAssignment}>Lưu thay đổi</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
