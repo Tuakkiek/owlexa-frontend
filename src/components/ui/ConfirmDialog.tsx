@@ -39,7 +39,35 @@ export const ConfirmDialog = ({
   variant = "primary",
   onConfirm,
   onCancel,
-}: ConfirmModalProps) => {
+  children
+}: ConfirmModalProps & { children?: import("react").ReactNode }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  if (children) {
+    return (
+      <>
+        <div className="inline-block" onClick={(e) => { e.stopPropagation(); setInternalOpen(true); }}>
+          {children}
+        </div>
+        {internalOpen && (
+          <ConfirmDialog
+            isOpen={true}
+            title={title}
+            message={message}
+            confirmText={confirmText}
+            cancelText={cancelText}
+            variant={variant}
+            onConfirm={() => {
+              setInternalOpen(false);
+              if (onConfirm) onConfirm();
+            }}
+            onCancel={() => setInternalOpen(false)}
+          />
+        )}
+      </>
+    );
+  }
+
   if (!isOpen) return null;
 
   const variantStyles = {
@@ -90,7 +118,7 @@ export const ConfirmDialog = ({
         onClick={onCancel}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 transform transition-all animate-[slideIn_0.2s_ease-out]">
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 transform transition-all animate-[slideIn_0.2s_ease-out] text-left">
         <div className="flex items-start gap-4">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.bgIcon}`}>
             {style.icon}
