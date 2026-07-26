@@ -21,11 +21,15 @@ import StudentFeesPage from "./pages/student/StudentFeesPage";
 import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import StudentDocumentsPage from "./pages/student/StudentDocumentsPage";
+import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
 
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
 import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 import GradingCriteriaPage from "./pages/teacher/GradingCriteriaPage";
+import QuestionBankPage from "./pages/teacher/QuestionBankPage";
+import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
+import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
 
 
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
@@ -145,6 +149,18 @@ function App() {
                   path="/teacher/grading-criteria"
                   element={<GradingCriteriaPage />}
                 />
+                <Route
+                  path="/teacher/questions"
+                  element={<QuestionBankPage />}
+                />
+                <Route
+                  path="/teacher/assessments"
+                  element={<AssessmentBuilderPage />}
+                />
+                <Route
+                  path="/teacher/assignments"
+                  element={<TeacherAssignmentsPage />}
+                />
 
 
               </Route>
@@ -167,6 +183,10 @@ function App() {
                 <Route
                   path="/student/documents"
                   element={<StudentDocumentsPage />}
+                />
+                <Route
+                  path="/student/assignments"
+                  element={<StudentAssignmentsPage />}
                 />
 
               </Route>

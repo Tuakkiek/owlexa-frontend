@@ -90,6 +90,9 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     },
     { name: "Students", path: "/teacher/students", permission: "CLASS_VIEW" },
     { name: "Grading Criteria", path: "/teacher/grading-criteria" },
+    { name: "Question Bank", path: "/teacher/questions" },
+    { name: "Assessment Builder", path: "/teacher/assessments" },
+    { name: "Assignments", path: "/teacher/assignments" },
 
 
 
@@ -110,6 +113,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
 
 
     { name: "Documents", path: "/student/documents" },
+    { name: "Assignments", path: "/student/assignments" },
   ],
   CASHIER: [
     {
