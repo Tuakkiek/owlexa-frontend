@@ -7,17 +7,13 @@ import type {
   GradingCriteriaRequest,
   GradingCriteriaResponse,
 } from "../../../types/gradingCriteria";
+import { stripHtml } from "../../../utils/text";
 
 interface GradingCriteriaFormProps {
   initialData?: GradingCriteriaResponse;
   onSubmit: (data: GradingCriteriaRequest) => Promise<void>;
   onCancel: () => void;
 }
-
-const getPlainText = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
-};
 
 export const GradingCriteriaForm = ({
   initialData,
@@ -49,7 +45,7 @@ export const GradingCriteriaForm = ({
       return;
     }
 
-    if (!getPlainText(content)) {
+    if (!stripHtml(content)) {
       setError("Content is required.");
       return;
     }

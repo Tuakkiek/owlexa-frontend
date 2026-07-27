@@ -19,19 +19,11 @@ import type {
   AssessmentType,
   PageResponse,
 } from "../../types/assessmentBuilder";
+import { formatDateTime } from "../../utils/dateTime";
 import { AssessmentForm } from "./components/AssessmentForm";
 import { AssessmentPreview } from "./components/AssessmentPreview";
 
 const PAGE_SIZE = 20;
-
-const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Quiz",

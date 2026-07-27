@@ -11,6 +11,7 @@ import type {
   QuestionResponse,
   QuestionType,
 } from "../../../types/questionBank";
+import { stripHtml } from "../../../utils/text";
 
 interface QuestionFormProps {
   initialData?: QuestionResponse;
@@ -18,11 +19,6 @@ interface QuestionFormProps {
   onSubmit: (data: QuestionRequest) => Promise<void>;
   onCancel: () => void;
 }
-
-const getPlainText = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
-};
 
 const createEmptyOptions = (): QuestionOptionRequest[] => [
   { content: "", isCorrect: false, displayOrder: 1 },
@@ -129,7 +125,7 @@ export const QuestionForm = ({
   };
 
   const validate = () => {
-    if (!getPlainText(content)) {
+    if (!stripHtml(content)) {
       return "Question content is required.";
     }
 
@@ -142,7 +138,7 @@ export const QuestionForm = ({
       if (normalizedOptions.length < 2) {
         return "Multiple choice questions must have at least 2 options.";
       }
-      if (normalizedOptions.some((option) => !getPlainText(option.content))) {
+      if (normalizedOptions.some((option) => !stripHtml(option.content))) {
         return "All options must have content.";
       }
       if (!normalizedOptions.some((option) => option.isCorrect)) {

@@ -32,20 +32,6 @@ export const formatCurrency = (
   }).format(amount ?? 0);
 };
 
-export const formatMoneyNumber = (
-  value: Money | null | undefined,
-  locale: string = "vi-VN",
-): string => {
-  return new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 2,
-  }).format(parseMoney(value));
-};
-
-export const moneyToInputString = (value: Money | null | undefined): string => {
-  if (value === null || value === undefined || value === "") return "";
-  return String(parseMoney(value));
-};
-
 export const remainingBalance = (record: {
   amount: Money;
   paidAmount: Money;

@@ -16,6 +16,7 @@ import type {
   QuestionResponse,
   QuestionType,
 } from "../../../types/questionBank";
+import { stripHtml } from "../../../utils/text";
 
 interface AssessmentFormProps {
   initialData?: AssessmentDetailResponse;
@@ -40,11 +41,6 @@ const emptyQuestionPage: QuestionPageResponse<QuestionResponse> = {
   totalPages: 0,
   size: PAGE_SIZE,
   number: 0,
-};
-
-const stripHtml = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
 };
 
 const previewContent = (html: string) => {

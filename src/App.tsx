@@ -22,6 +22,7 @@ import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
 import StudentDocumentsPage from "./pages/student/StudentDocumentsPage";
 import StudentAssignmentsPage from "./pages/student/StudentAssignmentsPage";
+import StudentSubmissionAttemptPage from "./pages/student/StudentSubmissionAttemptPage";
 
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
 import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
@@ -46,8 +47,8 @@ import SessionManagementPage from "./pages/owner/SessionManagementPage";
 import AccountPage from "./pages/account/AccountPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 
-import { ToastProvider } from "./components/ui/Toast";
-import { ConfirmProvider } from "./components/ui/ConfirmDialog";
+import { ToastProvider } from "./components/ui/ToastProvider";
+import { ConfirmProvider } from "./components/ui/ConfirmProvider";
 
 function App() {
   return (
@@ -187,6 +188,10 @@ function App() {
                 <Route
                   path="/student/assignments"
                   element={<StudentAssignmentsPage />}
+                />
+                <Route
+                  path="/student/submission-attempts/:attemptId"
+                  element={<StudentSubmissionAttemptPage />}
                 />
 
               </Route>

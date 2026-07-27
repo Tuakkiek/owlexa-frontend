@@ -5,15 +5,11 @@ import type {
   AssessmentType,
 } from "../../../types/assessmentBuilder";
 import type { QuestionType } from "../../../types/questionBank";
+import { stripHtml } from "../../../utils/text";
 
 interface AssessmentPreviewProps {
   assessment: AssessmentDetailResponse;
 }
-
-const stripHtml = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
-};
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Quiz",

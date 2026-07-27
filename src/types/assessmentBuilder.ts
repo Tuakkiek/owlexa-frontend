@@ -1,5 +1,7 @@
 import type { QuestionDifficulty, QuestionType } from "./questionBank";
 
+export type { PageResponse } from "./pagination";
+
 export type AssessmentType = "QUIZ" | "HOMEWORK" | "EXAM";
 
 export type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -68,12 +70,4 @@ export interface AssessmentSearchParams {
   status?: AssessmentStatus | "";
   page?: number;
   size?: number;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }

@@ -1,3 +1,5 @@
+export type { PageResponse } from "./pagination";
+
 export type QuestionType = "MULTIPLE_CHOICE" | "ESSAY";
 
 export type QuestionDifficulty = "EASY" | "MEDIUM" | "HARD";
@@ -54,12 +56,4 @@ export interface QuestionSearchParams {
   gradingCriteriaId?: number | "";
   page?: number;
   size?: number;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }

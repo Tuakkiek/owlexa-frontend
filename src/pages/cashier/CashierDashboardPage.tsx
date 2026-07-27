@@ -60,7 +60,7 @@ const CashierDashboardPage = () => {
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         title={`Chào mừng, ${user?.fullName ?? "Thu ngân"}`}
-        subtitle="Tổng quan hoạt động thu ngân"
+        description="Tổng quan hoạt động thu ngân"
       >
         <Button variant="secondary" onClick={loadStats} isLoading={isLoading}>
           Làm mới

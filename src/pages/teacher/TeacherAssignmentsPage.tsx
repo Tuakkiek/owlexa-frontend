@@ -21,21 +21,13 @@ import type {
   PageResponse,
 } from "../../types/assignment";
 import type { ClassResponse } from "../../types/class";
+import { formatDateTime } from "../../utils/dateTime";
 import { AssignmentForm } from "./components/AssignmentForm";
 import { AssignmentPreview } from "./components/AssignmentPreview";
+import { TeacherReviewQueue } from "./components/TeacherReviewQueue";
+import { TeacherSubmissionList } from "./components/TeacherSubmissionList";
 
 const PAGE_SIZE = 20;
-
-const formatDateTime = (value: string | null) => {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-};
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Quiz",
@@ -78,6 +70,10 @@ const TeacherAssignmentsPage = () => {
     useState<AssignmentDetailResponse | null>(null);
   const [previewAssignment, setPreviewAssignment] =
     useState<AssignmentDetailResponse | null>(null);
+  const [submissionsAssignment, setSubmissionsAssignment] =
+    useState<AssignmentListResponse | null>(null);
+  const [reviewsAssignment, setReviewsAssignment] =
+    useState<AssignmentListResponse | null>(null);
   const [pendingActionId, setPendingActionId] = useState<number | null>(null);
   const [pendingPreviewId, setPendingPreviewId] = useState<number | null>(null);
 
@@ -182,6 +178,22 @@ const TeacherAssignmentsPage = () => {
     setPreviewAssignment(null);
   };
 
+  const openSubmissions = (assignment: AssignmentListResponse) => {
+    setSubmissionsAssignment(assignment);
+  };
+
+  const closeSubmissions = () => {
+    setSubmissionsAssignment(null);
+  };
+
+  const openReviews = (assignment: AssignmentListResponse) => {
+    setReviewsAssignment(assignment);
+  };
+
+  const closeReviews = () => {
+    setReviewsAssignment(null);
+  };
+
   const handleSave = async (request: AssignmentRequest) => {
     if (editingAssignment) {
       await assignmentApi.update(editingAssignment.id, request);
@@ -201,6 +213,12 @@ const TeacherAssignmentsPage = () => {
     }
     if (previewAssignment?.id === assignmentId) {
       closePreview();
+    }
+    if (submissionsAssignment?.id === assignmentId) {
+      closeSubmissions();
+    }
+    if (reviewsAssignment?.id === assignmentId) {
+      closeReviews();
     }
   };
 
@@ -453,6 +471,26 @@ const TeacherAssignmentsPage = () => {
                               : "Publish"}
                           </button>
                         )}
+                        {assignment.status !== "DRAFT" && (
+                          <>
+                            <button
+                              type="button"
+                              className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={pendingActionId === assignment.id}
+                              onClick={() => openSubmissions(assignment)}
+                            >
+                              Submissions
+                            </button>
+                            <button
+                              type="button"
+                              className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={pendingActionId === assignment.id}
+                              onClick={() => openReviews(assignment)}
+                            >
+                              Reviews
+                            </button>
+                          </>
+                        )}
                         {(assignment.status === "ACTIVE" ||
                           assignment.status === "SCHEDULED") && (
                           <button
@@ -559,6 +597,34 @@ const TeacherAssignmentsPage = () => {
             attemptLimit={previewAssignment.attemptLimit}
             assessmentSnapshotAt={previewAssignment.assessmentSnapshotAt}
             items={previewAssignment.items}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={submissionsAssignment != null}
+        onClose={closeSubmissions}
+        title="Assignment Submissions"
+        maxWidth="max-w-6xl"
+      >
+        {submissionsAssignment && (
+          <TeacherSubmissionList
+            assignmentId={submissionsAssignment.id}
+            assignmentTitle={submissionsAssignment.title}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={reviewsAssignment != null}
+        onClose={closeReviews}
+        title="Review Queue"
+        maxWidth="max-w-7xl"
+      >
+        {reviewsAssignment && (
+          <TeacherReviewQueue
+            assignmentId={reviewsAssignment.id}
+            assignmentTitle={reviewsAssignment.title}
           />
         )}
       </Modal>

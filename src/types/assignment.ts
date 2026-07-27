@@ -1,6 +1,8 @@
 import type { AssessmentType } from "./assessmentBuilder";
 import type { QuestionDifficulty, QuestionType } from "./questionBank";
 
+export type { PageResponse } from "./pagination";
+
 export type AssignmentStatus =
   | "DRAFT"
   | "SCHEDULED"
@@ -140,12 +142,4 @@ export interface AssignmentSearchParams {
   classId?: number | "";
   page?: number;
   size?: number;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
 }

@@ -5,6 +5,8 @@ import type {
 } from "../../../types/assignment";
 import type { AssessmentType } from "../../../types/assessmentBuilder";
 import type { QuestionType } from "../../../types/questionBank";
+import { formatDateTime } from "../../../utils/dateTime";
+import { stripHtml } from "../../../utils/text";
 
 interface AssignmentPreviewProps {
   title: string;
@@ -17,22 +19,6 @@ interface AssignmentPreviewProps {
   assessmentSnapshotAt?: string | null;
   items: AssignmentItemResponse[];
 }
-
-const stripHtml = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
-};
-
-const formatDateTime = (value: string | null | undefined) => {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-};
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Quiz",

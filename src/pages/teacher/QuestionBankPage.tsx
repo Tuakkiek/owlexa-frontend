@@ -20,23 +20,11 @@ import type {
   QuestionResponse,
   QuestionType,
 } from "../../types/questionBank";
+import { formatDateTime } from "../../utils/dateTime";
+import { stripHtml } from "../../utils/text";
 import { QuestionForm } from "./components/QuestionForm";
 
 const PAGE_SIZE = 20;
-
-const formatDateTime = (value: string) =>
-  new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-
-const stripHtml = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return (doc.body.textContent ?? "").replace(/\s+/g, " ").trim();
-};
 
 const previewContent = (html: string) => {
   const text = stripHtml(html);
