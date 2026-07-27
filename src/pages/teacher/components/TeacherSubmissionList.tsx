@@ -28,14 +28,14 @@ const emptyPage: PageResponse<TeacherSubmissionSummaryResponse> = {
 };
 
 const statusLabel: Record<SubmissionAttemptStatus, string> = {
-  IN_PROGRESS: "In Progress",
-  SUBMITTED: "Submitted",
-  AUTO_SUBMITTED: "Auto Submitted",
+  IN_PROGRESS: "Đang làm bài",
+  SUBMITTED: "Đã nộp",
+  AUTO_SUBMITTED: "Tự động nộp",
 };
 
 const formatSummaryScore = (submission: TeacherSubmissionSummaryResponse) => {
   if (!submission.latestStatus) return "-";
-  if (submission.latestStatus === "IN_PROGRESS") return "Not submitted";
+  if (submission.latestStatus === "IN_PROGRESS") return "Chưa nộp";
   return `${submission.latestAutoScore ?? "-"} / ${submission.maxScore ?? "-"}`;
 };
 
@@ -69,7 +69,7 @@ export const TeacherSubmissionList = ({
         }),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load submissions.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách bài nộp.");
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +94,7 @@ export const TeacherSubmissionList = ({
       setAttemptDetail(await submissionApi.findAttemptDetailForTeacher(attemptId));
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load submission attempt.",
+        err?.response?.data?.message ?? "Không thể tải chi tiết lượt làm bài.",
       );
     } finally {
       setPendingAttemptId(null);
@@ -120,7 +120,7 @@ export const TeacherSubmissionList = ({
       <div>
         <div className="font-medium text-gray-900">{assignmentTitle}</div>
         <div className="mt-1 text-sm text-gray-500">
-          {submissionsPage.totalElements} recipients
+          {submissionsPage.totalElements} học viên
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export const TeacherSubmissionList = ({
         <LoadingSkeleton count={4} height="h-14" />
       ) : submissions.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-10 text-center text-sm text-gray-400">
-          No recipients found.
+          Không tìm thấy học viên nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -138,13 +138,13 @@ export const TeacherSubmissionList = ({
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Class</th>
-                  <th className="px-4 py-3">Attempts</th>
-                  <th className="px-4 py-3">Latest Status</th>
-                  <th className="px-4 py-3">Submitted</th>
-                  <th className="px-4 py-3">Score</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">Học viên</th>
+                  <th className="px-4 py-3">Lớp học</th>
+                  <th className="px-4 py-3">Lượt làm bài</th>
+                  <th className="px-4 py-3">Trạng thái mới nhất</th>
+                  <th className="px-4 py-3">Thời gian nộp</th>
+                  <th className="px-4 py-3">Điểm số</th>
+                  <th className="px-4 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -163,14 +163,14 @@ export const TeacherSubmissionList = ({
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-500">
                       {submission.latestAttemptNumber
-                        ? `${submission.attemptsCount} (latest #${submission.latestAttemptNumber})`
+                        ? `${submission.attemptsCount} (mới nhất #${submission.latestAttemptNumber})`
                         : "0"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       {submission.latestStatus ? (
                         <Badge>{statusLabel[submission.latestStatus]}</Badge>
                       ) : (
-                        <span className="text-gray-400">No attempt</span>
+                        <span className="text-gray-400">Chưa có lượt nộp</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-500">
@@ -194,8 +194,8 @@ export const TeacherSubmissionList = ({
                         }}
                       >
                         {pendingAttemptId === submission.latestAttemptId
-                          ? "Loading..."
-                          : "Open"}
+                          ? "Đang tải..."
+                          : "Xem"}
                       </button>
                     </td>
                   </tr>
@@ -209,8 +209,8 @@ export const TeacherSubmissionList = ({
       {!isLoading && submissionsPage.totalElements > 0 && (
         <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Page {submissionsPage.number + 1} of {pageCount} -{" "}
-            {submissionsPage.totalElements} recipients
+            Trang {submissionsPage.number + 1} / {pageCount} - Tổng số{" "}
+            {submissionsPage.totalElements} học viên
           </div>
           <div className="flex gap-2">
             <Button
@@ -220,7 +220,7 @@ export const TeacherSubmissionList = ({
               onClick={goToPreviousPage}
               disabled={submissionsPage.number <= 0}
             >
-              Previous
+              Trước
             </Button>
             <Button
               type="button"
@@ -229,7 +229,7 @@ export const TeacherSubmissionList = ({
               onClick={goToNextPage}
               disabled={submissionsPage.number + 1 >= pageCount}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>
@@ -238,7 +238,7 @@ export const TeacherSubmissionList = ({
       <Modal
         isOpen={attemptDetail != null}
         onClose={closeAttemptDetail}
-        title="Submission Attempt"
+        title="Chi tiết lượt làm bài"
         maxWidth="max-w-5xl"
       >
         {attemptDetail && (

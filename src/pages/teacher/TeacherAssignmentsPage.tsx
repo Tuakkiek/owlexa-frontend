@@ -30,17 +30,17 @@ import { TeacherSubmissionList } from "./components/TeacherSubmissionList";
 const PAGE_SIZE = 20;
 
 const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
+  QUIZ: "Trắc nghiệm",
+  HOMEWORK: "Bài tập về nhà",
+  EXAM: "Bài kiểm tra",
 };
 
 const statusLabel: Record<AssignmentStatus, string> = {
-  DRAFT: "Draft",
-  SCHEDULED: "Scheduled",
-  ACTIVE: "Active",
-  CLOSED: "Closed",
-  ARCHIVED: "Archived",
+  DRAFT: "Nháp",
+  SCHEDULED: "Đã lên lịch",
+  ACTIVE: "Đang diễn ra",
+  CLOSED: "Đã đóng",
+  ARCHIVED: "Đã lưu trữ",
 };
 
 const emptyPage: PageResponse<AssignmentListResponse> = {
@@ -100,7 +100,7 @@ const TeacherAssignmentsPage = () => {
         }),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load assignments.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách bài tập.");
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +150,7 @@ const TeacherAssignmentsPage = () => {
       setEditingAssignment(await assignmentApi.findById(assignment.id));
       setIsModalOpen(true);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Unable to load assignment.");
+      toast.error(err?.response?.data?.message ?? "Không thể tải thông tin bài tập.");
     }
   };
 
@@ -167,7 +167,7 @@ const TeacherAssignmentsPage = () => {
       setPreviewAssignment(await assignmentApi.findById(assignment.id));
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load assignment preview.",
+        err?.response?.data?.message ?? "Không thể tải xem trước bài tập.",
       );
     } finally {
       setPendingPreviewId(null);
@@ -197,10 +197,10 @@ const TeacherAssignmentsPage = () => {
   const handleSave = async (request: AssignmentRequest) => {
     if (editingAssignment) {
       await assignmentApi.update(editingAssignment.id, request);
-      toast.success("Assignment updated.");
+      toast.success("Cập nhật bài tập thành công.");
     } else {
       await assignmentApi.create(request);
-      toast.success("Assignment created.");
+      toast.success("Tạo mới bài tập thành công.");
     }
 
     closeModal();
@@ -224,9 +224,9 @@ const TeacherAssignmentsPage = () => {
 
   const handlePublish = async (assignment: AssignmentListResponse) => {
     const confirmed = await confirm({
-      title: "Publish assignment?",
-      message: `Publish "${assignment.title}"? This snapshots the assessment and assigns it to the selected targets.`,
-      confirmText: "Publish",
+      title: "Công bố bài tập?",
+      message: `Công bố bài tập "${assignment.title}"? Thao tác này sẽ lưu bản chụp đề thi và giao cho các đối tượng đã chọn.`,
+      confirmText: "Công bố",
     });
 
     if (!confirmed) return;
@@ -235,11 +235,11 @@ const TeacherAssignmentsPage = () => {
       setPendingActionId(assignment.id);
       await assignmentApi.publish(assignment.id);
       closeOpenDialogsForAssignment(assignment.id);
-      toast.success("Assignment published.");
+      toast.success("Công bố bài tập thành công.");
       await loadAssignments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to publish assignment.",
+        err?.response?.data?.message ?? "Không thể công bố bài tập.",
       );
     } finally {
       setPendingActionId(null);
@@ -248,9 +248,9 @@ const TeacherAssignmentsPage = () => {
 
   const handleClose = async (assignment: AssignmentListResponse) => {
     const confirmed = await confirm({
-      title: "Close assignment?",
-      message: `Close "${assignment.title}"? Students will no longer see it as active work.`,
-      confirmText: "Close",
+      title: "Đóng bài tập?",
+      message: `Đóng bài tập "${assignment.title}"? Học viên sẽ không còn thấy bài tập này ở trạng thái đang làm bài.`,
+      confirmText: "Đóng",
     });
 
     if (!confirmed) return;
@@ -259,11 +259,11 @@ const TeacherAssignmentsPage = () => {
       setPendingActionId(assignment.id);
       await assignmentApi.close(assignment.id);
       closeOpenDialogsForAssignment(assignment.id);
-      toast.success("Assignment closed.");
+      toast.success("Đã đóng bài tập.");
       await loadAssignments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to close assignment.",
+        err?.response?.data?.message ?? "Không thể đóng bài tập.",
       );
     } finally {
       setPendingActionId(null);
@@ -272,9 +272,9 @@ const TeacherAssignmentsPage = () => {
 
   const handleArchive = async (assignment: AssignmentListResponse) => {
     const confirmed = await confirm({
-      title: "Archive assignment?",
-      message: `Archive "${assignment.title}"? It will remain available as historical content.`,
-      confirmText: "Archive",
+      title: "Lưu trữ bài tập?",
+      message: `Lưu trữ bài tập "${assignment.title}"? Bài tập sẽ được lưu dưới dạng nội dung lịch sử.`,
+      confirmText: "Lưu trữ",
     });
 
     if (!confirmed) return;
@@ -283,11 +283,11 @@ const TeacherAssignmentsPage = () => {
       setPendingActionId(assignment.id);
       await assignmentApi.archive(assignment.id);
       closeOpenDialogsForAssignment(assignment.id);
-      toast.success("Assignment archived.");
+      toast.success("Đã lưu trữ bài tập.");
       await loadAssignments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to archive assignment.",
+        err?.response?.data?.message ?? "Không thể lưu trữ bài tập.",
       );
     } finally {
       setPendingActionId(null);
@@ -296,9 +296,9 @@ const TeacherAssignmentsPage = () => {
 
   const handleDelete = async (assignment: AssignmentListResponse) => {
     const confirmed = await confirm({
-      title: "Delete assignment?",
-      message: `Delete "${assignment.title}"? Only draft assignments can be deleted.`,
-      confirmText: "Delete",
+      title: "Xóa bài tập?",
+      message: `Bạn có chắc chắn muốn xóa bài tập "${assignment.title}"? Chỉ bài tập ở trạng thái nháp mới có thể xóa.`,
+      confirmText: "Xóa",
       variant: "danger",
     });
 
@@ -308,11 +308,11 @@ const TeacherAssignmentsPage = () => {
       setPendingActionId(assignment.id);
       await assignmentApi.delete(assignment.id);
       closeOpenDialogsForAssignment(assignment.id);
-      toast.success("Assignment deleted.");
+      toast.success("Đã xóa bài tập.");
       await loadAssignments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to delete assignment.",
+        err?.response?.data?.message ?? "Không thể xóa bài tập.",
       );
     } finally {
       setPendingActionId(null);
@@ -322,11 +322,11 @@ const TeacherAssignmentsPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Assignments"
-        description="Assign published assessments to classes or students."
+        title="Bài tập"
+        description="Giao bài tập đã phát hành cho các lớp học hoặc học viên."
       >
         <Button type="button" onClick={openCreate}>
-          Create Assignment
+          Tạo mới bài tập
         </Button>
       </PageHeader>
 
@@ -336,7 +336,7 @@ const TeacherAssignmentsPage = () => {
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search assignments..."
+          placeholder="Tìm kiếm bài tập..."
         />
 
         <select
@@ -346,10 +346,10 @@ const TeacherAssignmentsPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All types</option>
-          <option value="QUIZ">Quiz</option>
-          <option value="HOMEWORK">Homework</option>
-          <option value="EXAM">Exam</option>
+          <option value="">Tất cả loại</option>
+          <option value="QUIZ">Trắc nghiệm</option>
+          <option value="HOMEWORK">Bài tập về nhà</option>
+          <option value="EXAM">Bài kiểm tra</option>
         </select>
 
         <select
@@ -359,12 +359,12 @@ const TeacherAssignmentsPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="ACTIVE">Active</option>
-          <option value="CLOSED">Closed</option>
-          <option value="ARCHIVED">Archived</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="DRAFT">Nháp</option>
+          <option value="SCHEDULED">Đã lên lịch</option>
+          <option value="ACTIVE">Đang diễn ra</option>
+          <option value="CLOSED">Đã đóng</option>
+          <option value="ARCHIVED">Đã lưu trữ</option>
         </select>
 
         <select
@@ -374,7 +374,7 @@ const TeacherAssignmentsPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All classes</option>
+          <option value="">Tất cả lớp học</option>
           {classOptions.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name}
@@ -387,7 +387,7 @@ const TeacherAssignmentsPage = () => {
         <LoadingSkeleton count={4} height="h-16" />
       ) : assignments.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          No assignments found.
+          Không tìm thấy bài tập nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -395,13 +395,13 @@ const TeacherAssignmentsPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Assignment</th>
-                  <th className="px-6 py-3">Type</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Open</th>
-                  <th className="px-6 py-3">Due</th>
-                  <th className="px-6 py-3">Updated At</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-3">Bài tập</th>
+                  <th className="px-6 py-3">Loại</th>
+                  <th className="px-6 py-3">Trạng thái</th>
+                  <th className="px-6 py-3">Mở từ</th>
+                  <th className="px-6 py-3">Hạn nộp</th>
+                  <th className="px-6 py-3">Cập nhật</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -443,7 +443,7 @@ const TeacherAssignmentsPage = () => {
                             disabled={pendingActionId === assignment.id}
                             onClick={() => openEdit(assignment)}
                           >
-                            Edit
+                            Chỉnh sửa
                           </button>
                         )}
                         <button
@@ -456,8 +456,8 @@ const TeacherAssignmentsPage = () => {
                           onClick={() => openPreview(assignment)}
                         >
                           {pendingPreviewId === assignment.id
-                            ? "Loading..."
-                            : "Preview"}
+                            ? "Đang tải..."
+                            : "Xem trước"}
                         </button>
                         {assignment.status === "DRAFT" && (
                           <button
@@ -467,8 +467,8 @@ const TeacherAssignmentsPage = () => {
                             onClick={() => handlePublish(assignment)}
                           >
                             {pendingActionId === assignment.id
-                              ? "Publishing..."
-                              : "Publish"}
+                              ? "Đang công bố..."
+                              : "Công bố"}
                           </button>
                         )}
                         {assignment.status !== "DRAFT" && (
@@ -479,7 +479,7 @@ const TeacherAssignmentsPage = () => {
                               disabled={pendingActionId === assignment.id}
                               onClick={() => openSubmissions(assignment)}
                             >
-                              Submissions
+                              Bài nộp
                             </button>
                             <button
                               type="button"
@@ -487,7 +487,7 @@ const TeacherAssignmentsPage = () => {
                               disabled={pendingActionId === assignment.id}
                               onClick={() => openReviews(assignment)}
                             >
-                              Reviews
+                              Chấm bài
                             </button>
                           </>
                         )}
@@ -500,8 +500,8 @@ const TeacherAssignmentsPage = () => {
                             onClick={() => handleClose(assignment)}
                           >
                             {pendingActionId === assignment.id
-                              ? "Closing..."
-                              : "Close"}
+                              ? "Đang đóng..."
+                              : "Đóng"}
                           </button>
                         )}
                         {assignment.status === "CLOSED" && (
@@ -512,8 +512,8 @@ const TeacherAssignmentsPage = () => {
                             onClick={() => handleArchive(assignment)}
                           >
                             {pendingActionId === assignment.id
-                              ? "Archiving..."
-                              : "Archive"}
+                              ? "Đang lưu trữ..."
+                              : "Lưu trữ"}
                           </button>
                         )}
                         {assignment.status === "DRAFT" && (
@@ -524,8 +524,8 @@ const TeacherAssignmentsPage = () => {
                             onClick={() => handleDelete(assignment)}
                           >
                             {pendingActionId === assignment.id
-                              ? "Deleting..."
-                              : "Delete"}
+                              ? "Đang xóa..."
+                              : "Xóa"}
                           </button>
                         )}
                       </div>
@@ -541,8 +541,8 @@ const TeacherAssignmentsPage = () => {
       {!isLoading && assignmentsPage.totalElements > 0 && (
         <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Page {assignmentsPage.number + 1} of {pageCount} -{" "}
-            {assignmentsPage.totalElements} assignments
+            Trang {assignmentsPage.number + 1} / {pageCount} - Tổng số{" "}
+            {assignmentsPage.totalElements} bài tập
           </div>
           <div className="flex gap-2">
             <Button
@@ -552,7 +552,7 @@ const TeacherAssignmentsPage = () => {
               onClick={goToPreviousPage}
               disabled={assignmentsPage.number <= 0}
             >
-              Previous
+              Trước
             </Button>
             <Button
               type="button"
@@ -561,7 +561,7 @@ const TeacherAssignmentsPage = () => {
               onClick={goToNextPage}
               disabled={assignmentsPage.number + 1 >= pageCount}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>
@@ -570,7 +570,7 @@ const TeacherAssignmentsPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={editingAssignment ? "Edit Assignment" : "Create Assignment"}
+        title={editingAssignment ? "Chỉnh sửa bài tập" : "Tạo mới bài tập"}
         maxWidth="max-w-6xl"
       >
         <AssignmentForm
@@ -583,7 +583,7 @@ const TeacherAssignmentsPage = () => {
       <Modal
         isOpen={previewAssignment != null}
         onClose={closePreview}
-        title="Assignment Preview"
+        title="Xem trước bài tập"
         maxWidth="max-w-5xl"
       >
         {previewAssignment && (
@@ -604,7 +604,7 @@ const TeacherAssignmentsPage = () => {
       <Modal
         isOpen={submissionsAssignment != null}
         onClose={closeSubmissions}
-        title="Assignment Submissions"
+        title="Danh sách bài nộp"
         maxWidth="max-w-6xl"
       >
         {submissionsAssignment && (
@@ -618,7 +618,7 @@ const TeacherAssignmentsPage = () => {
       <Modal
         isOpen={reviewsAssignment != null}
         onClose={closeReviews}
-        title="Review Queue"
+        title="Hàng chờ chấm bài"
         maxWidth="max-w-7xl"
       >
         {reviewsAssignment && (

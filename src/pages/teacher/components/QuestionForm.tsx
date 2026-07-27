@@ -126,23 +126,23 @@ export const QuestionForm = ({
 
   const validate = () => {
     if (!stripHtml(content)) {
-      return "Question content is required.";
+      return "Vui lòng nhập nội dung câu hỏi.";
     }
 
     const parsedPoints = points.trim() ? Number(points) : null;
     if (parsedPoints != null && (!Number.isFinite(parsedPoints) || parsedPoints <= 0)) {
-      return "Points must be greater than 0.";
+      return "Điểm số phải lớn hơn 0.";
     }
 
     if (type === "MULTIPLE_CHOICE") {
       if (normalizedOptions.length < 2) {
-        return "Multiple choice questions must have at least 2 options.";
+        return "Câu hỏi trắc nghiệm phải có ít nhất 2 phương án.";
       }
       if (normalizedOptions.some((option) => !stripHtml(option.content))) {
-        return "All options must have content.";
+        return "Tất cả các phương án phải có nội dung.";
       }
       if (!normalizedOptions.some((option) => option.isCorrect)) {
-        return "Select at least 1 correct option.";
+        return "Vui lòng chọn ít nhất 1 đáp án đúng.";
       }
     }
 
@@ -177,7 +177,7 @@ export const QuestionForm = ({
       setIsLoading(true);
       await onSubmit(buildRequest());
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to save question.");
+      setError(err?.response?.data?.message ?? "Không thể lưu câu hỏi.");
     } finally {
       setIsLoading(false);
     }
@@ -187,28 +187,28 @@ export const QuestionForm = ({
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Type</label>
+          <label className="text-sm font-medium text-gray-700">Loại câu hỏi</label>
           <select
             value={type}
             onChange={(event) => setType(event.target.value as QuestionType)}
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-            <option value="ESSAY">Essay</option>
+            <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+            <option value="ESSAY">Tự luận</option>
           </select>
         </div>
 
         <Input
-          label="Title"
+          label="Tiêu đề"
           value={title}
           maxLength={255}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Optional short label"
+          placeholder="Nhãn ngắn (tùy chọn)"
         />
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            Difficulty
+            Độ khó
           </label>
           <select
             value={difficulty}
@@ -217,32 +217,32 @@ export const QuestionForm = ({
             }
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="">Not set</option>
-            <option value="EASY">Easy</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HARD">Hard</option>
+            <option value="">Chưa thiết lập</option>
+            <option value="EASY">Dễ</option>
+            <option value="MEDIUM">Trung bình</option>
+            <option value="HARD">Khó</option>
           </select>
         </div>
 
         <Input
-          label="Points"
+          label="Điểm số"
           type="number"
           min="0.01"
           step="0.01"
           value={points}
           onChange={(event) => setPoints(event.target.value)}
-          placeholder="Optional"
+          placeholder="Tùy chọn"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          Question Content
+          Nội dung câu hỏi
         </label>
         <RichTextEditor
           value={content}
           onChange={setContent}
-          placeholder="Enter question content..."
+          placeholder="Nhập nội dung câu hỏi..."
           className="min-h-[180px]"
         />
       </div>
@@ -251,10 +251,10 @@ export const QuestionForm = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <label className="text-sm font-medium text-gray-700">
-              Options
+              Phương án trả lời
             </label>
             <Button type="button" variant="secondary" size="sm" onClick={addOption}>
-              Add Option
+              Thêm phương án
             </Button>
           </div>
           <div className="space-y-3">
@@ -264,12 +264,12 @@ export const QuestionForm = ({
                 className="grid gap-3 rounded-card border border-surface-border bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto_auto]"
               >
                 <Input
-                  label={`Option ${index + 1}`}
+                  label={`Phương án ${index + 1}`}
                   value={option.content}
                   onChange={(event) =>
                     updateOption(index, { content: event.target.value })
                   }
-                  placeholder="Option content"
+                  placeholder="Nội dung phương án"
                 />
                 <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-700">
                   <input
@@ -280,7 +280,7 @@ export const QuestionForm = ({
                     }
                     className="h-4 w-4 rounded border-surface-border"
                   />
-                  Correct
+                  Đáp án đúng
                 </label>
                 <Button
                   type="button"
@@ -290,7 +290,7 @@ export const QuestionForm = ({
                   disabled={normalizedOptions.length <= 2}
                   className="self-end"
                 >
-                  Remove
+                  Xóa
                 </Button>
               </div>
             ))}
@@ -298,12 +298,12 @@ export const QuestionForm = ({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Explanation
+              Giải thích đáp án
             </label>
             <RichTextEditor
               value={explanation}
               onChange={setExplanation}
-              placeholder="Optional explanation..."
+              placeholder="Giải thích (tùy chọn)..."
               className="min-h-[120px]"
             />
           </div>
@@ -312,14 +312,14 @@ export const QuestionForm = ({
         <div className="space-y-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700">
-              Grading Criteria
+              Tiêu chí chấm điểm
             </label>
             <select
               value={gradingCriteriaId}
               onChange={(event) => setGradingCriteriaId(event.target.value)}
               className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
-              <option value="">No criteria selected</option>
+              <option value="">Chưa chọn tiêu chí</option>
               {gradingCriteria.map((criteria) => (
                 <option key={criteria.id} value={criteria.id}>
                   {criteria.name}
@@ -330,12 +330,12 @@ export const QuestionForm = ({
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Sample Answer
+              Bài mẫu / Đáp án tham khảo
             </label>
             <RichTextEditor
               value={sampleAnswer}
               onChange={setSampleAnswer}
-              placeholder="Optional sample answer..."
+              placeholder="Bài mẫu (tùy chọn)..."
               className="min-h-[160px]"
             />
           </div>
@@ -346,10 +346,10 @@ export const QuestionForm = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          {initialData ? "Update" : "Create"}
+          {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </div>
     </form>

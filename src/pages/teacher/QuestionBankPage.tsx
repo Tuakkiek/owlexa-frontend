@@ -33,14 +33,14 @@ const previewContent = (html: string) => {
 };
 
 const typeLabel: Record<QuestionType, string> = {
-  MULTIPLE_CHOICE: "Multiple Choice",
-  ESSAY: "Essay",
+  MULTIPLE_CHOICE: "Trắc nghiệm",
+  ESSAY: "Tự luận",
 };
 
 const difficultyLabel: Record<QuestionDifficulty, string> = {
-  EASY: "Easy",
-  MEDIUM: "Medium",
-  HARD: "Hard",
+  EASY: "Dễ",
+  MEDIUM: "Trung bình",
+  HARD: "Khó",
 };
 
 const emptyPage: PageResponse<QuestionResponse> = {
@@ -96,7 +96,7 @@ const QuestionBankPage = () => {
         }),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load questions.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách câu hỏi.");
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +139,7 @@ const QuestionBankPage = () => {
       setEditingQuestion(await questionBankApi.findById(question.id));
       setIsModalOpen(true);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Unable to load question.");
+      toast.error(err?.response?.data?.message ?? "Không thể tải thông tin câu hỏi.");
     }
   };
 
@@ -151,10 +151,10 @@ const QuestionBankPage = () => {
   const handleSave = async (request: QuestionRequest) => {
     if (editingQuestion) {
       await questionBankApi.update(editingQuestion.id, request);
-      toast.success("Question updated.");
+      toast.success("Cập nhật câu hỏi thành công.");
     } else {
       await questionBankApi.create(request);
-      toast.success("Question created.");
+      toast.success("Tạo mới câu hỏi thành công.");
     }
 
     closeModal();
@@ -163,9 +163,9 @@ const QuestionBankPage = () => {
 
   const handleDelete = async (question: QuestionResponse) => {
     const confirmed = await confirm({
-      title: "Delete question?",
-      message: `Delete "${question.title || previewContent(question.content)}"? This removes it from the active question bank.`,
-      confirmText: "Delete",
+      title: "Xóa câu hỏi?",
+      message: `Bạn có chắc chắn muốn xóa câu hỏi "${question.title || previewContent(question.content)}"? Câu hỏi sẽ bị xóa khỏi ngân hàng câu hỏi.`,
+      confirmText: "Xóa",
       variant: "danger",
     });
 
@@ -173,10 +173,10 @@ const QuestionBankPage = () => {
 
     try {
       await questionBankApi.delete(question.id);
-      toast.success("Question deleted.");
+      toast.success("Đã xóa câu hỏi.");
       await loadQuestions();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Unable to delete question.");
+      toast.error(err?.response?.data?.message ?? "Không thể xóa câu hỏi.");
     }
   };
 
@@ -193,10 +193,10 @@ const QuestionBankPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Question Bank"
-        description="Manage reusable questions for this center."
+        title="Ngân hàng câu hỏi"
+        description="Quản lý danh sách câu hỏi tái sử dụng cho trung tâm."
       >
-        <Button onClick={openCreate}>Create Question</Button>
+        <Button onClick={openCreate}>Tạo mới câu hỏi</Button>
       </PageHeader>
 
       {error && <ErrorBanner message={error} />}
@@ -205,7 +205,7 @@ const QuestionBankPage = () => {
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search questions..."
+          placeholder="Tìm kiếm câu hỏi..."
         />
 
         <select
@@ -213,9 +213,9 @@ const QuestionBankPage = () => {
           onChange={(event) => setType(event.target.value as QuestionType | "")}
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All types</option>
-          <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-          <option value="ESSAY">Essay</option>
+          <option value="">Tất cả loại</option>
+          <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+          <option value="ESSAY">Tự luận</option>
         </select>
 
         <select
@@ -225,10 +225,10 @@ const QuestionBankPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All difficulties</option>
-          <option value="EASY">Easy</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HARD">Hard</option>
+          <option value="">Tất cả độ khó</option>
+          <option value="EASY">Dễ</option>
+          <option value="MEDIUM">Trung bình</option>
+          <option value="HARD">Khó</option>
         </select>
 
         <select
@@ -241,7 +241,7 @@ const QuestionBankPage = () => {
           disabled={isCriteriaLoading}
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-hover"
         >
-          <option value="">All criteria</option>
+          <option value="">Tất cả tiêu chí</option>
           {criteriaFilterOptions.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name}
@@ -254,7 +254,7 @@ const QuestionBankPage = () => {
         <LoadingSkeleton count={4} height="h-16" />
       ) : questions.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          No questions found.
+          Không tìm thấy câu hỏi nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -262,13 +262,13 @@ const QuestionBankPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Question</th>
-                  <th className="px-6 py-3">Type</th>
-                  <th className="px-6 py-3">Difficulty</th>
-                  <th className="px-6 py-3">Points</th>
-                  <th className="px-6 py-3">Criteria</th>
-                  <th className="px-6 py-3">Updated At</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-3">Câu hỏi</th>
+                  <th className="px-6 py-3">Loại</th>
+                  <th className="px-6 py-3">Độ khó</th>
+                  <th className="px-6 py-3">Điểm số</th>
+                  <th className="px-6 py-3">Tiêu chí</th>
+                  <th className="px-6 py-3">Cập nhật</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -277,7 +277,7 @@ const QuestionBankPage = () => {
                     <td className="max-w-xl px-6 py-4">
                       <div className="font-medium text-gray-900">
                         <span className="line-clamp-1 break-words">
-                          {question.title || "Untitled question"}
+                          {question.title || "Câu hỏi chưa có tiêu đề"}
                         </span>
                       </div>
                       <div className="mt-1 text-gray-500">
@@ -312,14 +312,14 @@ const QuestionBankPage = () => {
                           className="text-xs text-blue-600 underline"
                           onClick={() => openEdit(question)}
                         >
-                          Edit
+                          Chỉnh sửa
                         </button>
                         <button
                           type="button"
                           className="text-xs text-red-600 underline"
                           onClick={() => handleDelete(question)}
                         >
-                          Delete
+                          Xóa
                         </button>
                       </div>
                     </td>
@@ -334,8 +334,8 @@ const QuestionBankPage = () => {
       {!isLoading && questionsPage.totalElements > 0 && (
         <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Page {questionsPage.number + 1} of {pageCount} ·{" "}
-            {questionsPage.totalElements} questions
+            Trang {questionsPage.number + 1} / {pageCount} · Tổng số{" "}
+            {questionsPage.totalElements} câu hỏi
           </div>
           <div className="flex gap-2">
             <Button
@@ -345,7 +345,7 @@ const QuestionBankPage = () => {
               onClick={goToPreviousPage}
               disabled={questionsPage.number <= 0}
             >
-              Previous
+              Trước
             </Button>
             <Button
               type="button"
@@ -354,7 +354,7 @@ const QuestionBankPage = () => {
               onClick={goToNextPage}
               disabled={questionsPage.number + 1 >= pageCount}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>
@@ -363,7 +363,7 @@ const QuestionBankPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={editingQuestion ? "Edit Question" : "Create Question"}
+        title={editingQuestion ? "Chỉnh sửa câu hỏi" : "Tạo mới câu hỏi"}
         maxWidth="max-w-5xl"
       >
         <QuestionForm

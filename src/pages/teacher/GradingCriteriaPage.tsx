@@ -43,7 +43,7 @@ const GradingCriteriaPage = () => {
       setCriteria(await gradingCriteriaApi.findAll(search));
     } catch (err: any) {
       setError(
-        err?.response?.data?.message ?? "Unable to load grading criteria.",
+        err?.response?.data?.message ?? "Không thể tải danh sách tiêu chí chấm điểm.",
       );
     } finally {
       setIsLoading(false);
@@ -85,10 +85,10 @@ const GradingCriteriaPage = () => {
   const handleSave = async (request: GradingCriteriaRequest) => {
     if (editingCriteria) {
       await gradingCriteriaApi.update(editingCriteria.id, request);
-      toast.success("Grading criteria updated.");
+      toast.success("Cập nhật tiêu chí chấm điểm thành công.");
     } else {
       await gradingCriteriaApi.create(request);
-      toast.success("Grading criteria created.");
+      toast.success("Tạo mới tiêu chí chấm điểm thành công.");
     }
 
     closeModal();
@@ -97,9 +97,9 @@ const GradingCriteriaPage = () => {
 
   const handleDelete = async (item: GradingCriteriaResponse) => {
     const confirmed = await confirm({
-      title: "Delete criteria?",
-      message: `Delete "${item.name}"? This action will remove it from the active criteria list.`,
-      confirmText: "Delete",
+      title: "Xóa tiêu chí?",
+      message: `Bạn có chắc chắn muốn xóa tiêu chí "${item.name}"?`,
+      confirmText: "Xóa",
       variant: "danger",
     });
 
@@ -107,11 +107,11 @@ const GradingCriteriaPage = () => {
 
     try {
       await gradingCriteriaApi.delete(item.id);
-      toast.success("Grading criteria deleted.");
+      toast.success("Đã xóa tiêu chí chấm điểm.");
       await loadCriteria(query);
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to delete grading criteria.",
+        err?.response?.data?.message ?? "Không thể xóa tiêu chí chấm điểm.",
       );
     }
   };
@@ -119,10 +119,10 @@ const GradingCriteriaPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Grading Criteria"
-        description="Manage reusable essay grading criteria for this center."
+        title="Tiêu chí chấm điểm"
+        description="Quản lý danh sách tiêu chí chấm bài tự luận cho trung tâm."
       >
-        <Button onClick={openCreate}>Create Criteria</Button>
+        <Button onClick={openCreate}>Tạo mới tiêu chí</Button>
       </PageHeader>
 
       {error && <ErrorBanner message={error} />}
@@ -130,14 +130,14 @@ const GradingCriteriaPage = () => {
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder="Search by name..."
+        placeholder="Tìm theo tên tiêu chí..."
       />
 
       {isLoading ? (
         <LoadingSkeleton count={4} height="h-16" />
       ) : sortedCriteria.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          No grading criteria found.
+          Không tìm thấy tiêu chí chấm điểm nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -145,10 +145,10 @@ const GradingCriteriaPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">Preview Content</th>
-                  <th className="px-6 py-3">Updated At</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-3">Tên tiêu chí</th>
+                  <th className="px-6 py-3">Nội dung xem trước</th>
+                  <th className="px-6 py-3">Cập nhật</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -174,14 +174,14 @@ const GradingCriteriaPage = () => {
                           className="text-xs text-blue-600 underline"
                           onClick={() => openEdit(item)}
                         >
-                          Edit
+                          Chỉnh sửa
                         </button>
                         <button
                           type="button"
                           className="text-xs text-red-600 underline"
                           onClick={() => handleDelete(item)}
                         >
-                          Delete
+                          Xóa
                         </button>
                       </div>
                     </td>
@@ -196,7 +196,7 @@ const GradingCriteriaPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={editingCriteria ? "Edit Criteria" : "Create Criteria"}
+        title={editingCriteria ? "Chỉnh sửa tiêu chí" : "Tạo mới tiêu chí"}
         maxWidth="max-w-3xl"
       >
         <GradingCriteriaForm

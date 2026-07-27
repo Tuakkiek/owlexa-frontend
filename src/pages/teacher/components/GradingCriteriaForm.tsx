@@ -41,12 +41,12 @@ export const GradingCriteriaForm = ({
     setError("");
 
     if (!name.trim()) {
-      setError("Name is required.");
+      setError("Vui lòng nhập tên tiêu chí.");
       return;
     }
 
     if (!stripHtml(content)) {
-      setError("Content is required.");
+      setError("Vui lòng nhập nội dung tiêu chí.");
       return;
     }
 
@@ -57,7 +57,7 @@ export const GradingCriteriaForm = ({
         content: content.trim(),
       });
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to save criteria.");
+      setError(err?.response?.data?.message ?? "Không thể lưu tiêu chí chấm điểm.");
     } finally {
       setIsLoading(false);
     }
@@ -66,20 +66,20 @@ export const GradingCriteriaForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="Name"
+        label="Tên tiêu chí"
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder="IELTS Writing Task 2"
+        placeholder="Ví dụ: IELTS Writing Task 2"
       />
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">
-          Content
+          Nội dung tiêu chí
         </label>
         <RichTextEditor
           value={content}
           onChange={setContent}
-          placeholder="Enter grading criteria..."
+          placeholder="Nhập nội dung tiêu chí chấm điểm..."
           className="min-h-[260px]"
         />
       </div>
@@ -88,10 +88,10 @@ export const GradingCriteriaForm = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          {initialData ? "Update" : "Create"}
+          {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </div>
     </form>

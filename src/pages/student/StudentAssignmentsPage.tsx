@@ -27,23 +27,23 @@ import { StudentReleasedResult } from "./components/StudentReleasedResult";
 import { AssignmentPreview } from "../teacher/components/AssignmentPreview";
 
 const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
+  QUIZ: "Trắc nghiệm",
+  HOMEWORK: "Bài tập về nhà",
+  EXAM: "Bài kiểm tra",
 };
 
 const statusLabel: Record<AssignmentStatus, string> = {
-  DRAFT: "Draft",
-  SCHEDULED: "Scheduled",
-  ACTIVE: "Active",
-  CLOSED: "Closed",
-  ARCHIVED: "Archived",
+  DRAFT: "Nháp",
+  SCHEDULED: "Đã lên lịch",
+  ACTIVE: "Đang diễn ra",
+  CLOSED: "Đã đóng",
+  ARCHIVED: "Đã lưu trữ",
 };
 
 const attemptStatusLabel: Record<SubmissionAttemptStatus, string> = {
-  IN_PROGRESS: "In Progress",
-  SUBMITTED: "Submitted",
-  AUTO_SUBMITTED: "Auto Submitted",
+  IN_PROGRESS: "Đang làm bài",
+  SUBMITTED: "Đã nộp",
+  AUTO_SUBMITTED: "Tự động nộp",
 };
 
 const StudentAssignmentsPage = () => {
@@ -76,7 +76,7 @@ const StudentAssignmentsPage = () => {
       setError("");
       setAssignments(await assignmentApi.findStudentAssignments());
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load assignments.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách bài tập.");
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +92,7 @@ const StudentAssignmentsPage = () => {
         await assignmentApi.findStudentAssignmentDetail(assignment.id),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load assignment.");
+      setError(err?.response?.data?.message ?? "Không thể tải thông tin bài tập.");
     }
   };
 
@@ -109,7 +109,7 @@ const StudentAssignmentsPage = () => {
       navigate(`/student/submission-attempts/${attempt.id}`);
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to start assignment.",
+        err?.response?.data?.message ?? "Không thể bắt đầu làm bài.",
       );
     } finally {
       setPendingStartId(null);
@@ -128,7 +128,7 @@ const StudentAssignmentsPage = () => {
       setAttemptHistory(await submissionApi.getAttemptHistory(assignment.id));
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load attempt history.",
+        err?.response?.data?.message ?? "Không thể tải lịch sử làm bài.",
       );
       setAttemptsAssignment(null);
       setAttemptHistory([]);
@@ -153,10 +153,10 @@ const StudentAssignmentsPage = () => {
       );
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        toast.info("The teacher has not released this result yet.");
+        toast.info("Giáo viên chưa công bố kết quả cho lượt làm bài này.");
       } else {
         toast.error(
-          err?.response?.data?.message ?? "Unable to load the released result.",
+          err?.response?.data?.message ?? "Không thể tải kết quả đã công bố.",
         );
       }
     } finally {
@@ -171,8 +171,8 @@ const StudentAssignmentsPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="My Assignments"
-        description="View assigned homework, quizzes, and exams."
+        title="Bài tập của tôi"
+        description="Xem danh sách bài tập về nhà, trắc nghiệm và bài kiểm tra được giao."
       />
 
       {error && <ErrorBanner message={error} />}
@@ -181,7 +181,7 @@ const StudentAssignmentsPage = () => {
         <LoadingSkeleton count={4} height="h-16" />
       ) : assignments.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          No assignments found.
+          Không tìm thấy bài tập nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -189,13 +189,13 @@ const StudentAssignmentsPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Assignment</th>
-                  <th className="px-6 py-3">Type</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Open</th>
-                  <th className="px-6 py-3">Due</th>
-                  <th className="px-6 py-3">Assigned At</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-3">Bài tập</th>
+                  <th className="px-6 py-3">Loại</th>
+                  <th className="px-6 py-3">Trạng thái</th>
+                  <th className="px-6 py-3">Mở từ</th>
+                  <th className="px-6 py-3">Hạn nộp</th>
+                  <th className="px-6 py-3">Thời gian giao</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -237,8 +237,8 @@ const StudentAssignmentsPage = () => {
                           onClick={() => startOrResume(assignment)}
                         >
                           {pendingStartId === assignment.id
-                            ? "Opening..."
-                            : "Start / Resume"}
+                            ? "Đang mở..."
+                            : "Làm bài / Tiếp tục"}
                         </button>
                         <button
                           type="button"
@@ -247,15 +247,15 @@ const StudentAssignmentsPage = () => {
                           onClick={() => openAttemptHistory(assignment)}
                         >
                           {pendingHistoryId === assignment.id
-                            ? "Loading..."
-                            : "Attempts"}
+                            ? "Đang tải..."
+                            : "Lịch sử làm bài"}
                         </button>
                         <button
                           type="button"
                           className="text-xs text-gray-600 underline"
                           onClick={() => openDetail(assignment)}
                         >
-                          Preview
+                          Xem trước
                         </button>
                       </div>
                     </td>
@@ -270,7 +270,7 @@ const StudentAssignmentsPage = () => {
       <Modal
         isOpen={selectedAssignment != null}
         onClose={closeDetail}
-        title="Assignment Detail"
+        title="Chi tiết bài tập"
         maxWidth="max-w-5xl"
       >
         {selectedAssignment && (
@@ -290,7 +290,7 @@ const StudentAssignmentsPage = () => {
       <Modal
         isOpen={attemptsAssignment != null}
         onClose={closeAttemptHistory}
-        title="Attempt History"
+        title="Lịch sử làm bài"
         maxWidth="max-w-4xl"
       >
         {attemptsAssignment && (
@@ -308,7 +308,7 @@ const StudentAssignmentsPage = () => {
               <LoadingSkeleton count={3} height="h-14" />
             ) : attemptHistory.length === 0 ? (
               <div className="rounded-card border border-surface-border bg-white py-10 text-center text-sm text-gray-400">
-                No attempts yet.
+                Chưa có lượt làm bài nào.
               </div>
             ) : (
               <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -316,19 +316,19 @@ const StudentAssignmentsPage = () => {
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                        <th className="px-4 py-3">Attempt</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Started</th>
-                        <th className="px-4 py-3">Submitted</th>
-                        <th className="px-4 py-3">Score</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
+                        <th className="px-4 py-3">Lượt bài</th>
+                        <th className="px-4 py-3">Trạng thái</th>
+                        <th className="px-4 py-3">Bắt đầu</th>
+                        <th className="px-4 py-3">Đã nộp</th>
+                        <th className="px-4 py-3">Điểm số</th>
+                        <th className="px-4 py-3 text-right">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-surface-border">
                       {attemptHistory.map((attempt) => (
                         <tr key={attempt.id}>
                           <td className="whitespace-nowrap px-4 py-3">
-                            Attempt {attempt.attemptNumber}
+                            Lượt {attempt.attemptNumber}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <Badge>{attemptStatusLabel[attempt.status]}</Badge>
@@ -354,7 +354,7 @@ const StudentAssignmentsPage = () => {
                                   )
                                 }
                               >
-                                Open
+                                Mở
                               </button>
                               {attempt.status !== "IN_PROGRESS" && (
                                 <button
@@ -366,8 +366,8 @@ const StudentAssignmentsPage = () => {
                                   onClick={() => openReleasedResult(attempt.id)}
                                 >
                                   {pendingResultAttemptId === attempt.id
-                                    ? "Loading..."
-                                    : "View Result"}
+                                    ? "Đang tải..."
+                                    : "Xem kết quả"}
                                 </button>
                               )}
                             </div>
@@ -386,7 +386,7 @@ const StudentAssignmentsPage = () => {
       <Modal
         isOpen={releasedResult != null}
         onClose={closeReleasedResult}
-        title="Released Result"
+        title="Kết quả đã công bố"
         maxWidth="max-w-4xl"
       >
         {releasedResult && (

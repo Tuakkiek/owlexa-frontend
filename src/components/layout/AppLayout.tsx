@@ -77,47 +77,42 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     },
   ],
   TEACHER: [
-    { name: "Dashboard", path: "/teacher/dashboard" },
+    { name: "Bảng điều khiển", path: "/teacher/dashboard" },
     {
-      name: "Schedule",
+      name: "Lịch dạy",
       path: "/teacher/schedule",
       permission: "SCHEDULE_VIEW",
     },
     {
-      name: "Attendance",
+      name: "Điểm danh",
       path: "/teacher/attendance",
       permission: "ATTENDANCE_MARK",
     },
-    { name: "Students", path: "/teacher/students", permission: "CLASS_VIEW" },
-    { name: "Grading Criteria", path: "/teacher/grading-criteria" },
-    { name: "Question Bank", path: "/teacher/questions" },
-    { name: "Assessment Builder", path: "/teacher/assessments" },
-    { name: "Assignments", path: "/teacher/assignments" },
-
-
-
+    { name: "Học viên", path: "/teacher/students", permission: "CLASS_VIEW" },
+    { name: "Tiêu chí chấm điểm", path: "/teacher/grading-criteria" },
+    { name: "Ngân hàng câu hỏi", path: "/teacher/questions" },
+    { name: "Tạo đề thi", path: "/teacher/assessments" },
+    { name: "Bài tập", path: "/teacher/assignments" },
   ],
   STUDENT: [
-    { name: "Dashboard", path: "/student/dashboard" },
+    { name: "Bảng điều khiển", path: "/student/dashboard" },
     {
-      name: "Schedule",
+      name: "Lịch học",
       path: "/student/schedule",
       permission: "SCHEDULE_VIEW",
     },
     {
-      name: "Attendance",
+      name: "Điểm danh",
       path: "/student/attendance",
       permission: "STUDENT_VIEW",
     },
-    { name: "Fees", path: "/student/fees", permission: "PAYMENT_VIEW" },
-
-
-    { name: "Documents", path: "/student/documents" },
-    { name: "Assignments", path: "/student/assignments" },
+    { name: "Học phí", path: "/student/fees", permission: "PAYMENT_VIEW" },
+    { name: "Tài liệu", path: "/student/documents" },
+    { name: "Bài tập", path: "/student/assignments" },
   ],
   CASHIER: [
     {
-      name: "Dashboard",
+      name: "Bảng điều khiển",
       path: "/cashier/dashboard",
       permission: "DASHBOARD_FINANCE",
     },
@@ -132,17 +127,17 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
       permission: "PAYMENT_VIEW",
     },
   ],
-  ADMIN: [{ name: "Dashboard", path: "/admin/dashboard" }],
+  ADMIN: [{ name: "Bảng điều khiển", path: "/admin/dashboard" }],
 };
 
 const roleLabels: Record<RoleName, string> = {
-  ADMIN: "Admin Portal",
-  OWNER: "Owner Portal",
-  MANAGER: "Manager Portal",
-  ACADEMIC_STAFF: "Academic Portal",
-  TEACHER: "Teacher Portal",
-  STUDENT: "Student Portal",
-  CASHIER: "Cashier Portal",
+  ADMIN: "Cổng Quản trị hệ thống",
+  OWNER: "Cổng Quản lý trung tâm",
+  MANAGER: "Cổng Quản lý",
+  ACADEMIC_STAFF: "Cổng Giáo vụ",
+  TEACHER: "Cổng Giáo viên",
+  STUDENT: "Cổng Học viên",
+  CASHIER: "Cổng Thu ngân",
 };
 
 const AppLayout = () => {

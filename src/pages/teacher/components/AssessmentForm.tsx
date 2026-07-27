@@ -201,10 +201,10 @@ export const AssessmentForm = ({
 
   const validate = () => {
     if (!title.trim()) {
-      return "Assessment title is required.";
+      return "Vui lòng nhập tiêu đề đề thi.";
     }
     if (title.trim().length > 255) {
-      return "Assessment title must not exceed 255 characters.";
+      return "Tiêu đề đề thi không được vượt quá 255 ký tự.";
     }
     const invalidPoints = selectedQuestions.some((question) => {
       if (!question.points.trim()) return false;
@@ -212,7 +212,7 @@ export const AssessmentForm = ({
       return !Number.isFinite(value) || value <= 0;
     });
     if (invalidPoints) {
-      return "Item points must be greater than 0.";
+      return "Điểm số của câu hỏi phải lớn hơn 0.";
     }
     return "";
   };
@@ -242,7 +242,7 @@ export const AssessmentForm = ({
       setIsSaving(true);
       await onSubmit(buildRequest());
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to save assessment.");
+      setError(err?.response?.data?.message ?? "Không thể lưu đề thi.");
     } finally {
       setIsSaving(false);
     }
@@ -252,36 +252,36 @@ export const AssessmentForm = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <Input
-          label="Title"
+          label="Tiêu đề"
           value={title}
           maxLength={255}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Assessment title"
+          placeholder="Tiêu đề đề thi"
         />
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Type</label>
+          <label className="text-sm font-medium text-gray-700">Loại đề thi</label>
           <select
             value={type}
             onChange={(event) => setType(event.target.value as AssessmentType)}
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="QUIZ">Quiz</option>
-            <option value="HOMEWORK">Homework</option>
-            <option value="EXAM">Exam</option>
+            <option value="QUIZ">Trắc nghiệm</option>
+            <option value="HOMEWORK">Bài tập về nhà</option>
+            <option value="EXAM">Bài kiểm tra</option>
           </select>
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">
-          Description
+          Mô tả
         </label>
         <textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={3}
-          placeholder="Optional description"
+          placeholder="Mô tả (tùy chọn)"
           className="w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         />
       </div>
@@ -290,10 +290,10 @@ export const AssessmentForm = ({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              Question Selector
+              Chọn câu hỏi
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Select existing active questions from Question Bank.
+              Chọn các câu hỏi đang hoạt động từ Ngân hàng câu hỏi.
             </p>
           </div>
 
@@ -301,7 +301,7 @@ export const AssessmentForm = ({
             <SearchInput
               value={questionQuery}
               onChange={setQuestionQuery}
-              placeholder="Search questions..."
+              placeholder="Tìm kiếm câu hỏi..."
             />
             <select
               value={questionType}
@@ -310,9 +310,9 @@ export const AssessmentForm = ({
               }
               className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
-              <option value="">All types</option>
-              <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-              <option value="ESSAY">Essay</option>
+              <option value="">Tất cả loại</option>
+              <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+              <option value="ESSAY">Tự luận</option>
             </select>
           </div>
 
@@ -322,10 +322,10 @@ export const AssessmentForm = ({
 
           <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
             {isQuestionLoading ? (
-              <div className="p-4 text-sm text-gray-500">Loading...</div>
+              <div className="p-4 text-sm text-gray-500">Đang tải...</div>
             ) : questionPage.content.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                No questions found.
+                Không tìm thấy câu hỏi nào.
               </div>
             ) : (
               <div className="divide-y divide-surface-border">
@@ -340,7 +340,7 @@ export const AssessmentForm = ({
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-medium text-gray-900">
-                            {question.title || "Untitled question"}
+                            {question.title || "Câu hỏi chưa có tiêu đề"}
                           </span>
                           <span className="text-xs text-gray-500">
                             {typeLabel[question.type]}
@@ -357,7 +357,7 @@ export const AssessmentForm = ({
                         disabled={isSelected}
                         onClick={() => addQuestion(question)}
                       >
-                        {isSelected ? "Selected" : "Add"}
+                        {isSelected ? "Đã chọn" : "Thêm"}
                       </Button>
                     </div>
                   );
@@ -370,15 +370,15 @@ export const AssessmentForm = ({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              Selected Questions
+              Câu hỏi đã chọn
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Reorder questions and override points when needed.
+              Sắp xếp lại thứ tự câu hỏi và ghi đè điểm số khi cần.
             </p>
           </div>
 
           <div className="rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-700">
-            Total points:{" "}
+            Tổng điểm:{" "}
             <span className="font-medium text-gray-900">
               {totalPoints > 0 ? totalPoints.toFixed(2) : "-"}
             </span>
@@ -387,7 +387,7 @@ export const AssessmentForm = ({
           <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
             {selectedQuestions.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                No questions selected.
+                Chưa có câu hỏi nào được chọn.
               </div>
             ) : (
               <div className="divide-y divide-surface-border">
@@ -402,7 +402,7 @@ export const AssessmentForm = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">
-                          {question.title || "Untitled question"}
+                          {question.title || "Câu hỏi chưa có tiêu đề"}
                         </span>
                         <span className="text-xs text-gray-500">
                           {typeLabel[question.questionType]}
@@ -412,11 +412,11 @@ export const AssessmentForm = ({
                         {previewContent(question.content)}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        Default points: {question.defaultPoints ?? "-"}
+                        Điểm mặc định: {question.defaultPoints ?? "-"}
                       </p>
                     </div>
                     <Input
-                      label="Points"
+                      label="Điểm số"
                       type="number"
                       min="0.01"
                       step="0.01"
@@ -427,7 +427,7 @@ export const AssessmentForm = ({
                       placeholder={
                         question.defaultPoints != null
                           ? String(question.defaultPoints)
-                          : "Default"
+                          : "Mặc định"
                       }
                     />
                     <div className="flex flex-wrap items-end justify-end gap-2">
@@ -438,7 +438,7 @@ export const AssessmentForm = ({
                         disabled={index === 0}
                         onClick={() => moveQuestion(index, -1)}
                       >
-                        Up
+                        Lên
                       </Button>
                       <Button
                         type="button"
@@ -447,7 +447,7 @@ export const AssessmentForm = ({
                         disabled={index === selectedQuestions.length - 1}
                         onClick={() => moveQuestion(index, 1)}
                       >
-                        Down
+                        Xuống
                       </Button>
                       <Button
                         type="button"
@@ -455,7 +455,7 @@ export const AssessmentForm = ({
                         size="sm"
                         onClick={() => removeQuestion(question.questionId)}
                       >
-                        Remove
+                        Xóa
                       </Button>
                     </div>
                   </div>
@@ -470,10 +470,10 @@ export const AssessmentForm = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isSaving}>
-          {initialData ? "Update" : "Create"}
+          {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </div>
     </form>

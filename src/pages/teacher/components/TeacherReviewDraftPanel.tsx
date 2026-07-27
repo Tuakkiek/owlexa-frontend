@@ -554,7 +554,7 @@ export const TeacherReviewDraftPanel = ({
           htmlFor={`teacher-review-ai-result-${review.id}`}
           className="block text-xs font-medium text-gray-500"
         >
-          Selected AI Result
+          Kết quả chấm AI đã chọn
         </label>
         <select
           id={`teacher-review-ai-result-${review.id}`}
@@ -567,16 +567,16 @@ export const TeacherReviewDraftPanel = ({
           disabled={!isEditable || isPending}
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
         >
-          <option value="">No AI result selected</option>
+          <option value="">Không chọn kết quả AI</option>
           {latestAiResult && (
             <option value={latestAiResult.id}>
-              Latest completed result #{latestAiResult.id}
+              Kết quả AI mới nhất #{latestAiResult.id}
             </option>
           )}
           {review.selectedAiGradingResultId != null &&
             review.selectedAiGradingResultId !== latestAiResult?.id && (
               <option value={review.selectedAiGradingResultId}>
-                Currently selected result #
+                Kết quả AI đang chọn #
                 {review.selectedAiGradingResultId}
               </option>
             )}
@@ -585,25 +585,25 @@ export const TeacherReviewDraftPanel = ({
             selectedAiGradingResultId !==
               review.selectedAiGradingResultId && (
               <option value={selectedAiGradingResultId}>
-                Unsaved selected result #{selectedAiGradingResultId}
+                Kết quả AI chưa lưu #{selectedAiGradingResultId}
               </option>
             )}
         </select>
 
         {latestAiResult ? (
           <div className="text-sm text-gray-600">
-            Latest recommendation: {latestAiResult.aiScore ?? "-"} /{" "}
+            Đề xuất mới nhất: {latestAiResult.aiScore ?? "-"} /{" "}
             {latestAiResult.maxScore ?? "-"}
             {latestAiResult.confidence != null &&
-              ` - ${Math.round(latestAiResult.confidence * 100)}% confidence`}
+              ` - Độ tin cậy ${Math.round(latestAiResult.confidence * 100)}%`}
           </div>
         ) : selectedAiGradingResultId != null ? (
           <div className="text-sm text-gray-600">
-            This review references AI result #{selectedAiGradingResultId}.
+            Bài đánh giá tham chiếu kết quả AI #{selectedAiGradingResultId}.
           </div>
         ) : (
           <div className="text-sm text-gray-500">
-            No completed AI grading result is currently available.
+            Hiện chưa có kết quả chấm bằng AI hoàn thành.
           </div>
         )}
 
@@ -611,8 +611,8 @@ export const TeacherReviewDraftPanel = ({
           selectedAiGradingResultId != null &&
           selectedAiGradingResultId !== latestAiResult.id && (
             <div className="text-sm text-amber-700">
-              The review keeps result #{selectedAiGradingResultId}; the AI
-              panel currently displays latest result #{latestAiResult.id}.
+              Bài đánh giá đang giữ kết quả #{selectedAiGradingResultId}; bảng AI
+              hiện hiển thị kết quả mới nhất #{latestAiResult.id}.
             </div>
           )}
       </div>
@@ -622,7 +622,7 @@ export const TeacherReviewDraftPanel = ({
           htmlFor={`teacher-review-overall-comment-${review.id}`}
           className="block text-sm font-medium text-gray-700"
         >
-          Overall Comment
+          Nhận xét chung
         </label>
         <textarea
           id={`teacher-review-overall-comment-${review.id}`}
@@ -630,15 +630,15 @@ export const TeacherReviewDraftPanel = ({
           value={overallComment}
           onChange={(event) => setOverallComment(event.target.value)}
           disabled={!isEditable || isPending}
-          placeholder="Feedback released to the student..."
+          placeholder="Nhận xét gửi cho học viên..."
           className="mt-2 w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
         />
       </div>
 
       {review.items.length === 0 ? (
         <div className="border-y border-surface-border py-4 text-sm text-gray-500">
-          This attempt has no Essay questions. The final score will use the
-          submission auto score.
+          Bài nộp này không có câu hỏi tự luận. Điểm số cuối cùng sẽ sử dụng điểm
+          tự động chấm.
         </div>
       ) : (
         <div className="space-y-4">
@@ -657,11 +657,11 @@ export const TeacherReviewDraftPanel = ({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="text-xs font-medium uppercase text-gray-400">
-                      Essay {item.displayOrderSnapshot}
+                      Tự luận {item.displayOrderSnapshot}
                     </div>
                     <div className="mt-1 text-sm font-medium text-gray-900">
                       {item.questionTitleSnapshot ||
-                        `Question ${item.displayOrderSnapshot}`}
+                        `Câu hỏi ${item.displayOrderSnapshot}`}
                     </div>
                   </div>
                   <div className="w-full sm:w-36">
@@ -669,7 +669,7 @@ export const TeacherReviewDraftPanel = ({
                       htmlFor={`teacher-review-score-${item.assignmentItemId}`}
                       className="block text-xs font-medium text-gray-500"
                     >
-                      Score / {item.maxScore}
+                      Điểm / {item.maxScore}
                     </label>
                     <input
                       id={`teacher-review-score-${item.assignmentItemId}`}
@@ -695,7 +695,7 @@ export const TeacherReviewDraftPanel = ({
                   htmlFor={`teacher-review-comment-${item.assignmentItemId}`}
                   className="mt-3 block text-xs font-medium text-gray-500"
                 >
-                  Teacher Comment
+                  Nhận xét của giáo viên
                 </label>
                 <textarea
                   id={`teacher-review-comment-${item.assignmentItemId}`}
@@ -709,7 +709,7 @@ export const TeacherReviewDraftPanel = ({
                     )
                   }
                   disabled={!isEditable || isPending}
-                  placeholder="Feedback for this Essay response..."
+                  placeholder="Nhận xét cho câu hỏi tự luận này..."
                   className="mt-1 w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
                 />
               </div>
@@ -723,10 +723,10 @@ export const TeacherReviewDraftPanel = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500" aria-live="polite">
               {isDirty
-                ? "You have unsaved changes. Save the draft before finalizing."
+                ? "Bạn có thay đổi chưa lưu. Vui lòng lưu bản nháp trước khi hoàn tất."
                 : !allEssayScoresValid
-                  ? "Every Essay needs a valid score before finalization."
-                  : "All changes are saved. The review is ready to finalize."}
+                  ? "Cần nhập điểm hợp lệ cho tất cả câu tự luận trước khi hoàn tất."
+                  : "Đã lưu tất cả thay đổi. Đánh giá sẵn sàng để hoàn tất."}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -735,7 +735,7 @@ export const TeacherReviewDraftPanel = ({
                 onClick={handleSave}
                 disabled={!isDirty || isPending}
               >
-                {isSaving ? "Saving..." : "Save Draft"}
+                {isSaving ? "Đang lưu..." : "Lưu bản nháp"}
               </Button>
               <Button
                 type="button"
@@ -745,8 +745,8 @@ export const TeacherReviewDraftPanel = ({
                 }
               >
                 {pendingLifecycleAction === "finalize"
-                  ? "Finalizing..."
-                  : "Finalize"}
+                  ? "Đang hoàn tất..."
+                  : "Hoàn tất"}
               </Button>
             </div>
           </div>
@@ -755,8 +755,8 @@ export const TeacherReviewDraftPanel = ({
         {review.status === "FINALIZED" && (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500">
-              Finalized {formatDateTime(review.finalizedAt)}. Release this
-              result when it is ready for the student.
+              Đã hoàn tất lúc {formatDateTime(review.finalizedAt)}. Công bố kết
+              quả khi sẵn sàng cho học viên.
             </div>
             <Button
               type="button"
@@ -764,16 +764,16 @@ export const TeacherReviewDraftPanel = ({
               disabled={isPending}
             >
               {pendingLifecycleAction === "release"
-                ? "Releasing..."
-                : "Release"}
+                ? "Đang công bố..."
+                : "Công bố"}
             </Button>
           </div>
         )}
 
         {review.status === "RELEASED" && (
           <div className="text-sm text-gray-500">
-            Released to the student {formatDateTime(review.releasedAt)}. This
-            review is read-only.
+            Đã công bố cho học viên lúc {formatDateTime(review.releasedAt)}.
+            Đánh giá này ở chế độ chỉ đọc.
           </div>
         )}
       </div>

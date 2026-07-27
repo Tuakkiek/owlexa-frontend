@@ -21,15 +21,15 @@ import { formatDateTime } from "../../utils/dateTime";
 import { htmlToText } from "../../utils/text";
 
 const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
+  QUIZ: "Trắc nghiệm",
+  HOMEWORK: "Bài tập về nhà",
+  EXAM: "Bài kiểm tra",
 };
 
 const statusLabel: Record<SubmissionAttemptStatus, string> = {
-  IN_PROGRESS: "In Progress",
-  SUBMITTED: "Submitted",
-  AUTO_SUBMITTED: "Auto Submitted",
+  IN_PROGRESS: "Đang làm bài",
+  SUBMITTED: "Đã nộp",
+  AUTO_SUBMITTED: "Tự động nộp",
 };
 
 type EditableSubmissionAnswer = {
@@ -86,7 +86,7 @@ const StudentSubmissionAttemptPage = () => {
   const loadAttempt = useCallback(async () => {
     const id = Number(attemptId);
     if (!attemptId || Number.isNaN(id)) {
-      setError("Invalid attempt.");
+      setError("Lượt làm bài không hợp lệ.");
       setIsLoading(false);
       return;
     }
@@ -98,7 +98,7 @@ const StudentSubmissionAttemptPage = () => {
       setAttempt(loadedAttempt);
       setEditableAnswers(toEditableAnswers(loadedAttempt));
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load attempt.");
+      setError(err?.response?.data?.message ?? "Không thể tải lượt làm bài.");
     } finally {
       setIsLoading(false);
     }
@@ -219,9 +219,9 @@ const StudentSubmissionAttemptPage = () => {
       setIsSaving(true);
       setError("");
       await persistAnswers();
-      toast.success("Answers saved.");
+      toast.success("Đã lưu câu trả lời.");
     } catch (err: any) {
-      const message = err?.response?.data?.message ?? "Unable to save answers.";
+      const message = err?.response?.data?.message ?? "Không thể lưu câu trả lời.";
       setError(message);
       toast.error(message);
       return;
@@ -234,9 +234,9 @@ const StudentSubmissionAttemptPage = () => {
     if (!attempt || !isEditable || isSaving || isSubmitting) return;
 
     const confirmed = await confirm({
-      title: "Submit attempt?",
-      message: "Submit this attempt? You will not be able to edit answers after submission.",
-      confirmText: "Submit",
+      title: "Nộp bài?",
+      message: "Bạn có chắc chắn muốn nộp bài? Sau khi nộp, bạn không thể chỉnh sửa câu trả lời nữa.",
+      confirmText: "Nộp bài",
     });
 
     if (!confirmed) return;
@@ -251,10 +251,10 @@ const StudentSubmissionAttemptPage = () => {
       );
       setAttempt(submittedAttempt);
       setEditableAnswers(toEditableAnswers(submittedAttempt));
-      toast.success("Attempt submitted.");
+      toast.success("Đã nộp bài thành công.");
     } catch (err: any) {
       const message =
-        err?.response?.data?.message ?? "Unable to submit attempt.";
+        err?.response?.data?.message ?? "Không thể nộp bài.";
       setError(message);
       toast.error(message);
     } finally {
@@ -309,7 +309,7 @@ const StudentSubmissionAttemptPage = () => {
         }
         rows={6}
         className="mt-4 w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
-        placeholder="Write your answer..."
+        placeholder="Nhập câu trả lời của bạn..."
       />
     );
   };
@@ -317,15 +317,15 @@ const StudentSubmissionAttemptPage = () => {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
-        title="Submission Attempt"
-        description="Answer and submit your assigned work."
+        title="Lượt làm bài"
+        description="Trả lời câu hỏi và nộp bài tập được giao."
       >
         <Button
           type="button"
           variant="secondary"
           onClick={() => navigate("/student/assignments")}
         >
-          Back
+          Quay lại
         </Button>
       </PageHeader>
 
@@ -341,7 +341,7 @@ const StudentSubmissionAttemptPage = () => {
                 {attempt.assignmentTitleSnapshot}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Attempt {attempt.attemptNumber}
+                Lượt làm bài {attempt.attemptNumber}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -353,7 +353,7 @@ const StudentSubmissionAttemptPage = () => {
           <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="text-xs font-medium uppercase text-gray-400">
-                Started
+                Thời gian bắt đầu
               </div>
               <div className="mt-1 text-gray-900">
                 {formatDateTime(attempt.startedAt)}
@@ -361,7 +361,7 @@ const StudentSubmissionAttemptPage = () => {
             </div>
             <div>
               <div className="text-xs font-medium uppercase text-gray-400">
-                Last Saved
+                Lưu lần cuối
               </div>
               <div className="mt-1 text-gray-900">
                 {formatDateTime(attempt.lastSavedAt)}
@@ -369,7 +369,7 @@ const StudentSubmissionAttemptPage = () => {
             </div>
             <div>
               <div className="text-xs font-medium uppercase text-gray-400">
-                Submitted
+                Thời gian nộp
               </div>
               <div className="mt-1 text-gray-900">
                 {formatDateTime(attempt.submittedAt)}
@@ -377,7 +377,7 @@ const StudentSubmissionAttemptPage = () => {
             </div>
             <div>
               <div className="text-xs font-medium uppercase text-gray-400">
-                Score
+                Điểm số
               </div>
               <div className="mt-1 text-gray-900">
                 {attempt.status === "IN_PROGRESS"
@@ -391,9 +391,9 @@ const StudentSubmissionAttemptPage = () => {
             <div className="text-sm text-gray-500">
               {isEditable
                 ? isDirty
-                  ? "You have unsaved changes."
-                  : "All changes are saved."
-                : "This attempt is read-only."}
+                  ? "Bạn có thay đổi chưa lưu."
+                  : "Tất cả câu trả lời đã được lưu."
+                : "Lượt làm bài này ở chế độ chỉ đọc."}
             </div>
             {isEditable && (
               <div className="flex gap-2">
@@ -404,7 +404,7 @@ const StudentSubmissionAttemptPage = () => {
                   disabled={isSubmitting || !isDirty}
                   isLoading={isSaving}
                 >
-                  Save Answers
+                  Lưu câu trả lời
                 </Button>
                 <Button
                   type="button"
@@ -412,7 +412,7 @@ const StudentSubmissionAttemptPage = () => {
                   disabled={isSaving}
                   isLoading={isSubmitting}
                 >
-                  Submit
+                  Nộp bài
                 </Button>
               </div>
             )}
@@ -431,7 +431,7 @@ const StudentSubmissionAttemptPage = () => {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="text-xs font-medium uppercase text-gray-400">
-                        Question {item.displayOrder}
+                        Câu hỏi {item.displayOrder}
                       </div>
                       <div className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900">
                         {htmlToText(item.content) || "-"}
@@ -440,10 +440,10 @@ const StudentSubmissionAttemptPage = () => {
                     <div className="flex flex-wrap gap-2">
                       <Badge>
                         {item.questionType === "MULTIPLE_CHOICE"
-                          ? "Multiple Choice"
-                          : "Essay"}
+                          ? "Trắc nghiệm"
+                          : "Tự luận"}
                       </Badge>
-                      <Badge>{item.points ?? 0} pts</Badge>
+                      <Badge>{item.points ?? 0} điểm</Badge>
                     </div>
                   </div>
 
@@ -451,7 +451,7 @@ const StudentSubmissionAttemptPage = () => {
 
                   {attempt.status !== "IN_PROGRESS" && savedAnswer && (
                     <div className="mt-3 text-xs text-gray-500">
-                      Score: {savedAnswer.autoScore ?? "-"} /{" "}
+                      Điểm số: {savedAnswer.autoScore ?? "-"} /{" "}
                       {savedAnswer.maxScore ?? "-"}
                     </div>
                   )}

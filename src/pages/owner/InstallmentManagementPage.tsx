@@ -123,7 +123,7 @@ const InstallmentManagementPage = () => {
       {error && <ErrorBanner message={error} />}
 
       <div className="flex gap-3">
-        <input className="flex-1 rounded-input border border-gray-300 p-2 text-sm" placeholder="Fee Record ID"
+        <input className="flex-1 rounded-input border border-gray-300 p-2 text-sm" placeholder="Mã khoản học phí"
           value={feeRecordId} onChange={(e) => setFeeRecordId(e.target.value)} />
         <Button size="sm" variant="secondary" onClick={load}>Tải</Button>
       </div>
@@ -163,7 +163,7 @@ const InstallmentManagementPage = () => {
           {[1,2,3].map(i => <div key={i} className="h-16 animate-pulse rounded-card bg-surface-hover" />)}
         </div>
       ) : installments.length === 0 ? (
-        <EmptyState message={feeRecordId ? "Chưa có kỳ hạn nào." : "Nhập Fee Record ID để xem."} icon="📅" />
+        <EmptyState message={feeRecordId ? "Chưa có kỳ hạn nào." : "Nhập mã khoản học phí để xem."} icon="📅" />
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
           <table className="min-w-full text-sm">

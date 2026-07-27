@@ -40,7 +40,7 @@ const FinancialTimelinePage = () => {
       {error && <ErrorBanner message={error} />}
 
       <div className="flex gap-3">
-        <input className="flex-1 rounded-input border border-gray-300 p-2 text-sm" placeholder="Student ID"
+        <input className="flex-1 rounded-input border border-gray-300 p-2 text-sm" placeholder="Mã học viên"
           value={studentId} onChange={(e) => setStudentId(e.target.value)} />
         <Button size="sm" variant="secondary" onClick={load}>Tải</Button>
       </div>
@@ -50,7 +50,7 @@ const FinancialTimelinePage = () => {
           {[1,2,3,4].map(i => <div key={i} className="h-20 animate-pulse rounded-card bg-surface-hover" />)}
         </div>
       ) : entries.length === 0 ? (
-        <EmptyState message={studentId ? "Không có sự kiện tài chính nào." : "Nhập Student ID để xem."} icon="📊" />
+        <EmptyState message={studentId ? "Không có sự kiện tài chính nào." : "Nhập mã học viên để xem."} icon="📊" />
       ) : (
         <div className="space-y-3">
           {entries.map((entry, i) => {

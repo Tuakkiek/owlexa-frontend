@@ -32,9 +32,9 @@ const emptyPage: PageResponse<TeacherReviewSummaryResponse> = {
 };
 
 const submissionStatusLabel = {
-  IN_PROGRESS: "In Progress",
-  SUBMITTED: "Submitted",
-  AUTO_SUBMITTED: "Auto Submitted",
+  IN_PROGRESS: "Đang làm bài",
+  SUBMITTED: "Đã nộp",
+  AUTO_SUBMITTED: "Tự động nộp",
 } as const;
 
 const submissionStatusVariant: Record<
@@ -47,10 +47,10 @@ const submissionStatusVariant: Record<
 };
 
 const reviewStatusLabel = {
-  UNREVIEWED: "No review yet",
-  IN_PROGRESS: "In Progress",
-  FINALIZED: "Finalized",
-  RELEASED: "Released",
+  UNREVIEWED: "Chưa chấm",
+  IN_PROGRESS: "Đang chấm",
+  FINALIZED: "Đã hoàn tất",
+  RELEASED: "Đã công bố",
 } as const;
 
 const reviewStatusVariant: Record<
@@ -105,7 +105,7 @@ export const TeacherReviewQueue = ({
       }
     } catch (err: any) {
       if (requestId === loadRequestIdRef.current) {
-        setError(err?.response?.data?.message ?? "Unable to load review queue.");
+        setError(err?.response?.data?.message ?? "Không thể tải hàng chờ chấm bài.");
       }
     } finally {
       if (requestId === loadRequestIdRef.current) {
@@ -133,7 +133,7 @@ export const TeacherReviewQueue = ({
       setAttemptDetail(await submissionApi.findAttemptDetailForTeacher(attemptId));
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load submission attempt.",
+        err?.response?.data?.message ?? "Không thể tải chi tiết lượt làm bài.",
       );
     } finally {
       setPendingAttemptId(null);
@@ -154,12 +154,12 @@ export const TeacherReviewQueue = ({
         <div>
           <div className="font-medium text-gray-900">{assignmentTitle}</div>
           <div className="mt-1 text-sm text-gray-500">
-            {reviewsPage.totalElements} attempts
+            {reviewsPage.totalElements} lượt làm bài
           </div>
         </div>
         <label className="block w-full sm:w-52">
           <span className="mb-1 block text-xs font-medium uppercase text-gray-500">
-            Review Status
+            Trạng thái chấm bài
           </span>
           <select
             value={reviewStatus}
@@ -171,11 +171,11 @@ export const TeacherReviewQueue = ({
             }}
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="">All statuses</option>
-            <option value="UNREVIEWED">Unreviewed</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="FINALIZED">Finalized</option>
-            <option value="RELEASED">Released</option>
+            <option value="">Tất cả trạng thái</option>
+            <option value="UNREVIEWED">Chưa chấm</option>
+            <option value="IN_PROGRESS">Đang chấm</option>
+            <option value="FINALIZED">Đã hoàn tất</option>
+            <option value="RELEASED">Đã công bố</option>
           </select>
         </label>
       </div>
@@ -186,7 +186,7 @@ export const TeacherReviewQueue = ({
         <LoadingSkeleton count={4} height="h-14" />
       ) : reviews.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-10 text-center text-sm text-gray-400">
-          No reviews found.
+          Không tìm thấy lượt làm bài nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -194,14 +194,14 @@ export const TeacherReviewQueue = ({
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Attempt</th>
-                  <th className="px-4 py-3">Submission</th>
-                  <th className="px-4 py-3">Review</th>
-                  <th className="px-4 py-3">Submitted</th>
-                  <th className="px-4 py-3">Final Score</th>
-                  <th className="px-4 py-3">Released</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">Học viên</th>
+                  <th className="px-4 py-3">Lượt bài</th>
+                  <th className="px-4 py-3">Bài nộp</th>
+                  <th className="px-4 py-3">Trạng thái chấm</th>
+                  <th className="px-4 py-3">Thời gian nộp</th>
+                  <th className="px-4 py-3">Điểm số cuối</th>
+                  <th className="px-4 py-3">Công bố</th>
+                  <th className="px-4 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -219,7 +219,7 @@ export const TeacherReviewQueue = ({
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                        Attempt {review.attemptNumber}
+                        Lượt {review.attemptNumber}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <Badge
@@ -245,7 +245,7 @@ export const TeacherReviewQueue = ({
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-600">
                         {review.reviewStatus === "RELEASED" ? (
-                          <Badge variant="success">Released</Badge>
+                          <Badge variant="success">Đã công bố</Badge>
                         ) : (
                           "-"
                         )}
@@ -262,10 +262,10 @@ export const TeacherReviewQueue = ({
                           }
                         >
                           {pendingAttemptId === review.submissionAttemptId
-                            ? "Loading..."
+                            ? "Đang tải..."
                             : review.reviewStatus
-                              ? "Open Review"
-                              : "Start Review"}
+                              ? "Xem chấm bài"
+                              : "Bắt đầu chấm"}
                         </button>
                       </td>
                     </tr>
@@ -280,8 +280,8 @@ export const TeacherReviewQueue = ({
       {!isLoading && reviewsPage.totalElements > 0 && (
         <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Page {reviewsPage.number + 1} of {pageCount} -{" "}
-            {reviewsPage.totalElements} attempts
+            Trang {reviewsPage.number + 1} / {pageCount} - Tổng số{" "}
+            {reviewsPage.totalElements} lượt làm bài
           </div>
           <div className="flex gap-2">
             <Button
@@ -291,7 +291,7 @@ export const TeacherReviewQueue = ({
               onClick={() => setPage((current) => Math.max(current - 1, 0))}
               disabled={reviewsPage.number <= 0}
             >
-              Previous
+              Trước
             </Button>
             <Button
               type="button"
@@ -304,7 +304,7 @@ export const TeacherReviewQueue = ({
               }
               disabled={reviewsPage.number + 1 >= pageCount}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>
@@ -313,7 +313,7 @@ export const TeacherReviewQueue = ({
       <Modal
         isOpen={attemptDetail != null}
         onClose={closeAttemptDetail}
-        title="Submission Review"
+        title="Chấm bài nộp"
         maxWidth="max-w-5xl"
       >
         {attemptDetail && (

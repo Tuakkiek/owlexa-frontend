@@ -140,7 +140,7 @@ export const AssignmentForm = ({
       );
     } catch (err: any) {
       setLookupError(
-        err?.response?.data?.message ?? "Unable to load assessments.",
+        err?.response?.data?.message ?? "Không thể tải danh sách đề thi.",
       );
     } finally {
       setIsAssessmentLoading(false);
@@ -152,7 +152,7 @@ export const AssignmentForm = ({
       setIsTargetLoading(true);
       setClasses(await classApi.findMyClassesWithStudentsAsTeacher());
     } catch (err: any) {
-      setLookupError(err?.response?.data?.message ?? "Unable to load targets.");
+      setLookupError(err?.response?.data?.message ?? "Không thể tải danh sách đối tượng.");
     } finally {
       setIsTargetLoading(false);
     }
@@ -231,25 +231,25 @@ export const AssignmentForm = ({
 
   const validate = () => {
     if (!assessmentId) {
-      return "Published assessment is required.";
+      return "Vui lòng chọn đề thi đã phát hành.";
     }
     if (!title.trim()) {
-      return "Assignment title is required.";
+      return "Vui lòng nhập tiêu đề bài tập.";
     }
     if (title.trim().length > 255) {
-      return "Assignment title must not exceed 255 characters.";
+      return "Tiêu đề bài tập không được vượt quá 255 ký tự.";
     }
     if (attemptLimit.trim()) {
       const value = Number(attemptLimit);
       if (!Number.isInteger(value) || value < 1) {
-        return "Attempt limit must be greater than or equal to 1.";
+        return "Giới hạn lượt làm bài phải lớn hơn hoặc bằng 1.";
       }
     }
     if (openAt && dueAt && new Date(openAt).getTime() >= new Date(dueAt).getTime()) {
-      return "Open time must be before due time.";
+      return "Thời gian mở bài phải trước thời hạn nộp.";
     }
     if (selectedTargets.length === 0) {
-      return "Select at least 1 target.";
+      return "Vui lòng chọn ít nhất 1 đối tượng được giao.";
     }
     return "";
   };
@@ -283,7 +283,7 @@ export const AssignmentForm = ({
       setIsSaving(true);
       await onSubmit(buildRequest());
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to save assignment.");
+      setError(err?.response?.data?.message ?? "Không thể lưu bài tập.");
     } finally {
       setIsSaving(false);
     }
@@ -294,14 +294,14 @@ export const AssignmentForm = ({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            Published Assessment
+            Đề thi đã phát hành
           </label>
           <select
             value={assessmentId}
             onChange={(event) => setAssessmentId(event.target.value)}
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="">Select assessment</option>
+            <option value="">Chọn đề thi</option>
             {assessmentsPage.content.map((assessment) => (
               <option key={assessment.id} value={assessment.id}>
                 {assessment.title} ({typeLabel[assessment.type]})
@@ -311,56 +311,56 @@ export const AssignmentForm = ({
           <SearchInput
             value={assessmentQuery}
             onChange={setAssessmentQuery}
-            placeholder="Search published assessments..."
+            placeholder="Tìm kiếm đề thi đã phát hành..."
           />
           {isAssessmentLoading && (
-            <p className="text-xs text-gray-500">Loading assessments...</p>
+            <p className="text-xs text-gray-500">Đang tải đề thi...</p>
           )}
         </div>
 
         <Input
-          label="Title"
+          label="Tiêu đề"
           value={title}
           maxLength={255}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Assignment title"
+          placeholder="Tiêu đề bài tập"
         />
       </div>
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">
-          Description
+          Mô tả
         </label>
         <textarea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={3}
-          placeholder="Optional description"
+          placeholder="Mô tả (tùy chọn)"
           className="w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Input
-          label="Open Time"
+          label="Thời gian mở"
           type="datetime-local"
           value={openAt}
           onChange={(event) => setOpenAt(event.target.value)}
         />
         <Input
-          label="Due Time"
+          label="Hạn nộp"
           type="datetime-local"
           value={dueAt}
           onChange={(event) => setDueAt(event.target.value)}
         />
         <Input
-          label="Attempt Limit"
+          label="Số lượt làm bài"
           type="number"
           min="1"
           step="1"
           value={attemptLimit}
           onChange={(event) => setAttemptLimit(event.target.value)}
-          placeholder="Optional"
+          placeholder="Tùy chọn"
         />
       </div>
 
@@ -368,10 +368,10 @@ export const AssignmentForm = ({
         <div className="space-y-4">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              Target Selector
+              Chọn đối tượng giao
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Select classes or individual students.
+              Chọn lớp học hoặc học viên cá nhân.
             </p>
           </div>
 
@@ -379,13 +379,13 @@ export const AssignmentForm = ({
 
           <div className="rounded-card border border-surface-border bg-white">
             <div className="border-b border-surface-border px-4 py-3 text-sm font-medium text-gray-900">
-              Classes
+              Lớp học
             </div>
             {isTargetLoading ? (
-              <div className="p-4 text-sm text-gray-500">Loading...</div>
+              <div className="p-4 text-sm text-gray-500">Đang tải...</div>
             ) : classes.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                No classes found.
+                Không tìm thấy lớp học nào.
               </div>
             ) : (
               <div className="max-h-48 divide-y divide-surface-border overflow-y-auto">
@@ -406,7 +406,7 @@ export const AssignmentForm = ({
                           {item.className}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {item.studentCount} students
+                          {item.studentCount} học viên
                         </div>
                       </div>
                       <Button
@@ -416,7 +416,7 @@ export const AssignmentForm = ({
                         disabled={isSelected}
                         onClick={() => addClassTarget(item)}
                       >
-                        {isSelected ? "Selected" : "Add"}
+                        {isSelected ? "Đã chọn" : "Thêm"}
                       </Button>
                     </div>
                   );
@@ -426,16 +426,16 @@ export const AssignmentForm = ({
           </div>
 
           <div className="space-y-3 rounded-card border border-surface-border bg-white p-4">
-            <div className="text-sm font-medium text-gray-900">Students</div>
+            <div className="text-sm font-medium text-gray-900">Học viên</div>
             <SearchInput
               value={studentQuery}
               onChange={setStudentQuery}
-              placeholder="Search students..."
+              placeholder="Tìm kiếm học viên..."
             />
             <div className="max-h-48 divide-y divide-surface-border overflow-y-auto rounded-input border border-surface-border">
               {students.length === 0 ? (
                 <div className="p-4 text-sm text-gray-400">
-                  No students found.
+                  Không tìm thấy học viên nào.
                 </div>
               ) : (
                 students.map((student) => {
@@ -465,7 +465,7 @@ export const AssignmentForm = ({
                         disabled={isSelected}
                         onClick={() => addStudentTarget(student)}
                       >
-                        {isSelected ? "Selected" : "Add"}
+                        {isSelected ? "Đã chọn" : "Thêm"}
                       </Button>
                     </div>
                   );
@@ -478,17 +478,17 @@ export const AssignmentForm = ({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              Selected Targets
+              Đối tượng đã chọn
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Duplicate recipients will be collapsed when publishing.
+              Học viên trùng lặp sẽ được hợp nhất khi công bố bài tập.
             </p>
           </div>
 
           <div className="max-h-96 overflow-y-auto rounded-card border border-surface-border bg-white">
             {selectedTargets.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                No targets selected.
+                Chưa có đối tượng nào được chọn.
               </div>
             ) : (
               <div className="divide-y divide-surface-border">
@@ -504,7 +504,7 @@ export const AssignmentForm = ({
                           : target.studentFullName}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {target.targetType === "CLASS" ? "Class" : "Student"}
+                        {target.targetType === "CLASS" ? "Lớp học" : "Học viên"}
                       </div>
                     </div>
                     <Button
@@ -513,7 +513,7 @@ export const AssignmentForm = ({
                       size="sm"
                       onClick={() => removeTarget(target)}
                     >
-                      Remove
+                      Xóa
                     </Button>
                   </div>
                 ))}
@@ -527,10 +527,10 @@ export const AssignmentForm = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isSaving}>
-          {initialData ? "Update" : "Create"}
+          {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </div>
     </form>

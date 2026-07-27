@@ -26,15 +26,15 @@ import { AssessmentPreview } from "./components/AssessmentPreview";
 const PAGE_SIZE = 20;
 
 const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
+  QUIZ: "Trắc nghiệm",
+  HOMEWORK: "Bài tập về nhà",
+  EXAM: "Bài kiểm tra",
 };
 
 const statusLabel: Record<AssessmentStatus, string> = {
-  DRAFT: "Draft",
-  PUBLISHED: "Published",
-  ARCHIVED: "Archived",
+  DRAFT: "Nháp",
+  PUBLISHED: "Đã phát hành",
+  ARCHIVED: "Đã lưu trữ",
 };
 
 const emptyPage: PageResponse<AssessmentListResponse> = {
@@ -78,7 +78,7 @@ const AssessmentBuilderPage = () => {
         }),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Unable to load assessments.");
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách đề thi.");
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +120,7 @@ const AssessmentBuilderPage = () => {
       setIsModalOpen(true);
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load assessment.",
+        err?.response?.data?.message ?? "Không thể tải thông tin đề thi.",
       );
     }
   };
@@ -130,7 +130,7 @@ const AssessmentBuilderPage = () => {
       setPreviewAssessment(await assessmentBuilderApi.findById(assessment.id));
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to load assessment preview.",
+        err?.response?.data?.message ?? "Không thể tải xem trước đề thi.",
       );
     }
   };
@@ -147,10 +147,10 @@ const AssessmentBuilderPage = () => {
   const handleSave = async (request: AssessmentRequest) => {
     if (editingAssessment) {
       await assessmentBuilderApi.update(editingAssessment.id, request);
-      toast.success("Assessment updated.");
+      toast.success("Cập nhật đề thi thành công.");
     } else {
       await assessmentBuilderApi.create(request);
-      toast.success("Assessment created.");
+      toast.success("Tạo mới đề thi thành công.");
     }
 
     closeModal();
@@ -159,9 +159,9 @@ const AssessmentBuilderPage = () => {
 
   const handlePublish = async (assessment: AssessmentListResponse) => {
     const confirmed = await confirm({
-      title: "Publish assessment?",
-      message: `Publish "${assessment.title}"? Published assessments can be used by future assignment workflows.`,
-      confirmText: "Publish",
+      title: "Phát hành đề thi?",
+      message: `Phát hành đề thi "${assessment.title}"? Đề thi đã phát hành có thể sử dụng để giao bài tập cho học viên.`,
+      confirmText: "Phát hành",
     });
 
     if (!confirmed) return;
@@ -169,11 +169,11 @@ const AssessmentBuilderPage = () => {
     try {
       setPendingActionId(assessment.id);
       await assessmentBuilderApi.publish(assessment.id);
-      toast.success("Assessment published.");
+      toast.success("Đã phát hành đề thi.");
       await loadAssessments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to publish assessment.",
+        err?.response?.data?.message ?? "Không thể phát hành đề thi.",
       );
     } finally {
       setPendingActionId(null);
@@ -182,9 +182,9 @@ const AssessmentBuilderPage = () => {
 
   const handleArchive = async (assessment: AssessmentListResponse) => {
     const confirmed = await confirm({
-      title: "Archive assessment?",
-      message: `Archive "${assessment.title}"? It will remain available as historical content but leave the active workflow.`,
-      confirmText: "Archive",
+      title: "Lưu trữ đề thi?",
+      message: `Lưu trữ đề thi "${assessment.title}"?`,
+      confirmText: "Lưu trữ",
     });
 
     if (!confirmed) return;
@@ -192,11 +192,11 @@ const AssessmentBuilderPage = () => {
     try {
       setPendingActionId(assessment.id);
       await assessmentBuilderApi.archive(assessment.id);
-      toast.success("Assessment archived.");
+      toast.success("Đã lưu trữ đề thi.");
       await loadAssessments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to archive assessment.",
+        err?.response?.data?.message ?? "Không thể lưu trữ đề thi.",
       );
     } finally {
       setPendingActionId(null);
@@ -205,9 +205,9 @@ const AssessmentBuilderPage = () => {
 
   const handleDelete = async (assessment: AssessmentListResponse) => {
     const confirmed = await confirm({
-      title: "Delete assessment?",
-      message: `Delete "${assessment.title}"? This removes it from the active assessment list.`,
-      confirmText: "Delete",
+      title: "Xóa đề thi?",
+      message: `Bạn có chắc chắn muốn xóa đề thi "${assessment.title}"?`,
+      confirmText: "Xóa",
       variant: "danger",
     });
 
@@ -222,11 +222,11 @@ const AssessmentBuilderPage = () => {
       if (previewAssessment?.id === assessment.id) {
         closePreview();
       }
-      toast.success("Assessment deleted.");
+      toast.success("Đã xóa đề thi.");
       await loadAssessments();
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Unable to delete assessment.",
+        err?.response?.data?.message ?? "Không thể xóa đề thi.",
       );
     } finally {
       setPendingActionId(null);
@@ -236,11 +236,11 @@ const AssessmentBuilderPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
-        title="Assessment Builder"
-        description="Build reusable assessments from the question bank."
+        title="Tạo đề thi"
+        description="Tạo và quản lý các đề thi, bài đánh giá từ ngân hàng câu hỏi."
       >
         <Button type="button" onClick={openCreate}>
-          Create Assessment
+          Tạo mới đề thi
         </Button>
       </PageHeader>
 
@@ -250,7 +250,7 @@ const AssessmentBuilderPage = () => {
         <SearchInput
           value={query}
           onChange={setQuery}
-          placeholder="Search assessments..."
+          placeholder="Tìm kiếm đề thi..."
         />
 
         <select
@@ -260,10 +260,10 @@ const AssessmentBuilderPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All types</option>
-          <option value="QUIZ">Quiz</option>
-          <option value="HOMEWORK">Homework</option>
-          <option value="EXAM">Exam</option>
+          <option value="">Tất cả loại</option>
+          <option value="QUIZ">Trắc nghiệm</option>
+          <option value="HOMEWORK">Bài tập về nhà</option>
+          <option value="EXAM">Bài kiểm tra</option>
         </select>
 
         <select
@@ -273,10 +273,10 @@ const AssessmentBuilderPage = () => {
           }
           className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
         >
-          <option value="">All statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="PUBLISHED">Published</option>
-          <option value="ARCHIVED">Archived</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="DRAFT">Nháp</option>
+          <option value="PUBLISHED">Đã phát hành</option>
+          <option value="ARCHIVED">Đã lưu trữ</option>
         </select>
       </div>
 
@@ -284,7 +284,7 @@ const AssessmentBuilderPage = () => {
         <LoadingSkeleton count={4} height="h-16" />
       ) : assessments.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-12 text-center text-sm text-gray-400">
-          No assessments found.
+          Không tìm thấy đề thi nào.
         </div>
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
@@ -292,11 +292,11 @@ const AssessmentBuilderPage = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Assessment</th>
-                  <th className="px-6 py-3">Type</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Updated At</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-3">Đề thi</th>
+                  <th className="px-6 py-3">Loại</th>
+                  <th className="px-6 py-3">Trạng thái</th>
+                  <th className="px-6 py-3">Cập nhật</th>
+                  <th className="px-6 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -331,7 +331,7 @@ const AssessmentBuilderPage = () => {
                           disabled={pendingActionId === assessment.id}
                           onClick={() => openEdit(assessment)}
                         >
-                          Edit
+                          Chỉnh sửa
                         </button>
                         <button
                           type="button"
@@ -339,7 +339,7 @@ const AssessmentBuilderPage = () => {
                           disabled={pendingActionId === assessment.id}
                           onClick={() => openPreview(assessment)}
                         >
-                          Preview
+                          Xem trước
                         </button>
                         {assessment.status === "DRAFT" && (
                           <button
@@ -349,8 +349,8 @@ const AssessmentBuilderPage = () => {
                             onClick={() => handlePublish(assessment)}
                           >
                             {pendingActionId === assessment.id
-                              ? "Publishing..."
-                              : "Publish"}
+                              ? "Đang phát hành..."
+                              : "Phát hành"}
                           </button>
                         )}
                         {assessment.status === "PUBLISHED" && (
@@ -361,8 +361,8 @@ const AssessmentBuilderPage = () => {
                             onClick={() => handleArchive(assessment)}
                           >
                             {pendingActionId === assessment.id
-                              ? "Archiving..."
-                              : "Archive"}
+                              ? "Đang lưu trữ..."
+                              : "Lưu trữ"}
                           </button>
                         )}
                         <button
@@ -372,8 +372,8 @@ const AssessmentBuilderPage = () => {
                           onClick={() => handleDelete(assessment)}
                         >
                           {pendingActionId === assessment.id
-                            ? "Deleting..."
-                            : "Delete"}
+                            ? "Đang xóa..."
+                            : "Xóa"}
                         </button>
                       </div>
                     </td>
@@ -388,8 +388,8 @@ const AssessmentBuilderPage = () => {
       {!isLoading && assessmentsPage.totalElements > 0 && (
         <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Page {assessmentsPage.number + 1} of {pageCount} -{" "}
-            {assessmentsPage.totalElements} assessments
+            Trang {assessmentsPage.number + 1} / {pageCount} - Tổng số{" "}
+            {assessmentsPage.totalElements} đề thi
           </div>
           <div className="flex gap-2">
             <Button
@@ -399,7 +399,7 @@ const AssessmentBuilderPage = () => {
               onClick={goToPreviousPage}
               disabled={assessmentsPage.number <= 0}
             >
-              Previous
+              Trước
             </Button>
             <Button
               type="button"
@@ -408,7 +408,7 @@ const AssessmentBuilderPage = () => {
               onClick={goToNextPage}
               disabled={assessmentsPage.number + 1 >= pageCount}
             >
-              Next
+              Sau
             </Button>
           </div>
         </div>
@@ -417,7 +417,7 @@ const AssessmentBuilderPage = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={editingAssessment ? "Edit Assessment" : "Create Assessment"}
+        title={editingAssessment ? "Chỉnh sửa đề thi" : "Tạo mới đề thi"}
         maxWidth="max-w-6xl"
       >
         <AssessmentForm
@@ -430,7 +430,7 @@ const AssessmentBuilderPage = () => {
       <Modal
         isOpen={previewAssessment != null}
         onClose={closePreview}
-        title="Assessment Preview"
+        title="Xem trước đề thi"
         maxWidth="max-w-5xl"
       >
         {previewAssessment && (
