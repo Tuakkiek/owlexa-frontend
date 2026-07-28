@@ -7,6 +7,7 @@ import type {
 } from "../../../types/submission";
 import { formatDateTime } from "../../../utils/dateTime";
 import { htmlToText } from "../../../utils/text";
+import { RichTextRenderer } from "../../../components/editor";
 import { AIGradingPanel } from "./AIGradingPanel";
 import { TeacherReviewDraftPanel } from "./TeacherReviewDraftPanel";
 
@@ -120,8 +121,8 @@ export const TeacherSubmissionAttemptDetail = ({
                   <div className="text-xs font-medium uppercase text-gray-400">
                     Question {item.displayOrder}
                   </div>
-                  <div className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900">
-                    {htmlToText(item.content) || "-"}
+                  <div className="mt-1 break-words text-sm text-gray-900">
+                    <RichTextRenderer value={item.content} />
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">

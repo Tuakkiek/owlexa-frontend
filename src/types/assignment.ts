@@ -1,5 +1,7 @@
-import type { AssessmentType } from "./assessmentBuilder";
+import type { AssessmentType, PlaybackMode } from "./assessmentBuilder";
+import type { FileMetadata } from "./file";
 import type { QuestionDifficulty, QuestionType } from "./questionBank";
+import type { EditorDocument } from "../components/editor";
 
 export type { PageResponse } from "./pagination";
 
@@ -62,13 +64,13 @@ export interface AssignmentItemResponse {
   assessmentItemId: number | null;
   questionType: QuestionType;
   title: string | null;
-  content: string;
+  content: EditorDocument;
   difficulty: QuestionDifficulty | null;
   points: number | null;
-  explanation: string | null;
-  sampleAnswer: string | null;
+  explanation: EditorDocument | null;
+  sampleAnswer: EditorDocument | null;
   gradingCriteriaName: string | null;
-  gradingCriteriaContent: string | null;
+  gradingCriteriaContent: EditorDocument | null;
   displayOrder: number;
   options: AssignmentItemOptionResponse[];
 }
@@ -99,6 +101,8 @@ export interface AssignmentDetailResponse {
   dueAt: string | null;
   attemptLimit: number | null;
   assessmentSnapshotAt: string | null;
+  audioFile: FileMetadata | null;
+  playbackMode: PlaybackMode;
   targets: AssignmentTargetResponse[];
   recipients: AssignmentRecipientResponse[];
   items: AssignmentItemResponse[];
@@ -118,21 +122,6 @@ export interface StudentAssignmentListResponse {
   dueAt: string | null;
   attemptLimit: number | null;
   assignedAt: string;
-}
-
-export interface StudentAssignmentDetailResponse {
-  id: number;
-  recipientId: number;
-  type: AssessmentType;
-  status: AssignmentStatus;
-  recipientStatus: AssignmentRecipientStatus;
-  title: string;
-  description: string | null;
-  openAt: string | null;
-  dueAt: string | null;
-  attemptLimit: number | null;
-  assignedAt: string;
-  items: AssignmentItemResponse[];
 }
 
 export interface AssignmentSearchParams {

@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { RichTextEditor } from "../../../components/ui/RichTextEditor";
+import {
+  EMPTY_EDITOR_DOCUMENT,
+  isEmptyEditorDocument,
+  RichTextEditor,
+  type EditorDocument,
+} from "../../../components/editor";
 import type { GradingCriteriaResponse } from "../../../types/gradingCriteria";
 import type {
+  QuestionCollectionResponse,
   QuestionDifficulty,
   QuestionOptionRequest,
   QuestionRequest,
@@ -15,6 +21,8 @@ import { stripHtml } from "../../../utils/text";
 
 interface QuestionFormProps {
   initialData?: QuestionResponse;
+  collections: QuestionCollectionResponse[];
+  initialCollectionId?: number;
   gradingCriteria: GradingCriteriaResponse[];
   onSubmit: (data: QuestionRequest) => Promise<void>;
   onCancel: () => void;
@@ -27,18 +35,25 @@ const createEmptyOptions = (): QuestionOptionRequest[] => [
 
 export const QuestionForm = ({
   initialData,
+  collections,
+  initialCollectionId,
   gradingCriteria,
   onSubmit,
   onCancel,
 }: QuestionFormProps) => {
+  const [collectionId, setCollectionId] = useState("");
+  const [sectionCode, setSectionCode] = useState("");
+  const [displayOrder, setDisplayOrder] = useState("");
   const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] =
+    useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
   const [difficulty, setDifficulty] = useState<QuestionDifficulty | "">("");
   const [points, setPoints] = useState("");
   const [gradingCriteriaId, setGradingCriteriaId] = useState("");
-  const [explanation, setExplanation] = useState("");
-  const [sampleAnswer, setSampleAnswer] = useState("");
+  const [explanation, setExplanation] =
+    useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
+  const [sampleAnswer, setSampleAnswer] =
+    useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
   const [options, setOptions] =
     useState<QuestionOptionRequest[]>(createEmptyOptions);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,16 +61,18 @@ export const QuestionForm = ({
 
   useEffect(() => {
     if (initialData) {
+      setCollectionId(String(initialData.collection.id));
+      setSectionCode(initialData.sectionCode);
+      setDisplayOrder(String(initialData.displayOrder));
       setType(initialData.type);
-      setTitle(initialData.title ?? "");
       setContent(initialData.content);
       setDifficulty(initialData.difficulty ?? "");
       setPoints(initialData.points != null ? String(initialData.points) : "");
       setGradingCriteriaId(
         initialData.gradingCriteria ? String(initialData.gradingCriteria.id) : "",
       );
-      setExplanation(initialData.explanation ?? "");
-      setSampleAnswer(initialData.sampleAnswer ?? "");
+      setExplanation(initialData.explanation ?? EMPTY_EDITOR_DOCUMENT);
+      setSampleAnswer(initialData.sampleAnswer ?? EMPTY_EDITOR_DOCUMENT);
       setOptions(
         initialData.type === "MULTIPLE_CHOICE" && initialData.options
           ? initialData.options
@@ -69,18 +86,20 @@ export const QuestionForm = ({
           : createEmptyOptions(),
       );
     } else {
+      setCollectionId(initialCollectionId ? String(initialCollectionId) : "");
+      setSectionCode("");
+      setDisplayOrder("");
       setType("MULTIPLE_CHOICE");
-      setTitle("");
-      setContent("");
+      setContent(EMPTY_EDITOR_DOCUMENT);
       setDifficulty("");
       setPoints("");
       setGradingCriteriaId("");
-      setExplanation("");
-      setSampleAnswer("");
+      setExplanation(EMPTY_EDITOR_DOCUMENT);
+      setSampleAnswer(EMPTY_EDITOR_DOCUMENT);
       setOptions(createEmptyOptions());
     }
     setError("");
-  }, [initialData]);
+  }, [initialCollectionId, initialData]);
 
   useEffect(() => {
     if (type === "MULTIPLE_CHOICE" && options.length === 0) {
@@ -125,7 +144,20 @@ export const QuestionForm = ({
   };
 
   const validate = () => {
-    if (!stripHtml(content)) {
+    if (!collectionId) {
+      return "Vui lòng chọn Collection.";
+    }
+    if (!sectionCode.trim()) {
+      return "Vui lòng nhập Section Code.";
+    }
+    if (!/^[A-Z][A-Z0-9_]*$/.test(sectionCode.trim().toUpperCase())) {
+      return "Section Code chỉ gồm chữ in hoa, số và dấu gạch dưới.";
+    }
+    const parsedDisplayOrder = Number(displayOrder);
+    if (!Number.isInteger(parsedDisplayOrder) || parsedDisplayOrder < 1) {
+      return "Display Order phải là số nguyên từ 1.";
+    }
+    if (type === "ESSAY" && isEmptyEditorDocument(content)) {
       return "Vui lòng nhập nội dung câu hỏi.";
     }
 
@@ -150,16 +182,20 @@ export const QuestionForm = ({
   };
 
   const buildRequest = (): QuestionRequest => ({
+    collectionId: Number(collectionId),
+    sectionCode: sectionCode.trim().toUpperCase(),
+    displayOrder: Number(displayOrder),
     type,
-    title: title.trim() || null,
-    content: content.trim(),
+    content: isEmptyEditorDocument(content) ? null : content,
     difficulty: difficulty || null,
     points: points.trim() ? Number(points) : null,
     gradingCriteriaId:
       type === "ESSAY" && gradingCriteriaId ? Number(gradingCriteriaId) : null,
-    explanation: explanation.trim() || null,
+    explanation: isEmptyEditorDocument(explanation) ? null : explanation,
     sampleAnswer:
-      type === "ESSAY" && sampleAnswer.trim() ? sampleAnswer.trim() : null,
+      type === "ESSAY" && !isEmptyEditorDocument(sampleAnswer)
+        ? sampleAnswer
+        : null,
     options: type === "MULTIPLE_CHOICE" ? normalizedOptions : null,
   });
 
@@ -185,6 +221,64 @@ export const QuestionForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {initialData && (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Mã câu hỏi
+          </label>
+          <input
+            value={initialData.questionCode}
+            readOnly
+            className="w-full rounded-input border border-surface-border bg-surface-hover px-3 py-2 font-mono text-sm text-gray-600 outline-none"
+          />
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700">
+            Collection
+          </label>
+          <select
+            value={collectionId}
+            onChange={(event) => setCollectionId(event.target.value)}
+            required
+            className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+          >
+            <option value="">Chọn Collection</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <Input
+          label="Section Code"
+          value={sectionCode}
+          maxLength={50}
+          onChange={(event) =>
+            setSectionCode(
+              event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"),
+            )
+          }
+          placeholder="PART_1"
+          required
+        />
+
+        <Input
+          label="Display Order"
+          type="number"
+          min="1"
+          step="1"
+          value={displayOrder}
+          onChange={(event) => setDisplayOrder(event.target.value)}
+          placeholder="1"
+          required
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Loại câu hỏi</label>
@@ -198,13 +292,6 @@ export const QuestionForm = ({
           </select>
         </div>
 
-        <Input
-          label="Tiêu đề"
-          value={title}
-          maxLength={255}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="Nhãn ngắn (tùy chọn)"
-        />
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">

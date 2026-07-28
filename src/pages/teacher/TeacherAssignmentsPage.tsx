@@ -596,6 +596,8 @@ const TeacherAssignmentsPage = () => {
             dueAt={previewAssignment.dueAt}
             attemptLimit={previewAssignment.attemptLimit}
             assessmentSnapshotAt={previewAssignment.assessmentSnapshotAt}
+            audioFile={previewAssignment.audioFile}
+            playbackMode={previewAssignment.playbackMode}
             items={previewAssignment.items}
           />
         )}

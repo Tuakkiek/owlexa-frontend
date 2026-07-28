@@ -5,7 +5,6 @@ import type {
   AssignmentRequest,
   AssignmentSearchParams,
   PageResponse,
-  StudentAssignmentDetailResponse,
   StudentAssignmentListResponse,
 } from "../types/assignment";
 
@@ -85,15 +84,6 @@ export const assignmentApi = {
     StudentAssignmentListResponse[]
   > => {
     const response = await axiosClient.get(STUDENT_BASE_URL);
-    return response.data;
-  },
-
-  findStudentAssignmentDetail: async (
-    assignmentId: number,
-  ): Promise<StudentAssignmentDetailResponse> => {
-    const response = await axiosClient.get(
-      `${STUDENT_BASE_URL}/${assignmentId}`,
-    );
     return response.data;
   },
 };

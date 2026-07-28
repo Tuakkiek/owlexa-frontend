@@ -1,12 +1,14 @@
+import type { EditorDocument } from "../components/editor";
+
 export interface GradingCriteriaRequest {
   name: string;
-  content: string;
+  content: EditorDocument;
 }
 
 export interface GradingCriteriaResponse {
   id: number;
   name: string;
-  content: string;
+  content: EditorDocument;
   createdAt: string;
   updatedAt: string;
 }

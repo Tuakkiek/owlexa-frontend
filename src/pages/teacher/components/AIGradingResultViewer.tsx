@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { AIGradingResultResponse } from "../../../types/aiGrading";
 import type { SubmissionAttemptItemResponse } from "../../../types/submission";
 import { formatDateTime } from "../../../utils/dateTime";
-import { htmlToText } from "../../../utils/text";
+import { RichTextRenderer } from "../../../components/editor";
 
 const formatScore = (value: number | null) => {
   if (value == null) return "-";
@@ -121,8 +121,8 @@ export const AIGradingResultViewer = ({
                     <div className="text-xs font-medium uppercase text-gray-400">
                       Question {item?.displayOrder ?? "-"}
                     </div>
-                    <div className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900">
-                      {htmlToText(item?.content ?? null) || "-"}
+                    <div className="mt-1 break-words text-sm text-gray-900">
+                      {item ? <RichTextRenderer value={item.content} /> : "-"}
                     </div>
                   </div>
                   <div className="whitespace-nowrap text-sm font-medium text-gray-900">

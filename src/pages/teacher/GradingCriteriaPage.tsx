@@ -15,11 +15,11 @@ import type {
   GradingCriteriaResponse,
 } from "../../types/gradingCriteria";
 import { formatDateTime } from "../../utils/dateTime";
-import { stripHtml } from "../../utils/text";
+import { editorDocumentToPlainText } from "../../components/editor";
 import { GradingCriteriaForm } from "./components/GradingCriteriaForm";
 
-const previewContent = (html: string) => {
-  const text = stripHtml(html);
+const previewContent = (document: GradingCriteriaResponse["content"]) => {
+  const text = editorDocumentToPlainText(document);
   if (text.length <= 100) return text || "-";
   return `${text.slice(0, 100)}...`;
 };

@@ -29,6 +29,7 @@ import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
 import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 import GradingCriteriaPage from "./pages/teacher/GradingCriteriaPage";
 import QuestionBankPage from "./pages/teacher/QuestionBankPage";
+import QuestionEditorPage from "./pages/teacher/QuestionEditorPage";
 import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
 import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
 
@@ -153,6 +154,14 @@ function App() {
                 <Route
                   path="/teacher/questions"
                   element={<QuestionBankPage />}
+                />
+                <Route
+                  path="/teacher/questions/new"
+                  element={<QuestionEditorPage />}
+                />
+                <Route
+                  path="/teacher/questions/:questionId/edit"
+                  element={<QuestionEditorPage />}
                 />
                 <Route
                   path="/teacher/assessments"

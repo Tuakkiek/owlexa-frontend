@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { submissionApi } from "../../api/submissionApi";
 import { Button } from "../../components/ui/Button";
@@ -10,7 +10,8 @@ import {
   LoadingSkeleton,
   PageHeader,
 } from "../../components/ui/SharedComponents";
-import type { AssessmentType } from "../../types/assessmentBuilder";
+import type { AssessmentType, PlaybackMode } from "../../types/assessmentBuilder";
+import type { FileMetadata } from "../../types/file";
 import type {
   StudentAttemptDetailResponse,
   SubmissionAnswerRequest,
@@ -19,6 +20,7 @@ import type {
 } from "../../types/submission";
 import { formatDateTime } from "../../utils/dateTime";
 import { htmlToText } from "../../utils/text";
+import { RichTextRenderer, type EditorDocument } from "../../components/editor";
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Trắc nghiệm",
@@ -48,7 +50,10 @@ const toEditableAnswers = (
     return {
       assignmentItemId: item.assignmentItemId,
       answerText: answer?.answerText ?? "",
-      selectedOptionIds: answer?.selectedOptionIds ?? [],
+      selectedOptionIds:
+        item.questionType === "MULTIPLE_CHOICE"
+          ? (answer?.selectedOptionIds ?? []).slice(0, 1)
+          : (answer?.selectedOptionIds ?? []),
     };
   });
 };
@@ -67,11 +72,176 @@ const normalizeAnswers = (answers: SubmissionAnswerRequest[]) => {
   );
 };
 
+const stripQuestionAudio = (document: EditorDocument): EditorDocument => {
+  const stripNode = (node: any): any | null => {
+    if (node?.type === "audio") return null;
+    const content = Array.isArray(node?.content)
+      ? node.content.map(stripNode).filter(Boolean)
+      : undefined;
+    return content ? { ...node, content } : { ...node };
+  };
+
+  const stripped = stripNode(document) ?? { type: "doc", content: [] };
+  if (stripped.type === "doc" && (!stripped.content || stripped.content.length === 0)) {
+    return { type: "doc", content: [{ type: "paragraph" }] };
+  }
+  return stripped;
+};
+
+const ListeningAudioPlayer = ({
+  audioFile,
+  playbackMode,
+  isActive,
+}: {
+  audioFile: FileMetadata | null;
+  playbackMode: PlaybackMode;
+  isActive: boolean;
+}) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isCleaningUpRef = useRef(false);
+  const maxTimeRef = useRef(0);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [hasEnded, setHasEnded] = useState(false);
+  const [audioError, setAudioError] = useState("");
+  const audioId = audioFile?.id;
+  const audioUrl = audioFile?.url;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    isCleaningUpRef.current = false;
+    maxTimeRef.current = 0;
+    setAutoplayBlocked(false);
+    setHasStarted(false);
+    setHasEnded(false);
+    setAudioError("");
+
+    if (!audio || !audioUrl || playbackMode !== "EXAM" || !isActive) {
+      return;
+    }
+
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise) {
+      playPromise
+        .then(() => setHasStarted(true))
+        .catch(() => setAutoplayBlocked(true));
+    }
+
+    return () => {
+      isCleaningUpRef.current = true;
+      audio.pause();
+    };
+  }, [audioId, audioUrl, isActive, playbackMode]);
+
+  if (!audioFile) {
+    return null;
+  }
+
+  if (playbackMode === "PRACTICE") {
+    return (
+      <div className="mt-6 rounded-card border border-surface-border bg-surface-page p-4">
+        <div className="mb-2 text-sm font-medium text-gray-900">
+          Audio nghe chung
+        </div>
+        <audio controls preload="metadata" src={audioFile.url} className="w-full">
+          Trình duyệt không hỗ trợ audio.
+        </audio>
+      </div>
+    );
+  }
+
+  const startExamAudio = async () => {
+    const audio = audioRef.current;
+    if (!audio || hasStarted || hasEnded || !isActive) return;
+    try {
+      setAutoplayBlocked(false);
+      setAudioError("");
+      audio.currentTime = 0;
+      await audio.play();
+      setHasStarted(true);
+    } catch {
+      setAutoplayBlocked(true);
+    }
+  };
+
+  return (
+    <div className="mt-6 rounded-card border border-surface-border bg-surface-page p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-gray-900">
+            Audio nghe chung
+          </div>
+          <div className="truncate text-xs text-gray-500">
+            {audioFile.originalName}
+          </div>
+        </div>
+        <div className="text-sm text-gray-600">
+          {audioError
+            ? audioError
+            : hasEnded
+              ? "Audio đã phát xong."
+              : hasStarted
+                ? "Audio đang phát."
+                : isActive
+                  ? "Sẵn sàng phát audio."
+                  : "Audio chỉ phát trong lượt làm bài."}
+        </div>
+      </div>
+
+      {autoplayBlocked && isActive && !hasStarted && !hasEnded && (
+        <div className="mt-3">
+          <Button type="button" onClick={startExamAudio}>
+            Nhấn để bắt đầu phát
+          </Button>
+        </div>
+      )}
+
+      <audio
+        ref={audioRef}
+        preload="auto"
+        src={audioFile.url}
+        onTimeUpdate={(event) => {
+          maxTimeRef.current = Math.max(
+            maxTimeRef.current,
+            event.currentTarget.currentTime,
+          );
+        }}
+        onSeeking={(event) => {
+          const audio = event.currentTarget;
+          if (!hasStarted || hasEnded) return;
+          if (Math.abs(audio.currentTime - maxTimeRef.current) > 0.5) {
+            audio.currentTime = maxTimeRef.current;
+          }
+        }}
+        onPause={(event) => {
+          if (
+            isCleaningUpRef.current ||
+            !isActive ||
+            hasEnded ||
+            !hasStarted ||
+            audioError
+          ) {
+            return;
+          }
+          void event.currentTarget.play().catch(() => setAutoplayBlocked(true));
+        }}
+        onEnded={() => {
+          setHasEnded(true);
+          setAutoplayBlocked(false);
+        }}
+        onError={() => setAudioError("Không thể phát audio.")}
+      />
+    </div>
+  );
+};
+
 const StudentSubmissionAttemptPage = () => {
   const confirm = useConfirm();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { attemptId } = useParams<{ attemptId: string }>();
+  const loadSequenceRef = useRef(0);
   const [attempt, setAttempt] = useState<StudentAttemptDetailResponse | null>(
     null,
   );
@@ -83,7 +253,15 @@ const StudentSubmissionAttemptPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    return () => {
+      loadSequenceRef.current += 1;
+    };
+  }, []);
+
   const loadAttempt = useCallback(async () => {
+    const sequence = loadSequenceRef.current + 1;
+    loadSequenceRef.current = sequence;
     const id = Number(attemptId);
     if (!attemptId || Number.isNaN(id)) {
       setError("Lượt làm bài không hợp lệ.");
@@ -95,12 +273,16 @@ const StudentSubmissionAttemptPage = () => {
       setIsLoading(true);
       setError("");
       const loadedAttempt = await submissionApi.getAttemptDetail(id);
+      if (loadSequenceRef.current !== sequence) return;
       setAttempt(loadedAttempt);
       setEditableAnswers(toEditableAnswers(loadedAttempt));
     } catch (err: any) {
+      if (loadSequenceRef.current !== sequence) return;
       setError(err?.response?.data?.message ?? "Không thể tải lượt làm bài.");
     } finally {
-      setIsLoading(false);
+      if (loadSequenceRef.current === sequence) {
+        setIsLoading(false);
+      }
     }
   }, [attemptId]);
 
@@ -142,17 +324,12 @@ const StudentSubmissionAttemptPage = () => {
     }));
   };
 
-  const toggleOption = (assignmentItemId: number, optionId: number) => {
-    updateAnswer(assignmentItemId, (answer) => {
-      const isSelected = answer.selectedOptionIds.includes(optionId);
-      return {
-        ...answer,
-        answerText: "",
-        selectedOptionIds: isSelected
-          ? answer.selectedOptionIds.filter((current) => current !== optionId)
-          : [...answer.selectedOptionIds, optionId],
-      };
-    });
+  const selectOption = (assignmentItemId: number, optionId: number) => {
+    updateAnswer(assignmentItemId, (answer) => ({
+      ...answer,
+      answerText: "",
+      selectedOptionIds: [optionId],
+    }));
   };
 
   const currentAnswerRequests = useMemo<SubmissionAnswerRequest[]>(() => {
@@ -167,7 +344,7 @@ const StudentSubmissionAttemptPage = () => {
         if (answer.selectedOptionIds.length > 0) {
           requests.push({
             assignmentItemId: item.assignmentItemId,
-            selectedOptionIds: answer.selectedOptionIds,
+            selectedOptionIds: answer.selectedOptionIds.slice(0, 1),
           });
         }
         return;
@@ -267,30 +444,35 @@ const StudentSubmissionAttemptPage = () => {
 
     if (item.questionType === "MULTIPLE_CHOICE") {
       return (
-        <div className="mt-4 space-y-2">
-          {item.options.map((option) => {
+        <div className="mt-4 space-y-2" role="radiogroup">
+          {item.options.map((option, index) => {
+            const label = String.fromCharCode(65 + index);
             const checked =
-              answer?.selectedOptionIds.includes(
-                option.assignmentItemOptionId,
-              ) ?? false;
+              answer?.selectedOptionIds[0] === option.assignmentItemOptionId;
             return (
               <label
                 key={option.assignmentItemOptionId}
-                className="flex gap-3 rounded-input border border-surface-border px-3 py-2 text-sm text-gray-700"
+                className={`flex cursor-pointer items-start gap-3 rounded-input border px-3 py-2 text-sm transition-colors ${
+                  checked
+                    ? "border-primary bg-primary-light text-primary-active"
+                    : "border-surface-border text-gray-700 hover:border-primary hover:bg-surface-hover"
+                } ${!isEditable || isSaving || isSubmitting ? "cursor-not-allowed opacity-70" : ""}`}
               >
                 <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4"
+                  type="radio"
+                  name={`answer-${item.assignmentItemId}`}
+                  className="mt-0.5 h-4 w-4 accent-primary"
                   checked={checked}
                   disabled={!isEditable || isSaving || isSubmitting}
                   onChange={() =>
-                    toggleOption(
+                    selectOption(
                       item.assignmentItemId,
                       option.assignmentItemOptionId,
                     )
                   }
                 />
-                <span className="break-words">
+                <span className="shrink-0 font-medium">({label})</span>
+                <span className="min-w-0 break-words">
                   {htmlToText(option.content) || "-"}
                 </span>
               </label>
@@ -387,6 +569,12 @@ const StudentSubmissionAttemptPage = () => {
             </div>
           </div>
 
+          <ListeningAudioPlayer
+            audioFile={attempt.audioFile}
+            playbackMode={attempt.playbackMode ?? "PRACTICE"}
+            isActive={isEditable}
+          />
+
           <div className="mt-6 flex flex-col gap-3 border-t border-surface-border pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500">
               {isEditable
@@ -433,8 +621,8 @@ const StudentSubmissionAttemptPage = () => {
                       <div className="text-xs font-medium uppercase text-gray-400">
                         Câu hỏi {item.displayOrder}
                       </div>
-                      <div className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-900">
-                        {htmlToText(item.content) || "-"}
+                      <div className="mt-1 break-words text-sm text-gray-900">
+                        <RichTextRenderer value={stripQuestionAudio(item.content)} />
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">

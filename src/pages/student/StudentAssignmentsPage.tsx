@@ -14,7 +14,6 @@ import {
 import type { AssessmentType } from "../../types/assessmentBuilder";
 import type {
   AssignmentStatus,
-  StudentAssignmentDetailResponse,
   StudentAssignmentListResponse,
 } from "../../types/assignment";
 import type {
@@ -24,7 +23,6 @@ import type {
 import type { StudentReviewResultResponse } from "../../types/teacherReview";
 import { formatDateTime } from "../../utils/dateTime";
 import { StudentReleasedResult } from "./components/StudentReleasedResult";
-import { AssignmentPreview } from "../teacher/components/AssignmentPreview";
 
 const typeLabel: Record<AssessmentType, string> = {
   QUIZ: "Trắc nghiệm",
@@ -52,8 +50,6 @@ const StudentAssignmentsPage = () => {
   const [assignments, setAssignments] = useState<StudentAssignmentListResponse[]>(
     [],
   );
-  const [selectedAssignment, setSelectedAssignment] =
-    useState<StudentAssignmentDetailResponse | null>(null);
   const [attemptsAssignment, setAttemptsAssignment] =
     useState<StudentAssignmentListResponse | null>(null);
   const [attemptHistory, setAttemptHistory] = useState<
@@ -85,20 +81,6 @@ const StudentAssignmentsPage = () => {
   useEffect(() => {
     loadAssignments();
   }, [loadAssignments]);
-
-  const openDetail = async (assignment: StudentAssignmentListResponse) => {
-    try {
-      setSelectedAssignment(
-        await assignmentApi.findStudentAssignmentDetail(assignment.id),
-      );
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể tải thông tin bài tập.");
-    }
-  };
-
-  const closeDetail = () => {
-    setSelectedAssignment(null);
-  };
 
   const startOrResume = async (assignment: StudentAssignmentListResponse) => {
     if (pendingStartId === assignment.id) return;
@@ -250,13 +232,6 @@ const StudentAssignmentsPage = () => {
                             ? "Đang tải..."
                             : "Lịch sử làm bài"}
                         </button>
-                        <button
-                          type="button"
-                          className="text-xs text-gray-600 underline"
-                          onClick={() => openDetail(assignment)}
-                        >
-                          Xem trước
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -267,25 +242,6 @@ const StudentAssignmentsPage = () => {
         </div>
       )}
 
-      <Modal
-        isOpen={selectedAssignment != null}
-        onClose={closeDetail}
-        title="Chi tiết bài tập"
-        maxWidth="max-w-5xl"
-      >
-        {selectedAssignment && (
-          <AssignmentPreview
-            title={selectedAssignment.title}
-            description={selectedAssignment.description}
-            type={selectedAssignment.type}
-            status={selectedAssignment.status}
-            openAt={selectedAssignment.openAt}
-            dueAt={selectedAssignment.dueAt}
-            attemptLimit={selectedAssignment.attemptLimit}
-            items={selectedAssignment.items}
-          />
-        )}
-      </Modal>
 
       <Modal
         isOpen={attemptsAssignment != null}

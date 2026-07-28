@@ -3,9 +3,11 @@ import type {
   AssessmentDetailResponse,
   AssessmentStatus,
   AssessmentType,
+  PlaybackMode,
 } from "../../../types/assessmentBuilder";
 import type { QuestionType } from "../../../types/questionBank";
 import { stripHtml } from "../../../utils/text";
+import { RichTextRenderer } from "../../../components/editor";
 
 interface AssessmentPreviewProps {
   assessment: AssessmentDetailResponse;
@@ -21,6 +23,11 @@ const statusLabel: Record<AssessmentStatus, string> = {
   DRAFT: "Draft",
   PUBLISHED: "Published",
   ARCHIVED: "Archived",
+};
+
+const playbackModeLabel: Record<PlaybackMode, string> = {
+  EXAM: "Exam playback",
+  PRACTICE: "Practice playback",
 };
 
 const questionTypeLabel: Record<QuestionType, string> = {
@@ -48,8 +55,24 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
           <Badge>{typeLabel[assessment.type]}</Badge>
           <Badge>{statusLabel[assessment.status]}</Badge>
         </div>
-        {assessment.description && (
-          <p className="text-sm text-gray-600">{assessment.description}</p>
+        <RichTextRenderer value={assessment.content} />
+        {assessment.audioFile && (
+          <div className="rounded-card border border-surface-border bg-white p-4">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-900">
+                Listening audio
+              </span>
+              <Badge>{playbackModeLabel[assessment.playbackMode]}</Badge>
+            </div>
+            <audio
+              controls
+              preload="metadata"
+              src={assessment.audioFile.url}
+              className="w-full"
+            >
+              Browser does not support audio.
+            </audio>
+          </div>
         )}
         <p className="text-sm text-gray-500">
           {sortedItems.length} questions -{" "}
@@ -89,9 +112,9 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
                 </div>
               </div>
 
-              <p className="mt-3 whitespace-pre-wrap text-sm text-gray-700">
-                {stripHtml(item.content) || "-"}
-              </p>
+              <div className="mt-3 text-sm text-gray-700">
+                <RichTextRenderer value={item.content} />
+              </div>
 
               {item.questionType === "MULTIPLE_CHOICE" && (
                 <div className="mt-4 space-y-2">

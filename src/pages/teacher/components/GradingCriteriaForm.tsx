@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
-import { RichTextEditor } from "../../../components/ui/RichTextEditor";
+import {
+  EMPTY_EDITOR_DOCUMENT,
+  isEmptyEditorDocument,
+  RichTextEditor,
+  type EditorDocument,
+} from "../../../components/editor";
 import type {
   GradingCriteriaRequest,
   GradingCriteriaResponse,
 } from "../../../types/gradingCriteria";
-import { stripHtml } from "../../../utils/text";
 
 interface GradingCriteriaFormProps {
   initialData?: GradingCriteriaResponse;
@@ -21,7 +25,8 @@ export const GradingCriteriaForm = ({
   onCancel,
 }: GradingCriteriaFormProps) => {
   const [name, setName] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] =
+    useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,7 +36,7 @@ export const GradingCriteriaForm = ({
       setContent(initialData.content);
     } else {
       setName("");
-      setContent("");
+      setContent(EMPTY_EDITOR_DOCUMENT);
     }
     setError("");
   }, [initialData]);
@@ -45,7 +50,7 @@ export const GradingCriteriaForm = ({
       return;
     }
 
-    if (!stripHtml(content)) {
+    if (isEmptyEditorDocument(content)) {
       setError("Vui lòng nhập nội dung tiêu chí.");
       return;
     }
@@ -54,7 +59,7 @@ export const GradingCriteriaForm = ({
       setIsLoading(true);
       await onSubmit({
         name: name.trim(),
-        content: content.trim(),
+        content,
       });
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Không thể lưu tiêu chí chấm điểm.");
