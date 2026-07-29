@@ -54,7 +54,7 @@ export const BulkAddStudentForm = ({
       setIsLoading(true);
       const res = await onSubmit({ students });
       setResults(res);
-    } catch (err) {
+    } catch {
       setError("Failed to bulk add students. Please try again.");
     } finally {
       setIsLoading(false);

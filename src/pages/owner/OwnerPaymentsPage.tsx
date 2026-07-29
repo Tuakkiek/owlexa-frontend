@@ -22,6 +22,13 @@ import axiosClient from "../../api/axiosClient";
 
 const PAGE_SIZE = 15;
 
+interface AppliedPaymentFilters {
+  query: string;
+  method: string;
+  startDate: string;
+  endDate: string;
+}
+
 export const OwnerPaymentsPage = () => {
   const [page, setPage] = useState<PaymentPage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,9 +48,15 @@ export const OwnerPaymentsPage = () => {
   const [filterMethod, setFilterMethod] = useState("");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<AppliedPaymentFilters>({
+    query: "",
+    method: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const loadPayments = useCallback(
-    async (pageNum: number, searchQuery: string) => {
+    async (pageNum: number, filters: AppliedPaymentFilters) => {
       try {
         setIsLoading(true);
         setError("");
@@ -52,12 +65,12 @@ export const OwnerPaymentsPage = () => {
           size: PAGE_SIZE,
           sort: "createdAt,desc",
         };
-        if (searchQuery) params.student = searchQuery;
-        if (filterMethod) params.method = filterMethod;
-        if (filterStartDate)
-          params.startDate = new Date(filterStartDate).toISOString();
-        if (filterEndDate)
-          params.endDate = new Date(filterEndDate).toISOString();
+        if (filters.query) params.student = filters.query;
+        if (filters.method) params.method = filters.method;
+        if (filters.startDate)
+          params.startDate = new Date(filters.startDate).toISOString();
+        if (filters.endDate)
+          params.endDate = new Date(filters.endDate).toISOString();
         const result = await feeApi.getPaymentsPaginated("owner", params);
         setPage(result);
       } catch (err: any) {
@@ -72,12 +85,17 @@ export const OwnerPaymentsPage = () => {
   );
 
   useEffect(() => {
-    loadPayments(currentPage, query);
-  }, [currentPage, loadPayments]);
+    loadPayments(currentPage, appliedFilters);
+  }, [appliedFilters, currentPage, loadPayments]);
 
   const handleSearch = () => {
     setCurrentPage(0);
-    loadPayments(0, query);
+    setAppliedFilters({
+      query,
+      method: filterMethod,
+      startDate: filterStartDate,
+      endDate: filterEndDate,
+    });
   };
 
   const handleVoid = async () => {
@@ -90,7 +108,7 @@ export const OwnerPaymentsPage = () => {
       );
       setShowVoidModal(null);
       setVoidReason("");
-      loadPayments(currentPage, query);
+      loadPayments(currentPage, appliedFilters);
     } catch (err: any) {
       setActionError(
         err?.response?.data?.message ?? "Không thể void giao dịch.",
@@ -115,7 +133,7 @@ export const OwnerPaymentsPage = () => {
       setShowRefundModal(null);
       setRefundAmount("");
       setRefundReason("");
-      loadPayments(currentPage, query);
+      loadPayments(currentPage, appliedFilters);
     } catch (err: any) {
       setActionError(err?.response?.data?.message ?? "Không thể hoàn tiền.");
     } finally {

@@ -167,7 +167,7 @@ const DiscountManagementPage = () => {
       <div className="flex gap-3">
         <input
           className="flex-1 rounded-input border border-gray-300 p-2 text-sm"
-          placeholder="Fee Record ID"
+          placeholder="Mã khoản học phí"
           value={feeRecordId}
           onChange={(e) => setFeeRecordId(e.target.value)}
         />

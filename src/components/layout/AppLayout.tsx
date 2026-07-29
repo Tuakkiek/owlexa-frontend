@@ -5,7 +5,14 @@ import { clearAuthState } from "../../auth/authService";
 import { useAuthStore } from "../../store/authStore";
 import { usePermissions } from "../../hooks/usePermissions";
 
-type RoleName = "ADMIN" | "OWNER" | "TEACHER" | "STUDENT" | "CASHIER" | "MANAGER" | "ACADEMIC_STAFF";
+type RoleName =
+  | "ADMIN"
+  | "OWNER"
+  | "TEACHER"
+  | "STUDENT"
+  | "CASHIER"
+  | "MANAGER"
+  | "ACADEMIC_STAFF";
 
 interface NavItem {
   name: string;
@@ -15,7 +22,11 @@ interface NavItem {
 
 const sidebarLinks: Record<RoleName, NavItem[]> = {
   OWNER: [
-    { name: "Tổng quan", path: "/owner/dashboard", permission: "DASHBOARD_OWNER" },
+    {
+      name: "Tổng quan",
+      path: "/owner/dashboard",
+      permission: "DASHBOARD_OWNER",
+    },
     { name: "Trung tâm", path: "/owner/centers", permission: "CENTER_VIEW" },
     { name: "Giáo viên", path: "/owner/teachers", permission: "TEACHER_VIEW" },
     { name: "Học sinh", path: "/owner/students", permission: "STUDENT_VIEW" },
@@ -23,17 +34,32 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Khóa học", path: "/owner/courses", permission: "COURSE_VIEW" },
     { name: "Phòng học", path: "/owner/rooms", permission: "ROOM_VIEW" },
     { name: "Lớp học", path: "/owner/classes", permission: "CLASS_VIEW" },
-    { name: "Điểm danh HS", path: "/owner/attendance", permission: "ATTENDANCE_VIEW" },
-    { name: "Chấm công GV", path: "/owner/teacher-attendance", permission: "TEACHER_ATT_VIEW" },
-    { name: "Học phí", path: "/owner/fee-records/overdue", permission: "FEE_VIEW" },
+    {
+      name: "Điểm danh HS",
+      path: "/owner/attendance",
+      permission: "ATTENDANCE_VIEW",
+    },
+    {
+      name: "Chấm công GV",
+      path: "/owner/teacher-attendance",
+      permission: "TEACHER_ATT_VIEW",
+    },
+    {
+      name: "Học phí",
+      path: "/owner/fee-records/overdue",
+      permission: "FEE_VIEW",
+    },
     { name: "Thanh toán", path: "/owner/payments", permission: "PAYMENT_VIEW" },
-    { name: "Đề thi", path: "/owner/tests", permission: "TEST_VIEW" },
-    { name: "Mẫu bài tập", path: "/owner/homework-templates" },
-    { name: "Bài tập đã giao", path: "/owner/homework-assignments" },
+
+
     { name: "Phiên đăng nhập", path: "/owner/sessions" },
   ],
   MANAGER: [
-    { name: "Tổng quan", path: "/owner/dashboard", permission: "DASHBOARD_OWNER" },
+    {
+      name: "Tổng quan",
+      path: "/owner/dashboard",
+      permission: "DASHBOARD_OWNER",
+    },
     { name: "Trung tâm", path: "/owner/centers", permission: "CENTER_VIEW" },
     { name: "Giáo viên", path: "/owner/teachers", permission: "TEACHER_VIEW" },
     { name: "Học sinh", path: "/owner/students", permission: "STUDENT_VIEW" },
@@ -44,45 +70,74 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
   ACADEMIC_STAFF: [
     { name: "Học sinh", path: "/owner/students", permission: "STUDENT_VIEW" },
     { name: "Lớp học", path: "/owner/classes", permission: "CLASS_VIEW" },
-    { name: "Điểm danh HS", path: "/owner/attendance", permission: "ATTENDANCE_VIEW" },
+    {
+      name: "Điểm danh HS",
+      path: "/owner/attendance",
+      permission: "ATTENDANCE_VIEW",
+    },
   ],
   TEACHER: [
-    { name: "Dashboard", path: "/teacher/dashboard" },
-    { name: "Schedule", path: "/teacher/schedule", permission: "SCHEDULE_VIEW" },
-    { name: "Attendance", path: "/teacher/attendance", permission: "ATTENDANCE_MARK" },
-    { name: "Students", path: "/teacher/students", permission: "CLASS_VIEW" },
-    { name: "Homework Templates", path: "/teacher/homework-templates" },
-    { name: "Homework Assignments", path: "/teacher/homework-assignments" },
-    { name: "Grading Criteria", path: "/teacher/grading-criteria" },
-    { name: "Essay Review", path: "/teacher/essays", permission: "ESSAY_VIEW" },
-    { name: "Mock Tests", path: "/teacher/tests", permission: "TEST_VIEW" },
+    { name: "Bảng điều khiển", path: "/teacher/dashboard" },
+    {
+      name: "Lịch dạy",
+      path: "/teacher/schedule",
+      permission: "SCHEDULE_VIEW",
+    },
+    {
+      name: "Điểm danh",
+      path: "/teacher/attendance",
+      permission: "ATTENDANCE_MARK",
+    },
+    { name: "Học viên", path: "/teacher/students", permission: "CLASS_VIEW" },
+    { name: "Tiêu chí chấm điểm", path: "/teacher/grading-criteria" },
+    { name: "Ngân hàng câu hỏi", path: "/teacher/questions" },
+    { name: "Tạo đề thi", path: "/teacher/assessments" },
+    { name: "Bài tập", path: "/teacher/assignments" },
   ],
   STUDENT: [
-    { name: "Dashboard", path: "/student/dashboard" },
-    { name: "Schedule", path: "/student/schedule", permission: "SCHEDULE_VIEW" },
-    { name: "Attendance", path: "/student/attendance", permission: "STUDENT_VIEW" },
-    { name: "Fees", path: "/student/fees", permission: "PAYMENT_VIEW" },
-    { name: "Essays", path: "/student/essays", permission: "ESSAY_VIEW" },
-    { name: "Homework Progress", path: "/student/homework-progress" },
-    { name: "Mock Tests", path: "/student/tests" },
-    { name: "Documents", path: "/student/documents" },
+    { name: "Bảng điều khiển", path: "/student/dashboard" },
+    {
+      name: "Lịch học",
+      path: "/student/schedule",
+      permission: "SCHEDULE_VIEW",
+    },
+    {
+      name: "Điểm danh",
+      path: "/student/attendance",
+      permission: "STUDENT_VIEW",
+    },
+    { name: "Học phí", path: "/student/fees", permission: "PAYMENT_VIEW" },
+    { name: "Tài liệu", path: "/student/documents" },
+    { name: "Bài tập", path: "/student/assignments" },
   ],
   CASHIER: [
-    { name: "Dashboard", path: "/cashier/dashboard", permission: "DASHBOARD_FINANCE" },
-    { name: "Thu học phí", path: "/cashier/payments", permission: "PAYMENT_COLLECT" },
-    { name: "Lịch sử", path: "/cashier/payment-history", permission: "PAYMENT_VIEW" },
+    {
+      name: "Bảng điều khiển",
+      path: "/cashier/dashboard",
+      permission: "DASHBOARD_FINANCE",
+    },
+    {
+      name: "Thu học phí",
+      path: "/cashier/payments",
+      permission: "PAYMENT_COLLECT",
+    },
+    {
+      name: "Lịch sử",
+      path: "/cashier/payment-history",
+      permission: "PAYMENT_VIEW",
+    },
   ],
-  ADMIN: [{ name: "Dashboard", path: "/admin/dashboard" }],
+  ADMIN: [{ name: "Bảng điều khiển", path: "/admin/dashboard" }],
 };
 
 const roleLabels: Record<RoleName, string> = {
-  ADMIN: "Admin Portal",
-  OWNER: "Owner Portal",
-  MANAGER: "Manager Portal",
-  ACADEMIC_STAFF: "Academic Portal",
-  TEACHER: "Teacher Portal",
-  STUDENT: "Student Portal",
-  CASHIER: "Cashier Portal",
+  ADMIN: "Cổng Quản trị hệ thống",
+  OWNER: "Cổng Quản lý trung tâm",
+  MANAGER: "Cổng Quản lý",
+  ACADEMIC_STAFF: "Cổng Giáo vụ",
+  TEACHER: "Cổng Giáo viên",
+  STUDENT: "Cổng Học viên",
+  CASHIER: "Cổng Thu ngân",
 };
 
 const AppLayout = () => {
@@ -90,8 +145,12 @@ const AppLayout = () => {
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  const links = user ? (sidebarLinks[user.roleName] || []).filter(link => !link.permission || hasPermission(link.permission)) : [];
+
+  const links = user
+    ? (sidebarLinks[user.roleName] || []).filter(
+        (link) => !link.permission || hasPermission(link.permission),
+      )
+    : [];
 
   const handleLogout = async () => {
     try {

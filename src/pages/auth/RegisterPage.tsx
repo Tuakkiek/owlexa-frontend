@@ -87,7 +87,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
             O
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            {isOwner ? "Đăng ký trung tâm" : "Đăng ký học sinh"}
+            {isOwner ? "Đăng ký trung tâm" : "Đăng ký học viên"}
           </h1>
           <p className="mt-1 text-sm text-gray-500">Owlexa Management System</p>
         </div>

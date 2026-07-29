@@ -1,8 +1,8 @@
 import { useAuthStore } from "../store/authStore";
 import type { AuthResponse, UserInfo } from "../types/auth";
+import type { AccountResponse } from "../types/account";
 import { migrateLegacyAuthStorage } from "./authMigration";
 import { removeLegacyAuthKeys } from "./authStorage";
-import type { AccountResponse } from "../api/accountApi";
 
 /**
  * Central auth API for the frontend.

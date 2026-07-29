@@ -5,14 +5,21 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  maxWidth?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+export const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  maxWidth = "max-w-md",
+}: ModalProps) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-card border border-surface-border bg-white shadow-sm">
+      <div className={`max-h-[calc(100vh-2rem)] w-full ${maxWidth} overflow-hidden rounded-card border border-surface-border bg-white shadow-sm text-left`}>
         <div className="flex items-center justify-between border-b border-surface-border px-6 py-4">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button
@@ -35,7 +42,7 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             </svg>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="max-h-[calc(100vh-6rem)] overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );
