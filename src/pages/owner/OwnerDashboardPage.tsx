@@ -281,15 +281,7 @@ export const OwnerDashboardPage = () => {
               to={link.to}
               className="rounded-card border border-surface-border bg-white p-6 transition-colors hover:bg-surface-hover"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{link.icon}</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{link.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {link.description}
-                  </p>
-                </div>
-              </div>
+              <h3 className="font-semibold text-gray-900">{link.title}</h3>
             </Link>
           ))}
         </div>

@@ -54,7 +54,7 @@ export const BulkAddTeacherForm = ({
       setIsLoading(true);
       const res = await onSubmit({ teachers });
       setResults(res);
-    } catch (err) {
+    } catch {
       setError("Failed to bulk add teachers. Please try again.");
     } finally {
       setIsLoading(false);

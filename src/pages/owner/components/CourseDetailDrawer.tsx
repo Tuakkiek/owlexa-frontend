@@ -226,7 +226,7 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-gray-500">Học phí mặc định:</span>
-                <span className="font-medium text-gray-955">{formatCurrency(course.defaultMonthlyFee)}/tháng</span>
+                <span className="font-medium text-gray-955">{formatCurrency(course.defaultMonthlyFee ?? 0)}/tháng</span>
               </div>
               <div className="flex justify-between border-b pb-1.5 col-span-2">
                 <span className="text-gray-500">Mô tả:</span>

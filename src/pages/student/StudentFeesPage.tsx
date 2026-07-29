@@ -216,6 +216,18 @@ const StudentFeesPage = () => {
     [],
   );
 
+  // ── Close payment flow ───────────────────────────────────────────────
+
+  const closePaymentFlow = useCallback(() => {
+    stopAll();
+    setActiveFeeId(null);
+    setDialogStep("confirm");
+    setPendingState(null);
+    setIsCreatingPayment(false);
+    setError("");
+    setCountdown("");
+  }, [stopAll]);
+
   // ── Open payment flow ────────────────────────────────────────────────
 
   const handleOpenPayment = useCallback(
@@ -265,20 +277,14 @@ const StudentFeesPage = () => {
       }
       // If no existing payment, user sees confirmation dialog
     },
-    [activeFeeId, checkExistingPending, startCountdown, startPolling],
+    [
+      activeFeeId,
+      checkExistingPending,
+      closePaymentFlow,
+      startCountdown,
+      startPolling,
+    ],
   );
-
-  // ── Close payment flow ───────────────────────────────────────────────
-
-  const closePaymentFlow = useCallback(() => {
-    stopAll();
-    setActiveFeeId(null);
-    setDialogStep("confirm");
-    setPendingState(null);
-    setIsCreatingPayment(false);
-    setError("");
-    setCountdown("");
-  }, [stopAll]);
 
   // ── Create payment (after confirmation) ──────────────────────────────
 
@@ -353,7 +359,7 @@ const StudentFeesPage = () => {
   // ── Generate new QR after expiration ─────────────────────────────────
 
   const handleNewQr = useCallback(
-    async (record: FeeRecordResponse) => {
+    () => {
       setError("");
       setDialogStep("confirm");
       setPendingState(null);
@@ -405,13 +411,6 @@ const StudentFeesPage = () => {
     });
     return map;
   }, [payments]);
-
-  const activeFee = useMemo(
-    () => fees.find((f) => f.id === activeFeeId),
-    [fees, activeFeeId],
-  );
-
-  const remaining = activeFee ? remainingBalance(activeFee) : 0;
 
   // ── Render ───────────────────────────────────────────────────────────
 
@@ -771,7 +770,7 @@ const StudentFeesPage = () => {
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleNewQr(record)}
+                              onClick={handleNewQr}
                               className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-xs font-medium hover:bg-blue-700"
                             >
                               Tạo QR mới
@@ -846,7 +845,7 @@ const StudentFeesPage = () => {
                           </p>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleNewQr(record)}
+                              onClick={handleNewQr}
                               className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-xs font-medium hover:bg-blue-700"
                             >
                               Tạo QR mới

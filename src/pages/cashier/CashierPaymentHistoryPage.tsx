@@ -26,6 +26,7 @@ const CashierPaymentHistoryPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [appliedQuery, setAppliedQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
   const loadPayments = useCallback(
@@ -53,12 +54,12 @@ const CashierPaymentHistoryPage = () => {
   );
 
   useEffect(() => {
-    loadPayments(currentPage, query);
-  }, [currentPage, loadPayments]);
+    loadPayments(currentPage, appliedQuery);
+  }, [appliedQuery, currentPage, loadPayments]);
 
   const handleSearch = () => {
     setCurrentPage(0);
-    loadPayments(0, query);
+    setAppliedQuery(query);
   };
 
   return (

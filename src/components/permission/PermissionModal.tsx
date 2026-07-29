@@ -4,6 +4,7 @@ import { Button } from "../ui/Button";
 import { permissionApi } from "../../api/permissionApi";
 import type {
   EffectivePermission,
+  PermissionOverrideItem,
   UserPermissionsResponse,
 } from "../../types/permission";
 
@@ -89,7 +90,7 @@ export const PermissionModal = ({
       setIsSaving(true);
       setError("");
       // Send only DISABLED permissions as overrides
-      const overrides = permissions
+      const overrides: PermissionOverrideItem[] = permissions
         .filter((p) => !p.enabled)
         .map((p) => ({
           permissionCode: p.code,

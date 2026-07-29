@@ -76,9 +76,9 @@ export default function OwnerTeacherAttendancePage() {
 
       setRows(
         teachers.map((t) => {
-          const record = recordMap.get(t.id);
+          const record = recordMap.get(t.userId);
           return {
-            teacherUserId: t.id,
+            teacherUserId: t.userId,
             teacherFullName: t.fullName ?? t.phoneNumber ?? "",
             teacherPhoneNumber: t.phoneNumber ?? "",
             status: record?.status ?? ("PRESENT" as TeacherAttendanceStatus),

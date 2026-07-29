@@ -1,3 +1,5 @@
+import type { ScheduleType } from "./schedule";
+
 export interface RoomRequest {
   code: string;
   name: string;
@@ -25,7 +27,7 @@ export interface RoomScheduleSummaryResponse {
   endTime: string;
   className: string;
   teacherName: string;
-  type: string;
+  type: ScheduleType;
 }
 
 export interface RoomDependencyDto {
