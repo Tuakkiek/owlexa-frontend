@@ -82,6 +82,7 @@ export interface AssignmentListResponse {
   status: AssignmentStatus;
   title: string;
   description: string | null;
+  content: EditorDocument;
   openAt: string | null;
   dueAt: string | null;
   attemptLimit: number | null;
@@ -97,6 +98,7 @@ export interface AssignmentDetailResponse {
   status: AssignmentStatus;
   title: string;
   description: string | null;
+  content: EditorDocument;
   openAt: string | null;
   dueAt: string | null;
   attemptLimit: number | null;

@@ -3,9 +3,16 @@ import type { FormEvent } from "react";
 import { questionBankApi } from "../../../api/questionBankApi";
 import { questionCollectionApi } from "../../../api/questionCollectionApi";
 import { Button } from "../../../components/ui/Button";
+import { useConfirm } from "../../../components/ui/ConfirmDialog";
 import { Input } from "../../../components/ui/Input";
 import { editorFileUploadService } from "../../../components/editor/services/fileUploadService";
 import { SearchInput } from "../../../components/ui/SharedComponents";
+import {
+  createSequentialDisplayOrders,
+  deriveStartingQuestionNumber,
+  MAX_DISPLAY_ORDER,
+  MIN_STARTING_QUESTION_NUMBER,
+} from "../../../utils/assessmentNumbering";
 import {
   editorDocumentToPlainText,
   EMPTY_EDITOR_DOCUMENT,
@@ -100,10 +107,12 @@ export const AssessmentForm = ({
   onSubmit,
   onCancel,
 }: AssessmentFormProps) => {
+  const confirm = useConfirm();
   const [title, setTitle] = useState("");
   const [content, setContent] =
     useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
   const [type, setType] = useState<AssessmentType>("QUIZ");
+  const [startingQuestionNumber, setStartingQuestionNumber] = useState("1");
   const [audioFile, setAudioFile] = useState<FileMetadata | null>(null);
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>("PRACTICE");
   const [selectedQuestions, setSelectedQuestions] = useState<
@@ -135,6 +144,7 @@ export const AssessmentForm = ({
       setTitle(initialData.title);
       setContent(initialData.content ?? EMPTY_EDITOR_DOCUMENT);
       setType(initialData.type);
+      setStartingQuestionNumber(String(deriveStartingQuestionNumber(initialData.items)));
       setAudioFile(initialData.audioFile ?? null);
       setPlaybackMode(initialData.playbackMode ?? "PRACTICE");
       setSelectedQuestions(
@@ -147,6 +157,7 @@ export const AssessmentForm = ({
       setTitle("");
       setContent(EMPTY_EDITOR_DOCUMENT);
       setType("QUIZ");
+      setStartingQuestionNumber(String(MIN_STARTING_QUESTION_NUMBER));
       setAudioFile(null);
       setPlaybackMode("PRACTICE");
       setSelectedQuestions([]);
@@ -340,7 +351,7 @@ export const AssessmentForm = ({
 
   const uploadAssessmentAudio = async (file: File) => {
     if (!file.type.startsWith("audio/")) {
-      setError("Vui lÃ²ng chá»n má»™t file audio.");
+      setError("Vui lòng chọn một file audio.");
       return;
     }
 
@@ -352,13 +363,13 @@ export const AssessmentForm = ({
         setAudioUploadProgress(progress),
       );
       if (uploaded.type !== "AUDIO") {
-        setError("File Ä‘Ã£ táº£i lÃªn khÃ´ng pháº£i audio.");
+        setError("File đã tải lên không phải audio.");
         return;
       }
       setAudioFile(uploaded);
       setAudioUploadProgress(100);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "KhÃ´ng thá»ƒ táº£i audio.");
+      setError(err?.response?.data?.message ?? "Không thể tải audio.");
     } finally {
       setIsAudioUploading(false);
     }
@@ -375,12 +386,55 @@ export const AssessmentForm = ({
     [selectedQuestions],
   );
 
+  const questionNumberPreview = useMemo(() => {
+    if (!/^\d+$/.test(startingQuestionNumber)) return null;
+
+    const start = Number(startingQuestionNumber);
+    if (
+      !Number.isSafeInteger(start) ||
+      start < MIN_STARTING_QUESTION_NUMBER ||
+      start > MAX_DISPLAY_ORDER
+    ) {
+      return null;
+    }
+
+    const displayOrders = createSequentialDisplayOrders(
+      start,
+      selectedQuestions.length,
+    );
+    if (displayOrders.some((displayOrder) => displayOrder > MAX_DISPLAY_ORDER)) {
+      return null;
+    }
+
+    return {
+      start,
+      end: displayOrders.at(-1) ?? null,
+    };
+  }, [selectedQuestions.length, startingQuestionNumber]);
+
   const validate = () => {
     if (!title.trim()) {
-      return "Vui lÃ²ng nháº­p tiÃªu Ä‘á» Ä‘á» thi.";
+      return "Vui lòng nhập tiêu đề đề thi.";
     }
     if (title.trim().length > 255) {
-      return "TiÃªu Ä‘á» Ä‘á» thi khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 255 kÃ½ tá»±.";
+      return "Tiêu đề đề thi không được vượt quá 255 ký tự.";
+    }
+    if (!/^\d+$/.test(startingQuestionNumber)) {
+      return "Số câu bắt đầu phải là số nguyên lớn hơn hoặc bằng 1.";
+    }
+    const parsedStartingQuestionNumber = Number(startingQuestionNumber);
+    if (
+      !Number.isSafeInteger(parsedStartingQuestionNumber) ||
+      parsedStartingQuestionNumber < MIN_STARTING_QUESTION_NUMBER ||
+      parsedStartingQuestionNumber > MAX_DISPLAY_ORDER
+    ) {
+      return "Số câu bắt đầu phải là số nguyên lớn hơn hoặc bằng 1.";
+    }
+    if (
+      parsedStartingQuestionNumber + selectedQuestions.length - 1 >
+      MAX_DISPLAY_ORDER
+    ) {
+      return "Phạm vi số câu vượt quá giới hạn cho phép.";
     }
     const invalidPoints = selectedQuestions.some((question) => {
       if (!question.points.trim()) return false;
@@ -388,7 +442,7 @@ export const AssessmentForm = ({
       return !Number.isFinite(value) || value <= 0;
     });
     if (invalidPoints) {
-      return "Äiá»ƒm sá»‘ cá»§a cÃ¢u há»i pháº£i lá»›n hÆ¡n 0.";
+      return "Điểm số của câu hỏi phải lớn hơn 0.";
     }
     return "";
   };
@@ -403,7 +457,7 @@ export const AssessmentForm = ({
     items: selectedQuestions.map<AssessmentItemRequest>((question, index) => ({
       questionId: question.questionId,
       points: question.points.trim() ? Number(question.points) : null,
-      displayOrder: index + 1,
+      displayOrder: Number(startingQuestionNumber) + index,
     })),
   });
 
@@ -417,11 +471,40 @@ export const AssessmentForm = ({
       return;
     }
 
+    const previousStartingQuestionNumber = deriveStartingQuestionNumber(
+      initialData?.items,
+    );
+    const parsedStartingQuestionNumber = Number(startingQuestionNumber);
+    const hasRenumberedExistingQuestions =
+      (initialData?.items.length ?? 0) > 0 &&
+      parsedStartingQuestionNumber !== previousStartingQuestionNumber;
+
+    if (hasRenumberedExistingQuestions) {
+      const previousEndingQuestionNumber =
+        previousStartingQuestionNumber + initialData!.items.length - 1;
+      const nextQuestionRange =
+        selectedQuestions.length === 0
+          ? "không còn câu hỏi"
+          : `Câu ${parsedStartingQuestionNumber}–${
+              parsedStartingQuestionNumber + selectedQuestions.length - 1
+            }`;
+      const confirmed = await confirm({
+        title: "Đánh số lại câu hỏi?",
+        message:
+          `Các câu hỏi hiện tại sẽ được đổi từ Câu ${previousStartingQuestionNumber}–${previousEndingQuestionNumber} ` +
+          `thành ${nextQuestionRange}.\n\n` +
+          "Thứ tự và nội dung câu hỏi không thay đổi.",
+        confirmText: "Đánh số lại",
+        variant: "warning",
+      });
+      if (!confirmed) return;
+    }
+
     try {
       setIsSaving(true);
       await onSubmit(buildRequest());
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "KhÃ´ng thá»ƒ lÆ°u Ä‘á» thi.");
+      setError(err?.response?.data?.message ?? "Không thể lưu đề thi.");
     } finally {
       setIsSaving(false);
     }
@@ -429,28 +512,51 @@ export const AssessmentForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Input
-          label="TiÃªu Ä‘á»"
+          label="Tiêu đề"
           value={title}
           maxLength={255}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="TiÃªu Ä‘á» Ä‘á» thi"
+          placeholder="Tiêu đề đề thi"
         />
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Loáº¡i Ä‘á» thi</label>
+          <label className="text-sm font-medium text-gray-700">Loại đề thi</label>
           <select
             value={type}
             onChange={(event) => setType(event.target.value as AssessmentType)}
             className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
           >
-            <option value="QUIZ">Tráº¯c nghiá»‡m</option>
-            <option value="HOMEWORK">BÃ i táº­p vá» nhÃ </option>
-            <option value="EXAM">BÃ i kiá»ƒm tra</option>
+            <option value="QUIZ">Trắc nghiệm</option>
+            <option value="HOMEWORK">Bài tập về nhà</option>
+            <option value="EXAM">Bài kiểm tra</option>
           </select>
         </div>
+
+        <Input
+          label="Số câu bắt đầu"
+          type="number"
+          min={MIN_STARTING_QUESTION_NUMBER}
+          max={MAX_DISPLAY_ORDER}
+          step="1"
+          inputMode="numeric"
+          value={startingQuestionNumber}
+          onChange={(event) => setStartingQuestionNumber(event.target.value)}
+          disabled={isSaving}
+        />
       </div>
+      <p className="-mt-3 text-xs text-gray-500">
+        Câu đầu tiên của đề sẽ được hiển thị với số này. Ví dụ: nhập 32 cho TOEIC Part 3.
+      </p>
+      <p className="-mt-4 text-sm text-gray-700">
+        Phạm vi số câu:{" "}
+        {questionNumberPreview
+          ? questionNumberPreview.end == null
+            ? `${questionNumberPreview.start}–...`
+            : `${questionNumberPreview.start}–${questionNumberPreview.end}`
+          : "-"}
+      </p>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
         <div className="flex flex-col gap-2">
@@ -467,7 +573,7 @@ export const AssessmentForm = ({
                     </div>
                     <div className="text-xs text-gray-500">
                       {audioFile.mimeType}
-                      {audioFile.size ? ` Â· ${formatFileSize(audioFile.size)}` : ""}
+                      {audioFile.size ? ` · ${formatFileSize(audioFile.size)}` : ""}
                     </div>
                   </div>
                   <Button
@@ -477,7 +583,7 @@ export const AssessmentForm = ({
                     onClick={() => setAudioFile(null)}
                     disabled={isAudioUploading || isSaving}
                   >
-                    XÃ³a audio
+                    Xóa audio
                   </Button>
                 </div>
                 <audio
@@ -486,18 +592,18 @@ export const AssessmentForm = ({
                   src={audioFile.url}
                   className="w-full"
                 >
-                  TrÃ¬nh duyá»‡t khÃ´ng há»— trá»£ audio.
+                  Trình duyệt không hỗ trợ audio.
                 </audio>
               </div>
             ) : (
-              <div className="text-sm text-gray-500">ChÆ°a cÃ³ audio.</div>
+              <div className="text-sm text-gray-500">Chưa có audio.</div>
             )}
             <label className="mt-3 inline-flex cursor-pointer items-center rounded-input border border-surface-border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-surface-hover">
               {isAudioUploading
-                ? `Äang táº£i ${audioUploadProgress}%`
+                ? `Đang tải ${audioUploadProgress}%`
                 : audioFile
                   ? "Thay audio"
-                  : "Táº£i audio"}
+                  : "Tải audio"}
               <input
                 type="file"
                 accept=".mp3,.wav,.m4a,.ogg,audio/*"
@@ -515,7 +621,7 @@ export const AssessmentForm = ({
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            Cháº¿ Ä‘á»™ phÃ¡t
+            Chế độ phát
           </label>
           <select
             value={playbackMode}
@@ -532,15 +638,15 @@ export const AssessmentForm = ({
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">
-          Ná»™i dung Ä‘á» thi
+          Nội dung đề thi
         </label>
         <p className="mb-2 text-xs text-gray-500">
-          Soáº¡n hÆ°á»›ng dáº«n, ná»™i dung chung vÃ  chÃ¨n hÃ¬nh áº£nh, audio, video hoáº·c tÃ i liá»‡u.
+          Soạn hướng dẫn, nội dung chung và chèn hình ảnh, audio, video hoặc tài liệu.
         </p>
         <RichTextEditor
           value={content}
           onChange={setContent}
-          placeholder="Nháº­p ná»™i dung Ä‘á» thi..."
+          placeholder="Nhập nội dung đề thi..."
           minHeight={320}
         />
       </div>
@@ -549,13 +655,13 @@ export const AssessmentForm = ({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              Chá»n cÃ¢u há»i
+              Chọn câu hỏi
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Chá»n cÃ¡c cÃ¢u há»i Ä‘ang hoáº¡t Ä‘á»™ng tá»« NgÃ¢n hÃ ng cÃ¢u há»i.
+              Chọn các câu hỏi đang hoạt động từ Ngân hàng câu hỏi.
             </p>
             <p className="mt-2 text-sm font-medium text-gray-700">
-              ÄÃ£ chá»n: {selectedQuestions.length} cÃ¢u há»i
+              Đã chọn: {selectedQuestions.length} câu hỏi
             </p>
           </div>
 
@@ -588,7 +694,7 @@ export const AssessmentForm = ({
             <SearchInput
               value={questionQuery}
               onChange={handleQuestionSearchChange}
-              placeholder="TÃ¬m kiáº¿m cÃ¢u há»i..."
+              placeholder="Tìm kiếm câu hỏi..."
             />
             <select
               value={questionSectionCode}
@@ -599,7 +705,7 @@ export const AssessmentForm = ({
               }}
               className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
-              <option value="">Táº¥t cáº£ Section</option>
+              <option value="">Tất cả Section</option>
               {questionSectionCodes.map((code) => (
                 <option key={code} value={code}>{code}</option>
               ))}
@@ -615,10 +721,10 @@ export const AssessmentForm = ({
               }}
               className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
-              <option value="">Táº¥t cáº£ Ä‘á»™ khÃ³</option>
-              <option value="EASY">Dá»…</option>
-              <option value="MEDIUM">Trung bÃ¬nh</option>
-              <option value="HARD">KhÃ³</option>
+              <option value="">Tất cả độ khó</option>
+              <option value="EASY">Dễ</option>
+              <option value="MEDIUM">Trung bình</option>
+              <option value="HARD">Khó</option>
             </select>
             <select
               value={questionType}
@@ -627,9 +733,9 @@ export const AssessmentForm = ({
               }
               className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
             >
-              <option value="">Táº¥t cáº£ loáº¡i</option>
-              <option value="MULTIPLE_CHOICE">Tráº¯c nghiá»‡m</option>
-              <option value="ESSAY">Tá»± luáº­n</option>
+              <option value="">Tất cả loại</option>
+              <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+              <option value="ESSAY">Tự luận</option>
             </select>
           </div>
 
@@ -647,7 +753,7 @@ export const AssessmentForm = ({
                 }
                 onChange={toggleAllPickerPage}
               />
-              Chá»n táº¥t cáº£ trang hiá»‡n táº¡i
+              Chọn tất cả trang hiện tại
             </label>
             <Button
               type="button"
@@ -655,7 +761,7 @@ export const AssessmentForm = ({
               disabled={pickerSelectedIds.size === 0}
               onClick={addSelectedQuestions}
             >
-              ThÃªm Ä‘Ã£ chá»n ({pickerSelectedIds.size})
+              Thêm đã chọn ({pickerSelectedIds.size})
             </Button>
           </div>
 
@@ -665,10 +771,10 @@ export const AssessmentForm = ({
 
           <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
             {isQuestionLoading ? (
-              <div className="p-4 text-sm text-gray-500">Äang táº£i...</div>
+              <div className="p-4 text-sm text-gray-500">Đang tải...</div>
             ) : questionPage.content.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i nÃ o.
+                Không tìm thấy câu hỏi nào.
               </div>
             ) : (
               <div>
@@ -716,7 +822,7 @@ export const AssessmentForm = ({
                             </span>
                             {isSelected && (
                               <span className="text-xs text-gray-500">
-                                ÄÃ£ thÃªm
+                                Đã thêm
                               </span>
                             )}
                           </label>
@@ -741,7 +847,7 @@ export const AssessmentForm = ({
                 onClick={goToPreviousQuestionPage}
                 disabled={isQuestionLoading || questionPage.number <= 0}
               >
-                TrÆ°á»›c
+                Trước
               </Button>
               <Button
                 type="button"
@@ -764,15 +870,15 @@ export const AssessmentForm = ({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-medium text-gray-900">
-              CÃ¢u há»i Ä‘Ã£ chá»n
+              Câu hỏi đã chọn
             </h4>
             <p className="mt-1 text-xs text-gray-500">
-              Sáº¯p xáº¿p láº¡i thá»© tá»± cÃ¢u há»i vÃ  ghi Ä‘Ã¨ Ä‘iá»ƒm sá»‘ khi cáº§n.
+              Sắp xếp lại thứ tự câu hỏi và ghi đè điểm số khi cần.
             </p>
           </div>
 
           <div className="rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-700">
-            Tá»•ng Ä‘iá»ƒm:{" "}
+            Tổng điểm:{" "}
             <span className="font-medium text-gray-900">
               {totalPoints > 0 ? totalPoints.toFixed(2) : "-"}
             </span>
@@ -781,7 +887,7 @@ export const AssessmentForm = ({
           <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
             {selectedQuestions.length === 0 ? (
               <div className="p-4 text-sm text-gray-400">
-                ChÆ°a cÃ³ cÃ¢u há»i nÃ o Ä‘Æ°á»£c chá»n.
+                Chưa có câu hỏi nào được chọn.
               </div>
             ) : (
               <div className="divide-y divide-surface-border">
@@ -806,11 +912,11 @@ export const AssessmentForm = ({
                         {previewContent(question.content)}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
-                        Äiá»ƒm máº·c Ä‘á»‹nh: {question.defaultPoints ?? "-"}
+                        Điểm mặc định: {question.defaultPoints ?? "-"}
                       </p>
                     </div>
                     <Input
-                      label="Äiá»ƒm sá»‘"
+                      label="Điểm số"
                       type="number"
                       min="0.01"
                       step="0.01"
@@ -821,7 +927,7 @@ export const AssessmentForm = ({
                       placeholder={
                         question.defaultPoints != null
                           ? String(question.defaultPoints)
-                          : "Máº·c Ä‘á»‹nh"
+                          : "Mặc định"
                       }
                     />
                     <div className="flex flex-wrap items-end justify-end gap-2">
@@ -832,7 +938,7 @@ export const AssessmentForm = ({
                         disabled={index === 0}
                         onClick={() => moveQuestion(index, -1)}
                       >
-                        LÃªn
+                        Lên
                       </Button>
                       <Button
                         type="button"
@@ -841,7 +947,7 @@ export const AssessmentForm = ({
                         disabled={index === selectedQuestions.length - 1}
                         onClick={() => moveQuestion(index, 1)}
                       >
-                        Xuá»‘ng
+                        Xuống
                       </Button>
                       <Button
                         type="button"
@@ -849,7 +955,7 @@ export const AssessmentForm = ({
                         size="sm"
                         onClick={() => removeQuestion(question.questionId)}
                       >
-                        XÃ³a
+                        Xóa
                       </Button>
                     </div>
                   </div>
@@ -864,10 +970,10 @@ export const AssessmentForm = ({
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Há»§y
+          Hủy
         </Button>
         <Button type="submit" isLoading={isSaving}>
-          {initialData ? "Cáº­p nháº­t" : "Táº¡o má»›i"}
+          {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </div>
     </form>

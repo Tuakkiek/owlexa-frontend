@@ -104,6 +104,10 @@ export const TeacherSubmissionAttemptDetail = ({
         latestAiResult={latestAiResult}
       />
 
+      <div className="rounded-card border border-surface-border bg-white p-4 text-sm text-gray-900">
+        <RichTextRenderer value={attempt.assignmentContent} />
+      </div>
+
       <div className="space-y-4">
         {attempt.items.map((item) => {
           const answer = answersByItemId.get(item.assignmentItemId);

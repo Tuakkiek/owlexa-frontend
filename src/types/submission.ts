@@ -45,6 +45,17 @@ export interface SubmissionAttemptItemResponse {
   options: SubmissionAttemptItemOptionResponse[];
 }
 
+export interface StudentAttemptItemResponse {
+  assignmentItemId: number;
+  questionType: QuestionType;
+  title: string | null;
+  content: EditorDocument;
+  difficulty: QuestionDifficulty | null;
+  points: number | null;
+  displayOrder: number;
+  options: SubmissionAttemptItemOptionResponse[];
+}
+
 export interface SubmissionAnswerResponse {
   assignmentItemId: number;
   answerText: string | null;
@@ -71,6 +82,7 @@ export interface StudentAttemptDetailResponse {
   assignmentRecipientId: number;
   assignmentTitleSnapshot: string;
   assignmentTypeSnapshot: AssessmentType;
+  assignmentContent: EditorDocument;
   status: SubmissionAttemptStatus;
   attemptNumber: number;
   startedAt: string;
@@ -80,7 +92,7 @@ export interface StudentAttemptDetailResponse {
   maxScore: number | null;
   audioFile: FileMetadata | null;
   playbackMode: PlaybackMode;
-  items: SubmissionAttemptItemResponse[];
+  items: StudentAttemptItemResponse[];
   answers: SubmissionAnswerResponse[];
 }
 
@@ -114,6 +126,7 @@ export interface TeacherAttemptDetailResponse {
   recipientStatus: AssignmentRecipientStatus;
   assignmentTitleSnapshot: string;
   assignmentTypeSnapshot: AssessmentType;
+  assignmentContent: EditorDocument;
   status: SubmissionAttemptStatus;
   attemptNumber: number;
   startedAt: string;

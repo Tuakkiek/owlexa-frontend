@@ -3,6 +3,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./router/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import ExamLayout from "./components/layout/ExamLayout";
 import TeachersPage from "./pages/owner/TeachersPage";
 import StudentsPage from "./pages/owner/StudentsPage";
 import ClassesPage from "./pages/owner/ClassesPage";
@@ -198,11 +199,6 @@ function App() {
                   path="/student/assignments"
                   element={<StudentAssignmentsPage />}
                 />
-                <Route
-                  path="/student/submission-attempts/:attemptId"
-                  element={<StudentSubmissionAttemptPage />}
-                />
-
               </Route>
 
               {/* CASHIER Routes */}
@@ -287,6 +283,15 @@ function App() {
                   </div>
                 }
               />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={["STUDENT"]} />}>
+              <Route element={<ExamLayout />}>
+                <Route
+                  path="/student/submission-attempts/:attemptId"
+                  element={<StudentSubmissionAttemptPage />}
+                />
+              </Route>
             </Route>
 
             {/* Fallback for undefined routes */}

@@ -86,7 +86,7 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedItems.map((item, index) => (
+          {sortedItems.map((item) => (
             <div
               key={item.id}
               className="rounded-card border border-surface-border bg-white p-4"
@@ -95,7 +95,7 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      Question {index + 1}
+                      Question {item.displayOrder}
                     </span>
                     <span className="text-xs text-gray-500">
                       {questionTypeLabel[item.questionType]}

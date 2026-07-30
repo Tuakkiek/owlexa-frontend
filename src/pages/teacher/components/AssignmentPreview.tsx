@@ -6,6 +6,7 @@ import type {
 import type { AssessmentType, PlaybackMode } from "../../../types/assessmentBuilder";
 import type { FileMetadata } from "../../../types/file";
 import type { QuestionType } from "../../../types/questionBank";
+import type { EditorDocument } from "../../../components/editor";
 import { formatDateTime } from "../../../utils/dateTime";
 import { stripHtml } from "../../../utils/text";
 import { RichTextRenderer } from "../../../components/editor";
@@ -13,6 +14,7 @@ import { RichTextRenderer } from "../../../components/editor";
 interface AssignmentPreviewProps {
   title: string;
   description: string | null;
+  content: EditorDocument;
   type: AssessmentType;
   status: AssignmentStatus;
   openAt: string | null;
@@ -51,6 +53,7 @@ const playbackModeLabel: Record<PlaybackMode, string> = {
 export const AssignmentPreview = ({
   title,
   description,
+  content,
   type,
   status,
   openAt,
@@ -76,6 +79,9 @@ export const AssignmentPreview = ({
           <Badge>{statusLabel[status]}</Badge>
         </div>
         {description && <p className="text-sm text-gray-600">{description}</p>}
+        <div className="rounded-card border border-surface-border bg-white p-4 text-sm text-gray-700">
+          <RichTextRenderer value={content} />
+        </div>
         <div className="grid gap-3 rounded-card border border-surface-border bg-white p-4 text-sm text-gray-600 md:grid-cols-2">
           <div>Open: {formatDateTime(openAt)}</div>
           <div>Due: {formatDateTime(dueAt)}</div>
@@ -107,7 +113,7 @@ export const AssignmentPreview = ({
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedItems.map((item, index) => (
+          {sortedItems.map((item) => (
             <div
               key={item.id}
               className="rounded-card border border-surface-border bg-white p-4"
@@ -116,7 +122,7 @@ export const AssignmentPreview = ({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      Question {index + 1}
+                      Question {item.displayOrder}
                     </span>
                     <span className="text-xs text-gray-500">
                       {questionTypeLabel[item.questionType]}

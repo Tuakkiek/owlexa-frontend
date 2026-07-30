@@ -590,6 +590,7 @@ const TeacherAssignmentsPage = () => {
           <AssignmentPreview
             title={previewAssignment.title}
             description={previewAssignment.description}
+            content={previewAssignment.content}
             type={previewAssignment.type}
             status={previewAssignment.status}
             openAt={previewAssignment.openAt}
