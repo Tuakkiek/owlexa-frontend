@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RichTextRenderer } from "../../../components/editor";
 import { teacherReviewApi } from "../../../api/teacherReviewApi";
 import { Button } from "../../../components/ui/Button";
 import { useConfirm } from "../../../components/ui/ConfirmDialog";
@@ -10,6 +11,10 @@ import {
 import { useToast } from "../../../components/ui/Toast";
 import type { AIGradingResultResponse } from "../../../types/aiGrading";
 import type {
+  SubmissionAnswerResponse,
+  SubmissionAttemptItemResponse,
+} from "../../../types/submission";
+import type {
   TeacherReviewDetailResponse,
   TeacherReviewItemRequest,
   TeacherReviewStatus,
@@ -17,9 +22,9 @@ import type {
 import { formatDateTime } from "../../../utils/dateTime";
 
 const statusLabel: Record<TeacherReviewStatus, string> = {
-  IN_PROGRESS: "In Progress",
-  FINALIZED: "Finalized",
-  RELEASED: "Released",
+  IN_PROGRESS: "Đang chấm",
+  FINALIZED: "Đã hoàn tất",
+  RELEASED: "Đã công bố",
 };
 
 const statusVariant: Record<
@@ -44,6 +49,8 @@ interface TeacherReviewDraftPanelProps {
   attemptId: number;
   canReview: boolean;
   latestAiResult: AIGradingResultResponse | null;
+  questionItems: SubmissionAttemptItemResponse[];
+  submissionAnswers: SubmissionAnswerResponse[];
 }
 
 const toEditableItems = (
@@ -77,6 +84,8 @@ export const TeacherReviewDraftPanel = ({
   attemptId,
   canReview,
   latestAiResult,
+  questionItems,
+  submissionAnswers,
 }: TeacherReviewDraftPanelProps) => {
   const confirm = useConfirm();
   const { toast } = useToast();
@@ -108,6 +117,57 @@ export const TeacherReviewDraftPanel = ({
   useEffect(() => {
     let cancelled = false;
 
+    const applyLoadedReview = (loadedReview: TeacherReviewDetailResponse) => {
+      setReview(loadedReview);
+      setOverallComment(loadedReview.overallComment ?? "");
+      setSelectedAiGradingResultId(loadedReview.selectedAiGradingResultId);
+      setEditableItems(toEditableItems(loadedReview));
+      setReviewNotCreated(false);
+      setError("");
+    };
+
+    const createDraft = async () => {
+      setIsCreating(true);
+      try {
+        const createdReview = await teacherReviewApi.createOrGetReview(attemptId);
+        if (!cancelled) {
+          applyLoadedReview(createdReview);
+        }
+      } catch (createError: any) {
+        if (!cancelled) {
+          setReviewNotCreated(true);
+          setError(
+            getErrorMessage(createError, "Không thể tạo phiếu chấm."),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsCreating(false);
+        }
+      }
+    };
+
+    const loadReview = async () => {
+      try {
+        const loadedReview = await teacherReviewApi.getReview(attemptId);
+        if (!cancelled) {
+          applyLoadedReview(loadedReview);
+        }
+      } catch (requestError: any) {
+        if (cancelled) return;
+        if (requestError?.response?.status === 404) {
+          await createDraft();
+          return;
+        }
+        setError(getErrorMessage(requestError, "Không thể tải phiếu chấm."));
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+    void loadReview;
+
     setReview(null);
     setOverallComment("");
     setSelectedAiGradingResultId(null);
@@ -124,34 +184,11 @@ export const TeacherReviewDraftPanel = ({
     }
 
     setIsLoading(true);
-    const loadReview = async () => {
-      try {
-        const loadedReview = await teacherReviewApi.getReview(attemptId);
-        if (!cancelled) {
-          setReview(loadedReview);
-          setOverallComment(loadedReview.overallComment ?? "");
-          setSelectedAiGradingResultId(
-            loadedReview.selectedAiGradingResultId,
-          );
-          setEditableItems(toEditableItems(loadedReview));
-        }
-      } catch (requestError: any) {
-        if (cancelled) return;
-        if (requestError?.response?.status === 404) {
-          setReviewNotCreated(true);
-        } else {
-          setError(
-            getErrorMessage(requestError, "Unable to load teacher review."),
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+    void createDraft().finally(() => {
+      if (!cancelled) {
+        setIsLoading(false);
       }
-    };
-
-    loadReview();
+    });
 
     return () => {
       cancelled = true;
@@ -166,17 +203,38 @@ export const TeacherReviewDraftPanel = ({
     [review],
   );
 
+  const questionItemsById = useMemo(
+    () => new Map(questionItems.map((item) => [item.assignmentItemId, item])),
+    [questionItems],
+  );
+
+  const answersByItemId = useMemo(
+    () =>
+      new Map(
+        submissionAnswers.map((answer) => [answer.assignmentItemId, answer]),
+      ),
+    [submissionAnswers],
+  );
+
+  const aiSuggestionByItemId = useMemo(
+    () =>
+      new Map(
+        (latestAiResult?.itemResults ?? []).map((item) => [
+          item.assignmentItemId,
+          item,
+        ]),
+      ),
+    [latestAiResult],
+  );
+
   const isDirty = useMemo(() => {
     if (!review || review.status !== "IN_PROGRESS") return false;
-    if (
-      nullableText(overallComment) !==
-      nullableText(review.overallComment ?? "")
-    ) {
+
+    if (nullableText(overallComment) !== nullableText(review.overallComment ?? "")) {
       return true;
     }
-    if (
-      selectedAiGradingResultId !== review.selectedAiGradingResultId
-    ) {
+
+    if (selectedAiGradingResultId !== review.selectedAiGradingResultId) {
       return true;
     }
 
@@ -213,8 +271,7 @@ export const TeacherReviewDraftPanel = ({
 
     return review.items.every((item) => {
       const editableItem = editableItems.find(
-        (candidate) =>
-          candidate.assignmentItemId === item.assignmentItemId,
+        (candidate) => candidate.assignmentItemId === item.assignmentItemId,
       );
       if (!editableItem) return false;
 
@@ -234,9 +291,7 @@ export const TeacherReviewDraftPanel = ({
   const applyReview = (updatedReview: TeacherReviewDetailResponse) => {
     setReview(updatedReview);
     setOverallComment(updatedReview.overallComment ?? "");
-    setSelectedAiGradingResultId(
-      updatedReview.selectedAiGradingResultId,
-    );
+    setSelectedAiGradingResultId(updatedReview.selectedAiGradingResultId);
     setEditableItems(toEditableItems(updatedReview));
     setReviewNotCreated(false);
     setError("");
@@ -248,18 +303,14 @@ export const TeacherReviewDraftPanel = ({
     try {
       setIsCreating(true);
       setError("");
-      const createdReview =
-        await teacherReviewApi.createOrGetReview(attemptId);
+      const createdReview = await teacherReviewApi.createOrGetReview(attemptId);
       if (!isMountedRef.current) return;
       applyReview(createdReview);
-      toast.success("Teacher review draft is ready.");
+      toast.success("Đã tạo phiếu chấm.");
     } catch (requestError: any) {
       if (isMountedRef.current) {
         setError(
-          getErrorMessage(
-            requestError,
-            "Unable to create teacher review draft.",
-          ),
+          getErrorMessage(requestError, "Không thể tạo phiếu chấm."),
         );
       }
     } finally {
@@ -290,7 +341,7 @@ export const TeacherReviewDraftPanel = ({
       const original = itemsById.get(item.assignmentItemId);
       const score = nullableScore(item.finalScore);
       if (!original) {
-        setError("Review item data is out of date. Reopen the submission.");
+        setError("Dữ liệu phiếu chấm đã thay đổi. Hãy mở lại bài nộp.");
         return null;
       }
       if (
@@ -301,7 +352,7 @@ export const TeacherReviewDraftPanel = ({
           hasMoreThanTwoDecimalPlaces(item.finalScore))
       ) {
         setError(
-          `Question ${original.displayOrderSnapshot} score must be between 0 and ${original.maxScore} with at most 2 decimal places.`,
+          `Điểm câu ${original.displayOrderSnapshot} phải trong khoảng 0 đến ${original.maxScore} và tối đa 2 chữ số thập phân.`,
         );
         return null;
       }
@@ -335,12 +386,10 @@ export const TeacherReviewDraftPanel = ({
       });
       if (!isMountedRef.current) return;
       applyReview(updatedReview);
-      toast.success("Teacher review draft saved.");
+      toast.success("Đã lưu phiếu chấm.");
     } catch (requestError: any) {
       if (isMountedRef.current) {
-        setError(
-          getErrorMessage(requestError, "Unable to save teacher review draft."),
-        );
+        setError(getErrorMessage(requestError, "Không thể lưu phiếu chấm."));
       }
     } finally {
       if (isMountedRef.current) {
@@ -361,9 +410,9 @@ export const TeacherReviewDraftPanel = ({
     }
 
     const confirmed = await confirm({
-      title: "Finalize teacher review?",
-      message: `Finalize this review with a score of ${formatScore(draftScore)} / ${review.maxScore}? The review cannot be edited after finalization.`,
-      confirmText: "Finalize",
+      title: "Hoàn tất chấm bài?",
+      message: `Hoàn tất phiếu chấm với số điểm ${formatScore(draftScore)} / ${review.maxScore}? Sau khi hoàn tất bạn sẽ không sửa tiếp được.`,
+      confirmText: "Hoàn tất",
       variant: "warning",
     });
     if (!confirmed || !isMountedRef.current) return;
@@ -374,12 +423,12 @@ export const TeacherReviewDraftPanel = ({
       const finalizedReview = await teacherReviewApi.finalizeReview(review.id);
       if (!isMountedRef.current) return;
       applyReview(finalizedReview);
-      toast.success("Teacher review finalized.");
+      toast.success("Đã hoàn tất chấm bài.");
     } catch (requestError: any) {
       if (isMountedRef.current) {
         const message = getErrorMessage(
           requestError,
-          "Unable to finalize teacher review.",
+          "Không thể hoàn tất phiếu chấm.",
         );
         setError(message);
         toast.error(message);
@@ -392,18 +441,14 @@ export const TeacherReviewDraftPanel = ({
   };
 
   const handleRelease = async () => {
-    if (
-      !review ||
-      review.status !== "FINALIZED" ||
-      isPending
-    ) {
+    if (!review || review.status !== "FINALIZED" || isPending) {
       return;
     }
 
     const confirmed = await confirm({
-      title: "Release result to student?",
-      message: `Release the final score of ${review.finalScore ?? "-"} / ${review.maxScore}? The student will be able to view this result.`,
-      confirmText: "Release",
+      title: "Công bố kết quả cho học sinh?",
+      message: `Công bố số điểm ${review.finalScore ?? "-"} / ${review.maxScore}? Học sinh sẽ xem được kết quả này ngay sau đó.`,
+      confirmText: "Công bố",
       variant: "emerald",
     });
     if (!confirmed || !isMountedRef.current) return;
@@ -414,12 +459,12 @@ export const TeacherReviewDraftPanel = ({
       const releasedReview = await teacherReviewApi.releaseReview(review.id);
       if (!isMountedRef.current) return;
       applyReview(releasedReview);
-      toast.success("Teacher review released to the student.");
+      toast.success("Đã công bố kết quả cho học sinh.");
     } catch (requestError: any) {
       if (isMountedRef.current) {
         const message = getErrorMessage(
           requestError,
-          "Unable to release teacher review.",
+          "Không thể công bố kết quả.",
         );
         setError(message);
         toast.error(message);
@@ -434,12 +479,9 @@ export const TeacherReviewDraftPanel = ({
   if (!canReview) {
     return (
       <section className="border-t border-surface-border pt-6">
-        <h3 className="text-base font-semibold text-gray-900">
-          Teacher Review
-        </h3>
+        <h3 className="text-base font-semibold text-gray-900">Phiếu chấm</h3>
         <p className="mt-2 text-sm text-gray-500">
-          Teacher review becomes available after the student submits this
-          attempt.
+          Phiếu chấm sẽ xuất hiện sau khi học sinh nộp bài.
         </p>
       </section>
     );
@@ -458,19 +500,13 @@ export const TeacherReviewDraftPanel = ({
       <section className="border-t border-surface-border pt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">
-              Teacher Review
-            </h3>
+            <h3 className="text-base font-semibold text-gray-900">Phiếu chấm</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Create a review draft to score Essay responses and add feedback.
+              Hệ thống chưa tạo được phiếu chấm tự động. Bạn có thể bấm tạo lại.
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={handleCreate}
-            disabled={isCreating}
-          >
-            {isCreating ? "Creating..." : "Start Review"}
+          <Button type="button" onClick={handleCreate} disabled={isCreating}>
+            {isCreating ? "Đang tạo..." : "Tạo phiếu chấm"}
           </Button>
         </div>
         {error && <div className="mt-3"><ErrorBanner message={error} /></div>}
@@ -481,11 +517,9 @@ export const TeacherReviewDraftPanel = ({
   if (!review) {
     return (
       <section className="border-t border-surface-border pt-6">
-        <h3 className="text-base font-semibold text-gray-900">
-          Teacher Review
-        </h3>
+        <h3 className="text-base font-semibold text-gray-900">Phiếu chấm</h3>
         <div className="mt-3">
-          <ErrorBanner message={error || "Teacher review is unavailable."} />
+          <ErrorBanner message={error || "Không thể mở phiếu chấm."} />
         </div>
       </section>
     );
@@ -500,11 +534,9 @@ export const TeacherReviewDraftPanel = ({
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="text-base font-semibold text-gray-900">
-            Teacher Review
-          </h3>
+          <h3 className="text-base font-semibold text-gray-900">Phiếu chấm</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Score Essay responses and prepare student-facing feedback.
+            Chấm từng câu tự luận ngay bên dưới câu trả lời của học sinh.
           </p>
         </div>
         <Badge variant={statusVariant[review.status]}>
@@ -517,7 +549,7 @@ export const TeacherReviewDraftPanel = ({
       <div className="grid gap-4 border-y border-surface-border py-4 text-sm sm:grid-cols-3">
         <div>
           <div className="text-xs font-medium uppercase text-gray-400">
-            Auto Score
+            Điểm tự động
           </div>
           <div className="mt-1 font-medium text-gray-900">
             {review.autoScore ?? 0}
@@ -525,7 +557,7 @@ export const TeacherReviewDraftPanel = ({
         </div>
         <div>
           <div className="text-xs font-medium uppercase text-gray-400">
-            {isEditable ? "Draft Score Preview" : "Final Score"}
+            {isEditable ? "Điểm tạm tính" : "Điểm cuối cùng"}
           </div>
           <div className="mt-1 font-medium text-gray-900">
             {formatScore(draftScore)} / {review.maxScore}
@@ -533,7 +565,7 @@ export const TeacherReviewDraftPanel = ({
         </div>
         <div>
           <div className="text-xs font-medium uppercase text-gray-400">
-            Essay Items
+            Câu tự luận
           </div>
           <div className="mt-1 font-medium text-gray-900">
             {review.items.length}
@@ -541,23 +573,16 @@ export const TeacherReviewDraftPanel = ({
         </div>
       </div>
 
-      <div className="space-y-3 border-b border-surface-border pb-5">
+      <div className="space-y-3 rounded-card border border-surface-border bg-surface-page p-4">
         <div>
-          <h4 className="text-sm font-medium text-gray-900">AI Reference</h4>
+          <h4 className="text-sm font-medium text-gray-900">Tham khảo từ AI</h4>
           <p className="mt-1 text-sm text-gray-500">
-            Selecting a result records the recommendation used during review.
-            It never copies AI scores into teacher scores.
+            Bạn có thể chọn một kết quả AI để tham khảo trong lúc chấm. Điểm AI
+            không tự động ghi đè điểm giáo viên.
           </p>
         </div>
 
-        <label
-          htmlFor={`teacher-review-ai-result-${review.id}`}
-          className="block text-xs font-medium text-gray-500"
-        >
-          Kết quả chấm AI đã chọn
-        </label>
         <select
-          id={`teacher-review-ai-result-${review.id}`}
           value={selectedAiGradingResultId ?? ""}
           onChange={(event) =>
             setSelectedAiGradingResultId(
@@ -576,16 +601,7 @@ export const TeacherReviewDraftPanel = ({
           {review.selectedAiGradingResultId != null &&
             review.selectedAiGradingResultId !== latestAiResult?.id && (
               <option value={review.selectedAiGradingResultId}>
-                Kết quả AI đang chọn #
-                {review.selectedAiGradingResultId}
-              </option>
-            )}
-          {selectedAiGradingResultId != null &&
-            selectedAiGradingResultId !== latestAiResult?.id &&
-            selectedAiGradingResultId !==
-              review.selectedAiGradingResultId && (
-              <option value={selectedAiGradingResultId}>
-                Kết quả AI chưa lưu #{selectedAiGradingResultId}
+                Kết quả AI đang chọn #{review.selectedAiGradingResultId}
               </option>
             )}
         </select>
@@ -597,24 +613,11 @@ export const TeacherReviewDraftPanel = ({
             {latestAiResult.confidence != null &&
               ` - Độ tin cậy ${Math.round(latestAiResult.confidence * 100)}%`}
           </div>
-        ) : selectedAiGradingResultId != null ? (
-          <div className="text-sm text-gray-600">
-            Bài đánh giá tham chiếu kết quả AI #{selectedAiGradingResultId}.
-          </div>
         ) : (
           <div className="text-sm text-gray-500">
-            Hiện chưa có kết quả chấm bằng AI hoàn thành.
+            Chưa có kết quả chấm bằng AI hoàn thành.
           </div>
         )}
-
-        {latestAiResult &&
-          selectedAiGradingResultId != null &&
-          selectedAiGradingResultId !== latestAiResult.id && (
-            <div className="text-sm text-amber-700">
-              Bài đánh giá đang giữ kết quả #{selectedAiGradingResultId}; bảng AI
-              hiện hiển thị kết quả mới nhất #{latestAiResult.id}.
-            </div>
-          )}
       </div>
 
       <div>
@@ -630,31 +633,33 @@ export const TeacherReviewDraftPanel = ({
           value={overallComment}
           onChange={(event) => setOverallComment(event.target.value)}
           disabled={!isEditable || isPending}
-          placeholder="Nhận xét gửi cho học viên..."
+          placeholder="Nhận xét gửi cho học sinh..."
           className="mt-2 w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
         />
       </div>
 
       {review.items.length === 0 ? (
         <div className="border-y border-surface-border py-4 text-sm text-gray-500">
-          Bài nộp này không có câu hỏi tự luận. Điểm số cuối cùng sẽ sử dụng điểm
-          tự động chấm.
+          Bài nộp này không có câu tự luận. Điểm cuối cùng sẽ dựa trên điểm tự
+          động.
         </div>
       ) : (
         <div className="space-y-4">
           {review.items.map((item) => {
             const editableItem = editableItems.find(
-              (candidate) =>
-                candidate.assignmentItemId === item.assignmentItemId,
+              (candidate) => candidate.assignmentItemId === item.assignmentItemId,
             );
+            const questionItem = questionItemsById.get(item.assignmentItemId);
+            const submissionAnswer = answersByItemId.get(item.assignmentItemId);
+            const aiSuggestion = aiSuggestionByItemId.get(item.assignmentItemId);
             if (!editableItem) return null;
 
             return (
               <div
                 key={item.assignmentItemId}
-                className="border-b border-surface-border pb-4 last:border-b-0"
+                className="rounded-card border border-surface-border bg-white p-4"
               >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="text-xs font-medium uppercase text-gray-400">
                       Tự luận {item.displayOrderSnapshot}
@@ -664,7 +669,7 @@ export const TeacherReviewDraftPanel = ({
                         `Câu hỏi ${item.displayOrderSnapshot}`}
                     </div>
                   </div>
-                  <div className="w-full sm:w-36">
+                  <div className="w-full sm:w-40">
                     <label
                       htmlFor={`teacher-review-score-${item.assignmentItemId}`}
                       className="block text-xs font-medium text-gray-500"
@@ -691,6 +696,45 @@ export const TeacherReviewDraftPanel = ({
                   </div>
                 </div>
 
+                {questionItem && (
+                  <div className="mt-3 rounded-input border border-surface-border bg-surface-page px-3 py-3">
+                    <div className="text-xs font-medium uppercase text-gray-400">
+                      Câu hỏi
+                    </div>
+                    <div className="mt-2 text-sm text-gray-900">
+                      <RichTextRenderer value={questionItem.content} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-3 rounded-input border border-surface-border bg-white px-3 py-3">
+                  <div className="text-xs font-medium uppercase text-gray-400">
+                    Câu trả lời của học sinh
+                  </div>
+                  <div className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                    {submissionAnswer?.answerText || "Học sinh chưa nhập câu trả lời."}
+                  </div>
+                </div>
+
+                {aiSuggestion && (
+                  <div className="mt-3 rounded-input border border-blue-100 bg-blue-50/70 px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="text-xs font-medium uppercase text-blue-700">
+                        Gợi ý từ AI
+                      </div>
+                      <div className="text-xs font-semibold text-blue-700">
+                        {aiSuggestion.aiScore ?? "-"} /{" "}
+                        {aiSuggestion.maxScore ?? "-"}
+                      </div>
+                    </div>
+                    {aiSuggestion.feedback && (
+                      <div className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+                        {aiSuggestion.feedback}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <label
                   htmlFor={`teacher-review-comment-${item.assignmentItemId}`}
                   className="mt-3 block text-xs font-medium text-gray-500"
@@ -709,7 +753,7 @@ export const TeacherReviewDraftPanel = ({
                     )
                   }
                   disabled={!isEditable || isPending}
-                  placeholder="Nhận xét cho câu hỏi tự luận này..."
+                  placeholder="Nhận xét cho câu tự luận này..."
                   className="mt-1 w-full resize-y rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary disabled:bg-surface-page disabled:text-gray-500"
                 />
               </div>
@@ -723,10 +767,10 @@ export const TeacherReviewDraftPanel = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500" aria-live="polite">
               {isDirty
-                ? "Bạn có thay đổi chưa lưu. Vui lòng lưu bản nháp trước khi hoàn tất."
+                ? "Bạn có thay đổi chưa lưu. Hãy lưu trước khi hoàn tất."
                 : !allEssayScoresValid
                   ? "Cần nhập điểm hợp lệ cho tất cả câu tự luận trước khi hoàn tất."
-                  : "Đã lưu tất cả thay đổi. Đánh giá sẵn sàng để hoàn tất."}
+                  : "Tất cả thay đổi đã được lưu. Bạn có thể hoàn tất phiếu chấm."}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -740,9 +784,7 @@ export const TeacherReviewDraftPanel = ({
               <Button
                 type="button"
                 onClick={handleFinalize}
-                disabled={
-                  isPending || isDirty || !allEssayScoresValid
-                }
+                disabled={isPending || isDirty || !allEssayScoresValid}
               >
                 {pendingLifecycleAction === "finalize"
                   ? "Đang hoàn tất..."
@@ -756,13 +798,9 @@ export const TeacherReviewDraftPanel = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-gray-500">
               Đã hoàn tất lúc {formatDateTime(review.finalizedAt)}. Công bố kết
-              quả khi sẵn sàng cho học viên.
+              quả khi sẵn sàng cho học sinh.
             </div>
-            <Button
-              type="button"
-              onClick={handleRelease}
-              disabled={isPending}
-            >
+            <Button type="button" onClick={handleRelease} disabled={isPending}>
               {pendingLifecycleAction === "release"
                 ? "Đang công bố..."
                 : "Công bố"}
@@ -772,8 +810,8 @@ export const TeacherReviewDraftPanel = ({
 
         {review.status === "RELEASED" && (
           <div className="text-sm text-gray-500">
-            Đã công bố cho học viên lúc {formatDateTime(review.releasedAt)}.
-            Đánh giá này ở chế độ chỉ đọc.
+            Đã công bố cho học sinh lúc {formatDateTime(review.releasedAt)}.
+            Phiếu chấm này hiện chỉ đọc.
           </div>
         )}
       </div>

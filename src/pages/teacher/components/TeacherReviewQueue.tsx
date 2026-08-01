@@ -7,6 +7,7 @@ import { useToast } from "../../../components/ui/Toast";
 import {
   Badge,
   ErrorBanner,
+  FilterTabs,
   LoadingSkeleton,
 } from "../../../components/ui/SharedComponents";
 import type {
@@ -31,11 +32,11 @@ const emptyPage: PageResponse<TeacherReviewSummaryResponse> = {
   number: 0,
 };
 
-const submissionStatusLabel = {
+const submissionStatusLabel: Record<SubmissionAttemptStatus, string> = {
   IN_PROGRESS: "Đang làm bài",
   SUBMITTED: "Đã nộp",
   AUTO_SUBMITTED: "Tự động nộp",
-} as const;
+};
 
 const submissionStatusVariant: Record<
   SubmissionAttemptStatus,
@@ -46,12 +47,12 @@ const submissionStatusVariant: Record<
   AUTO_SUBMITTED: "info",
 };
 
-const reviewStatusLabel = {
+const reviewStatusLabel: Record<TeacherReviewQueueStatus, string> = {
   UNREVIEWED: "Chưa chấm",
   IN_PROGRESS: "Đang chấm",
   FINALIZED: "Đã hoàn tất",
   RELEASED: "Đã công bố",
-} as const;
+};
 
 const reviewStatusVariant: Record<
   TeacherReviewQueueStatus,
@@ -68,6 +69,33 @@ const formatScore = (review: TeacherReviewSummaryResponse) => {
   return `${review.finalScore} / ${review.maxScore ?? "-"}`;
 };
 
+const getActionLabel = (status: TeacherReviewQueueStatus) => {
+  if (status === "UNREVIEWED") return "Bắt đầu chấm";
+  if (status === "IN_PROGRESS") return "Tiếp tục chấm";
+  if (status === "FINALIZED") return "Xem và công bố";
+  return "Xem kết quả";
+};
+
+const getActionHint = (review: TeacherReviewSummaryResponse) => {
+  const effectiveStatus = review.reviewStatus ?? "UNREVIEWED";
+
+  if (effectiveStatus === "UNREVIEWED") {
+    return review.hasAiResult
+      ? "Đã có gợi ý AI. Có thể vào chấm ngay."
+      : "Chưa có điểm giáo viên. Nên xử lý sớm.";
+  }
+
+  if (effectiveStatus === "IN_PROGRESS") {
+    return "Phiếu chấm đang mở. Vào tiếp để hoàn tất.";
+  }
+
+  if (effectiveStatus === "FINALIZED") {
+    return "Đã chốt điểm. Công bố khi sẵn sàng cho học sinh.";
+  }
+
+  return "Học sinh đã xem được kết quả này.";
+};
+
 interface TeacherReviewQueueProps {
   assignmentId: number;
   assignmentTitle: string;
@@ -82,7 +110,7 @@ export const TeacherReviewQueue = ({
   const [reviewsPage, setReviewsPage] =
     useState<PageResponse<TeacherReviewSummaryResponse>>(emptyPage);
   const [reviewStatus, setReviewStatus] =
-    useState<TeacherReviewQueueStatus | "">("");
+    useState<TeacherReviewQueueStatus | "">("UNREVIEWED");
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,7 +133,9 @@ export const TeacherReviewQueue = ({
       }
     } catch (err: any) {
       if (requestId === loadRequestIdRef.current) {
-        setError(err?.response?.data?.message ?? "Không thể tải hàng chờ chấm bài.");
+        setError(
+          err?.response?.data?.message ?? "Không thể tải danh sách bài cần chấm.",
+        );
       }
     } finally {
       if (requestId === loadRequestIdRef.current) {
@@ -130,10 +160,13 @@ export const TeacherReviewQueue = ({
 
     try {
       setPendingAttemptId(attemptId);
-      setAttemptDetail(await submissionApi.findAttemptDetailForTeacher(attemptId));
+      setAttemptDetail(
+        await submissionApi.findAttemptDetailForTeacher(attemptId),
+      );
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message ?? "Không thể tải chi tiết lượt làm bài.",
+        err?.response?.data?.message ??
+          "Không thể tải chi tiết bài học sinh đã làm.",
       );
     } finally {
       setPendingAttemptId(null);
@@ -150,130 +183,135 @@ export const TeacherReviewQueue = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="space-y-3">
         <div>
           <div className="font-medium text-gray-900">{assignmentTitle}</div>
           <div className="mt-1 text-sm text-gray-500">
-            {reviewsPage.totalElements} lượt làm bài
+            {reviewsPage.totalElements} lượt làm bài trong nhóm này
           </div>
         </div>
-        <label className="block w-full sm:w-52">
-          <span className="mb-1 block text-xs font-medium uppercase text-gray-500">
-            Trạng thái chấm bài
-          </span>
-          <select
-            value={reviewStatus}
-            onChange={(event) => {
-              setPage(0);
-              setReviewStatus(
-                event.target.value as TeacherReviewQueueStatus | "",
-              );
-            }}
-            className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="UNREVIEWED">Chưa chấm</option>
-            <option value="IN_PROGRESS">Đang chấm</option>
-            <option value="FINALIZED">Đã hoàn tất</option>
-            <option value="RELEASED">Đã công bố</option>
-          </select>
-        </label>
+
+        <div className="rounded-card border border-surface-border bg-surface-page p-4">
+          <div className="text-sm text-gray-600">
+            Bắt đầu từ <strong>Chưa chấm</strong> để xử lý bài mới nộp trước.
+            Sau khi chấm xong, chuyển sang <strong>Đã hoàn tất</strong> để công
+            bố kết quả cho học sinh khi cần.
+          </div>
+          <div className="mt-3">
+            <FilterTabs
+              tabs={[
+                { key: "UNREVIEWED", label: "Chưa chấm" },
+                { key: "IN_PROGRESS", label: "Đang chấm" },
+                { key: "FINALIZED", label: "Đã hoàn tất" },
+                { key: "RELEASED", label: "Đã công bố" },
+                { key: "", label: "Tất cả" },
+              ]}
+              activeKey={reviewStatus}
+              onChange={(key) => {
+                setPage(0);
+                setReviewStatus(key as TeacherReviewQueueStatus | "");
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {error && <ErrorBanner message={error} />}
 
       {isLoading ? (
-        <LoadingSkeleton count={4} height="h-14" />
+        <LoadingSkeleton count={4} height="h-28" />
       ) : reviews.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-10 text-center text-sm text-gray-400">
-          Không tìm thấy lượt làm bài nào.
+          Không tìm thấy bài nào trong nhóm này.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-4 py-3">Học viên</th>
-                  <th className="px-4 py-3">Lượt bài</th>
-                  <th className="px-4 py-3">Bài nộp</th>
-                  <th className="px-4 py-3">Trạng thái chấm</th>
-                  <th className="px-4 py-3">Thời gian nộp</th>
-                  <th className="px-4 py-3">Điểm số cuối</th>
-                  <th className="px-4 py-3">Công bố</th>
-                  <th className="px-4 py-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {reviews.map((review) => {
-                  const effectiveReviewStatus =
-                    review.reviewStatus ?? "UNREVIEWED";
-                  return (
-                    <tr key={review.submissionAttemptId}>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">
-                          {review.studentFullName || "-"}
+        <div className="space-y-3">
+          {reviews.map((review) => {
+            const effectiveReviewStatus = review.reviewStatus ?? "UNREVIEWED";
+            const isPending = pendingAttemptId === review.submissionAttemptId;
+
+            return (
+              <section
+                key={review.submissionAttemptId}
+                className="rounded-card border border-surface-border bg-white p-4"
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-base font-semibold text-gray-900">
+                        {review.studentFullName || "-"}
+                      </div>
+                      <Badge variant={reviewStatusVariant[effectiveReviewStatus]}>
+                        {reviewStatusLabel[effectiveReviewStatus]}
+                      </Badge>
+                      <Badge
+                        variant={
+                          submissionStatusVariant[review.submissionStatus]
+                        }
+                      >
+                        {submissionStatusLabel[review.submissionStatus]}
+                      </Badge>
+                      {review.hasAiResult && <Badge variant="info">Có AI</Badge>}
+                    </div>
+
+                    <div className="mt-2 text-sm text-gray-500">
+                      {review.className || `Học viên #${review.studentUserId}`} ·
+                      {" "}Lượt {review.attemptNumber}
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-input bg-surface-page px-3 py-2">
+                        <div className="text-xs font-medium uppercase text-gray-400">
+                          Nộp bài
                         </div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          {review.className || `Student ID ${review.studentUserId}`}
+                        <div className="mt-1 text-sm text-gray-700">
+                          {formatDateTime(review.submittedAt)}
                         </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                        Lượt {review.attemptNumber}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <Badge
-                          variant={
-                            submissionStatusVariant[review.submissionStatus]
-                          }
-                        >
-                          {submissionStatusLabel[review.submissionStatus]}
-                        </Badge>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <Badge
-                          variant={reviewStatusVariant[effectiveReviewStatus]}
-                        >
-                          {reviewStatusLabel[effectiveReviewStatus]}
-                        </Badge>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                        {formatDateTime(review.submittedAt)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                        {formatScore(review)}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                        {review.reviewStatus === "RELEASED" ? (
-                          <Badge variant="success">Đã công bố</Badge>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={
-                            pendingAttemptId != null
-                          }
-                          onClick={() =>
-                            openAttemptDetail(review.submissionAttemptId)
-                          }
-                        >
-                          {pendingAttemptId === review.submissionAttemptId
-                            ? "Đang tải..."
-                            : review.reviewStatus
-                              ? "Xem chấm bài"
-                              : "Bắt đầu chấm"}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+
+                      <div className="rounded-input bg-surface-page px-3 py-2">
+                        <div className="text-xs font-medium uppercase text-gray-400">
+                          Điểm hiện có
+                        </div>
+                        <div className="mt-1 text-sm text-gray-700">
+                          {formatScore(review)}
+                        </div>
+                      </div>
+
+                      <div className="rounded-input bg-surface-page px-3 py-2">
+                        <div className="text-xs font-medium uppercase text-gray-400">
+                          Tình trạng
+                        </div>
+                        <div className="mt-1 text-sm text-gray-700">
+                          {getActionHint(review)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full flex-col gap-2 lg:w-48">
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        openAttemptDetail(review.submissionAttemptId)
+                      }
+                      disabled={pendingAttemptId != null}
+                      isLoading={isPending}
+                    >
+                      {isPending
+                        ? "Đang tải"
+                        : getActionLabel(effectiveReviewStatus)}
+                    </Button>
+                    <div className="text-xs text-gray-500">
+                      {review.hasEssay
+                        ? "Có câu tự luận cần giáo viên xác nhận điểm."
+                        : "Không có tự luận. Chủ yếu để xem kết quả và công bố."}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
 
@@ -313,7 +351,7 @@ export const TeacherReviewQueue = ({
       <Modal
         isOpen={attemptDetail != null}
         onClose={closeAttemptDetail}
-        title="Chấm bài nộp"
+        title="Xem bài làm và chấm bài"
         maxWidth="max-w-5xl"
       >
         {attemptDetail && (

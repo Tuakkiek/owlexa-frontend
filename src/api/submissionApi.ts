@@ -22,9 +22,11 @@ const buildTeacherSubmissionParams = (
 export const submissionApi = {
   startOrResumeAttempt: async (
     assignmentId: number,
+    body?: { password: string },
   ): Promise<StudentAttemptDetailResponse> => {
     const response = await axiosClient.post(
       `${STUDENT_BASE_URL}/assignments/${assignmentId}/attempts/start`,
+      body ?? null,
     );
     return response.data;
   },

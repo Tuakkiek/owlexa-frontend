@@ -2,8 +2,8 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import { clearAuthState } from "../../auth/authService";
-import { useAuthStore } from "../../store/authStore";
 import { usePermissions } from "../../hooks/usePermissions";
+import { useAuthStore } from "../../store/authStore";
 
 type RoleName =
   | "ADMIN"
@@ -18,6 +18,7 @@ interface NavItem {
   name: string;
   path: string;
   permission?: string;
+  end?: boolean;
 }
 
 const sidebarLinks: Record<RoleName, NavItem[]> = {
@@ -50,8 +51,6 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
       permission: "FEE_VIEW",
     },
     { name: "Thanh toán", path: "/owner/payments", permission: "PAYMENT_VIEW" },
-
-
     { name: "Phiên đăng nhập", path: "/owner/sessions" },
   ],
   MANAGER: [
@@ -92,7 +91,8 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Tiêu chí chấm điểm", path: "/teacher/grading-criteria" },
     { name: "Ngân hàng câu hỏi", path: "/teacher/questions" },
     { name: "Tạo đề thi", path: "/teacher/assessments" },
-    { name: "Bài tập", path: "/teacher/assignments" },
+    { name: "Bài tập", path: "/teacher/assignments", end: true },
+    { name: "Kho bài tập", path: "/teacher/assignments/archived", end: true },
   ],
   STUDENT: [
     { name: "Bảng điều khiển", path: "/student/dashboard" },
@@ -131,13 +131,13 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
 };
 
 const roleLabels: Record<RoleName, string> = {
-  ADMIN: "Cổng Quản trị hệ thống",
-  OWNER: "Cổng Quản lý trung tâm",
-  MANAGER: "Cổng Quản lý",
-  ACADEMIC_STAFF: "Cổng Giáo vụ",
-  TEACHER: "Cổng Giáo viên",
-  STUDENT: "Cổng Học viên",
-  CASHIER: "Cổng Thu ngân",
+  ADMIN: "Cổng quản trị hệ thống",
+  OWNER: "Cổng quản lý trung tâm",
+  MANAGER: "Cổng quản lý",
+  ACADEMIC_STAFF: "Cổng giáo vụ",
+  TEACHER: "Cổng giáo viên",
+  STUDENT: "Cổng học viên",
+  CASHIER: "Cổng thủ ngân",
 };
 
 const AppLayout = () => {
@@ -166,7 +166,6 @@ const AppLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface-page">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <button
           type="button"
@@ -176,14 +175,12 @@ const AppLayout = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={[
           "fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-surface-border bg-white transition-transform lg:static lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        {/* Logo */}
         <div className="flex h-16 items-center gap-3 border-b border-surface-border px-6">
           <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-primary text-sm font-semibold text-white">
             O
@@ -195,12 +192,12 @@ const AppLayout = () => {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {links.map((link) => (
             <NavLink
               key={link.path}
               to={link.path}
+              end={link.end}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 [
@@ -216,7 +213,6 @@ const AppLayout = () => {
           ))}
         </nav>
 
-        {/* User section */}
         <div className="border-t border-surface-border p-4">
           <NavLink
             to="/account"
@@ -244,9 +240,7 @@ const AppLayout = () => {
         </div>
       </aside>
 
-      {/* Main content area */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
         <header className="flex h-16 items-center justify-between border-b border-surface-border bg-white px-4 lg:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -281,7 +275,6 @@ const AppLayout = () => {
           )}
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-auto bg-surface-page p-4 lg:p-6">
           <Outlet />
         </main>

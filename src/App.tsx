@@ -33,6 +33,7 @@ import QuestionBankPage from "./pages/teacher/QuestionBankPage";
 import QuestionEditorPage from "./pages/teacher/QuestionEditorPage";
 import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
 import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
+import TeacherArchivedAssignmentsPage from "./pages/teacher/TeacherArchivedAssignmentsPage";
 
 
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
@@ -168,9 +169,14 @@ function App() {
                   path="/teacher/assessments"
                   element={<AssessmentBuilderPage />}
                 />
+
                 <Route
                   path="/teacher/assignments"
                   element={<TeacherAssignmentsPage />}
+                />
+                <Route
+                  path="/teacher/assignments/archived"
+                  element={<TeacherArchivedAssignmentsPage />}
                 />
 
 

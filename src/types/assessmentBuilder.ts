@@ -10,6 +10,20 @@ export type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
 export type PlaybackMode = "EXAM" | "PRACTICE";
 
+export interface AssessmentBlockRequest {
+  id?: number;
+  position: number;
+  title?: string | null;
+  content: EditorDocument;
+}
+
+export interface AssessmentBlockResponse {
+  id: number;
+  position: number;
+  title: string | null;
+  content: EditorDocument;
+}
+
 export interface AssessmentItemRequest {
   questionId: number;
   points?: number | null;
@@ -19,8 +33,9 @@ export interface AssessmentItemRequest {
 export interface AssessmentRequest {
   title: string;
   description?: string | null;
-  content: EditorDocument;
-  type: AssessmentType;
+  content?: EditorDocument | null;
+  blocks?: AssessmentBlockRequest[] | null;
+  type?: AssessmentType | null;
   audioFileId?: number | null;
   playbackMode?: PlaybackMode | null;
   items?: AssessmentItemRequest[] | null;
@@ -71,6 +86,7 @@ export interface AssessmentDetailResponse {
   audioFile: FileMetadata | null;
   playbackMode: PlaybackMode;
   items: AssessmentItemResponse[];
+  blocks?: AssessmentBlockResponse[] | null;
   createdAt: string;
   updatedAt: string;
 }

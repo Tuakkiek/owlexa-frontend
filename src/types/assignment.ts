@@ -3,6 +3,7 @@ import type { FileMetadata } from "./file";
 import type { QuestionDifficulty, QuestionType } from "./questionBank";
 import type { EditorDocument } from "../components/editor";
 
+
 export type { PageResponse } from "./pagination";
 
 export type AssignmentStatus =
@@ -29,6 +30,9 @@ export interface AssignmentRequest {
   openAt?: string | null;
   dueAt?: string | null;
   attemptLimit?: number | null;
+  showScore?: boolean | null;
+  allowReview?: boolean | null;
+  accessPassword?: string | null;
   targets?: AssignmentTargetRequest[] | null;
 }
 
@@ -75,10 +79,12 @@ export interface AssignmentItemResponse {
   options: AssignmentItemOptionResponse[];
 }
 
+
 export interface AssignmentListResponse {
   id: number;
   assessmentId: number;
   type: AssessmentType;
+
   status: AssignmentStatus;
   title: string;
   description: string | null;
@@ -95,6 +101,7 @@ export interface AssignmentDetailResponse {
   id: number;
   assessmentId: number;
   type: AssessmentType;
+
   status: AssignmentStatus;
   title: string;
   description: string | null;
@@ -102,12 +109,17 @@ export interface AssignmentDetailResponse {
   openAt: string | null;
   dueAt: string | null;
   attemptLimit: number | null;
+  showScore: boolean;
+  allowReview: boolean;
+  accessPassword: string | null;
+  hasPassword: boolean;
   assessmentSnapshotAt: string | null;
   audioFile: FileMetadata | null;
   playbackMode: PlaybackMode;
   targets: AssignmentTargetResponse[];
   recipients: AssignmentRecipientResponse[];
   items: AssignmentItemResponse[];
+  blocks?: import('./assessmentBuilder').AssessmentBlockResponse[];
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +128,7 @@ export interface StudentAssignmentListResponse {
   id: number;
   recipientId: number;
   type: AssessmentType;
+
   status: AssignmentStatus;
   recipientStatus: AssignmentRecipientStatus;
   title: string;
@@ -123,6 +136,9 @@ export interface StudentAssignmentListResponse {
   openAt: string | null;
   dueAt: string | null;
   attemptLimit: number | null;
+  showScore: boolean;
+  allowReview: boolean;
+  hasPassword: boolean;
   assignedAt: string;
 }
 

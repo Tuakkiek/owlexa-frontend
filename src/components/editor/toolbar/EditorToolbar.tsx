@@ -6,6 +6,7 @@ interface EditorToolbarProps {
   editor: Editor;
   disabled?: boolean;
   onFilesSelected: (files: File[]) => void;
+  onInsertQuestion?: () => void;
 }
 
 interface ToolbarButtonProps {
@@ -84,6 +85,7 @@ export const EditorToolbar = ({
   editor,
   disabled,
   onFilesSelected,
+  onInsertQuestion,
 }: EditorToolbarProps) => {
   const setLink = () => {
     const previousUrl = editor.getAttributes("link").href as string | undefined;
@@ -197,6 +199,20 @@ export const EditorToolbar = ({
         <UploadButton label="PDF" title="Tải PDF" accept="application/pdf,.pdf" disabled={disabled} onFilesSelected={onFilesSelected} />
         <UploadButton label="File" title="Tải file đính kèm" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar" disabled={disabled} onFilesSelected={onFilesSelected} />
       </ToolbarGroup>
+
+      {onInsertQuestion && (
+        <ToolbarGroup>
+          <button
+            type="button"
+            title="Chèn câu hỏi từ Ngân hàng câu hỏi"
+            disabled={disabled}
+            onClick={onInsertQuestion}
+            className="flex items-center gap-1 text-xs font-bold text-white bg-primary hover:bg-primary-hover px-2.5 py-1 rounded transition-colors"
+          >
+            + Chèn câu hỏi
+          </button>
+        </ToolbarGroup>
+      )}
 
       <ToolbarGroup>
         <ToolbarButton label="↶" title="Hoàn tác" disabled={disabled || !editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()} />

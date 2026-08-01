@@ -76,6 +76,13 @@ export const assignmentApi = {
     return response.data;
   },
 
+  restore: async (assignmentId: number): Promise<AssignmentDetailResponse> => {
+    const response = await axiosClient.post(
+      `${TEACHER_BASE_URL}/${assignmentId}/restore`,
+    );
+    return response.data;
+  },
+
   delete: async (assignmentId: number): Promise<void> => {
     await axiosClient.delete(`${TEACHER_BASE_URL}/${assignmentId}`);
   },

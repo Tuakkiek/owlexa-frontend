@@ -105,16 +105,24 @@ export const AIGradingPanel = ({
 
     setIsInitializing(true);
 
-    const loadLatestCompletedJob = async () => {
+    const loadLatestJob = async () => {
       try {
+        const jobs = await aiGradingApi.listJobs(attemptId);
+        const latestJob = jobs[0] ?? null;
+        if (!cancelled) {
+          setJob(latestJob);
+        }
+
+        if (!latestJob || latestJob.status !== "COMPLETED") {
+          return;
+        }
+
         const latestResult = await aiGradingApi.getLatestResult(attemptId);
-        const completedJob = await aiGradingApi.getJob(latestResult.jobId);
         if (!cancelled) {
           setResult(latestResult);
-          setJob(completedJob);
         }
       } catch (requestError: any) {
-        if (!cancelled && requestError?.response?.status !== 404) {
+        if (!cancelled) {
           setError(
             getErrorMessage(
               requestError,
@@ -129,7 +137,7 @@ export const AIGradingPanel = ({
       }
     };
 
-    loadLatestCompletedJob();
+    loadLatestJob();
 
     return () => {
       cancelled = true;
