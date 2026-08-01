@@ -2,13 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { assessmentBuilderApi } from "../../api/assessmentBuilderApi";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
+import {
+  TableActionButton,
+  tableActionIcons,
+} from "../../components/ui/TableActionButton";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
 import {
   Badge,
   ErrorBanner,
   LoadingSkeleton,
-  PageHeader,
   SearchInput,
 } from "../../components/ui/SharedComponents";
 import type {
@@ -16,7 +19,6 @@ import type {
   AssessmentListResponse,
   AssessmentRequest,
   AssessmentStatus,
-  AssessmentType,
   PageResponse,
 } from "../../types/assessmentBuilder";
 import { formatDateTime } from "../../utils/dateTime";
@@ -24,12 +26,6 @@ import { AssessmentForm } from "./components/AssessmentForm";
 import { AssessmentPreview } from "./components/AssessmentPreview";
 
 const PAGE_SIZE = 20;
-
-const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Trắc nghiệm",
-  HOMEWORK: "Bài tập về nhà",
-  EXAM: "Bài kiểm tra",
-};
 
 const statusLabel: Record<AssessmentStatus, string> = {
   DRAFT: "Nháp",
@@ -52,7 +48,6 @@ const AssessmentBuilderPage = () => {
   const [assessmentsPage, setAssessmentsPage] =
     useState<PageResponse<AssessmentListResponse>>(emptyPage);
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<AssessmentType | "">("");
   const [status, setStatus] = useState<AssessmentStatus | "">("");
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +58,10 @@ const AssessmentBuilderPage = () => {
   const [previewAssessment, setPreviewAssessment] =
     useState<AssessmentDetailResponse | null>(null);
   const [pendingActionId, setPendingActionId] = useState<number | null>(null);
+  const [pendingActionType, setPendingActionType] = useState<
+    "publish" | "archive" | "delete" | null
+  >(null);
+  const [pendingPreviewId, setPendingPreviewId] = useState<number | null>(null);
 
   const loadAssessments = useCallback(async () => {
     try {
@@ -71,18 +70,19 @@ const AssessmentBuilderPage = () => {
       setAssessmentsPage(
         await assessmentBuilderApi.findAll({
           search: query,
-          type,
           status,
           page,
           size: PAGE_SIZE,
         }),
       );
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "Không thể tải danh sách đề thi.");
+      setError(
+        err?.response?.data?.message ?? "Không thể tải danh sách đề thi.",
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [page, query, status, type]);
+  }, [page, query, status]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -94,7 +94,7 @@ const AssessmentBuilderPage = () => {
 
   useEffect(() => {
     setPage(0);
-  }, [query, status, type]);
+  }, [query, status]);
 
   const assessments = assessmentsPage.content;
   const pageCount = Math.max(assessmentsPage.totalPages, 1);
@@ -126,12 +126,17 @@ const AssessmentBuilderPage = () => {
   };
 
   const openPreview = async (assessment: AssessmentListResponse) => {
+    if (pendingPreviewId === assessment.id) return;
+
     try {
+      setPendingPreviewId(assessment.id);
       setPreviewAssessment(await assessmentBuilderApi.findById(assessment.id));
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ?? "Không thể tải xem trước đề thi.",
       );
+    } finally {
+      setPendingPreviewId(null);
     }
   };
 
@@ -168,6 +173,7 @@ const AssessmentBuilderPage = () => {
 
     try {
       setPendingActionId(assessment.id);
+      setPendingActionType("publish");
       await assessmentBuilderApi.publish(assessment.id);
       toast.success("Đã phát hành đề thi.");
       await loadAssessments();
@@ -177,6 +183,7 @@ const AssessmentBuilderPage = () => {
       );
     } finally {
       setPendingActionId(null);
+      setPendingActionType(null);
     }
   };
 
@@ -191,15 +198,15 @@ const AssessmentBuilderPage = () => {
 
     try {
       setPendingActionId(assessment.id);
+      setPendingActionType("archive");
       await assessmentBuilderApi.archive(assessment.id);
       toast.success("Đã lưu trữ đề thi.");
       await loadAssessments();
     } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? "Không thể lưu trữ đề thi.",
-      );
+      toast.error(err?.response?.data?.message ?? "Không thể lưu trữ đề thi.");
     } finally {
       setPendingActionId(null);
+      setPendingActionType(null);
     }
   };
 
@@ -215,6 +222,7 @@ const AssessmentBuilderPage = () => {
 
     try {
       setPendingActionId(assessment.id);
+      setPendingActionType("delete");
       await assessmentBuilderApi.delete(assessment.id);
       if (editingAssessment?.id === assessment.id) {
         closeModal();
@@ -225,46 +233,55 @@ const AssessmentBuilderPage = () => {
       toast.success("Đã xóa đề thi.");
       await loadAssessments();
     } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? "Không thể xóa đề thi.",
-      );
+      toast.error(err?.response?.data?.message ?? "Không thể xóa đề thi.");
     } finally {
       setPendingActionId(null);
+      setPendingActionType(null);
     }
   };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <PageHeader
-        title="Tạo đề thi"
-        description="Tạo và quản lý các đề thi, bài đánh giá từ ngân hàng câu hỏi."
-      >
+      {/* Clean Top Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            Quản lý đề thi
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Danh sách các bài kiểm tra, bài tập về nhà và đề thi.
+          </p>
+        </div>
+
         <Button type="button" onClick={openCreate}>
+          <svg
+            className="-ml-1 mr-2 h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
           Tạo mới đề thi
         </Button>
-      </PageHeader>
+      </div>
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
+      <div
+        className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] animate-fade-in"
+        style={{ animationDelay: "100ms" }}
+      >
         <SearchInput
           value={query}
           onChange={setQuery}
           placeholder="Tìm kiếm đề thi..."
         />
-
-        <select
-          value={type}
-          onChange={(event) =>
-            setType(event.target.value as AssessmentType | "")
-          }
-          className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-        >
-          <option value="">Tất cả loại</option>
-          <option value="QUIZ">Trắc nghiệm</option>
-          <option value="HOMEWORK">Bài tập về nhà</option>
-          <option value="EXAM">Bài kiểm tra</option>
-        </select>
 
         <select
           value={status}
@@ -287,13 +304,15 @@ const AssessmentBuilderPage = () => {
           Không tìm thấy đề thi nào.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
+        <div
+          className="overflow-hidden rounded-card border border-surface-border glass-panel hover-lift animate-fade-in"
+          style={{ animationDelay: "200ms" }}
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
                   <th className="px-6 py-3">Đề thi</th>
-                  <th className="px-6 py-3">Loại</th>
                   <th className="px-6 py-3">Trạng thái</th>
                   <th className="px-6 py-3">Cập nhật</th>
                   <th className="px-6 py-3 text-right">Thao tác</th>
@@ -315,66 +334,79 @@ const AssessmentBuilderPage = () => {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
-                      <Badge>{typeLabel[assessment.type]}</Badge>
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
                       <Badge>{statusLabel[assessment.status]}</Badge>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-gray-500">
                       {formatDateTime(assessment.updatedAt)}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="text-xs text-blue-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        <TableActionButton
+                          variant="secondary"
+                          icon={tableActionIcons.edit()}
+                          title="Chỉnh sửa đề thi"
                           disabled={pendingActionId === assessment.id}
                           onClick={() => openEdit(assessment)}
                         >
                           Chỉnh sửa
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                        </TableActionButton>
+                        <TableActionButton
+                          variant="secondary"
+                          icon={tableActionIcons.preview()}
+                          title="Xem trước đề thi"
                           disabled={pendingActionId === assessment.id}
+                          loading={pendingPreviewId === assessment.id}
+                          loadingLabel="Đang tải..."
                           onClick={() => openPreview(assessment)}
                         >
                           Xem trước
-                        </button>
+                        </TableActionButton>
                         {assessment.status === "DRAFT" && (
-                          <button
-                            type="button"
-                            className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
+                          <TableActionButton
+                            variant="primary"
+                            icon={tableActionIcons.publish()}
+                            title="Phát hành đề thi để giao bài tập"
                             disabled={pendingActionId === assessment.id}
+                            loading={
+                              pendingActionId === assessment.id &&
+                              pendingActionType === "publish"
+                            }
+                            loadingLabel="Đang phát hành..."
                             onClick={() => handlePublish(assessment)}
                           >
-                            {pendingActionId === assessment.id
-                              ? "Đang phát hành..."
-                              : "Phát hành"}
-                          </button>
+                            Phát hành
+                          </TableActionButton>
                         )}
                         {assessment.status === "PUBLISHED" && (
-                          <button
-                            type="button"
-                            className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
+                          <TableActionButton
+                            variant="secondary"
+                            icon={tableActionIcons.archive()}
+                            title="Lưu trữ đề thi"
                             disabled={pendingActionId === assessment.id}
+                            loading={
+                              pendingActionId === assessment.id &&
+                              pendingActionType === "archive"
+                            }
+                            loadingLabel="Đang lưu trữ..."
                             onClick={() => handleArchive(assessment)}
                           >
-                            {pendingActionId === assessment.id
-                              ? "Đang lưu trữ..."
-                              : "Lưu trữ"}
-                          </button>
+                            Lưu trữ
+                          </TableActionButton>
                         )}
-                        <button
-                          type="button"
-                          className="text-xs text-red-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                        <TableActionButton
+                          variant="danger"
+                          icon={tableActionIcons.delete()}
+                          title="Xóa đề thi"
                           disabled={pendingActionId === assessment.id}
+                          loading={
+                            pendingActionId === assessment.id &&
+                            pendingActionType === "delete"
+                          }
+                          loadingLabel="Đang xóa..."
                           onClick={() => handleDelete(assessment)}
                         >
-                          {pendingActionId === assessment.id
-                            ? "Đang xóa..."
-                            : "Xóa"}
-                        </button>
+                          Xóa
+                        </TableActionButton>
                       </div>
                     </td>
                   </tr>

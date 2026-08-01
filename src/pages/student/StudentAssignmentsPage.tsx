@@ -64,6 +64,10 @@ const StudentAssignmentsPage = () => {
   >(null);
   const [releasedResult, setReleasedResult] =
     useState<StudentReviewResultResponse | null>(null);
+  const [passwordAssignment, setPasswordAssignment] =
+    useState<StudentAssignmentListResponse | null>(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [error, setError] = useState("");
 
   const loadAssignments = useCallback(async () => {
@@ -82,20 +86,52 @@ const StudentAssignmentsPage = () => {
     loadAssignments();
   }, [loadAssignments]);
 
-  const startOrResume = async (assignment: StudentAssignmentListResponse) => {
+  const startOrResume = async (
+    assignment: StudentAssignmentListResponse,
+    password?: string,
+  ) => {
     if (pendingStartId === assignment.id) return;
 
     try {
       setPendingStartId(assignment.id);
-      const attempt = await submissionApi.startOrResumeAttempt(assignment.id);
+      const attempt = await submissionApi.startOrResumeAttempt(
+        assignment.id,
+        password ? { password } : undefined,
+      );
+      setPasswordAssignment(null);
+      setPasswordInput("");
+      setPasswordError("");
       navigate(`/student/submission-attempts/${attempt.id}`);
     } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ?? "Không thể bắt đầu làm bài.",
-      );
+      const msg =
+        err?.response?.data?.message ?? "Không thể bắt đầu làm bài.";
+      if (passwordAssignment) {
+        setPasswordError(msg);
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setPendingStartId(null);
     }
+  };
+
+  const handleStartClick = (assignment: StudentAssignmentListResponse) => {
+    if (assignment.hasPassword) {
+      setPasswordAssignment(assignment);
+      setPasswordInput("");
+      setPasswordError("");
+    } else {
+      startOrResume(assignment);
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (!passwordAssignment) return;
+    if (!passwordInput.trim()) {
+      setPasswordError("Vui lòng nhập mật khẩu.");
+      return;
+    }
+    startOrResume(passwordAssignment, passwordInput.trim());
   };
 
   const openAttemptHistory = async (
@@ -135,7 +171,7 @@ const StudentAssignmentsPage = () => {
       );
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        toast.info("Giáo viên chưa công bố kết quả cho lượt làm bài này.");
+        toast.info("Chưa có nhận xét/đánh giá chi tiết từ giáo viên.");
       } else {
         toast.error(
           err?.response?.data?.message ?? "Không thể tải kết quả đã công bố.",
@@ -194,6 +230,11 @@ const StudentAssignmentsPage = () => {
                           {assignment.description || "-"}
                         </span>
                       </div>
+                      {assignment.hasPassword && (
+                        <span className="mt-1 inline-block text-xs text-amber-600">
+                          🔒 Yêu cầu mật khẩu
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <Badge>{typeLabel[assignment.type]}</Badge>
@@ -216,7 +257,7 @@ const StudentAssignmentsPage = () => {
                           type="button"
                           className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={pendingStartId === assignment.id}
-                          onClick={() => startOrResume(assignment)}
+                          onClick={() => handleStartClick(assignment)}
                         >
                           {pendingStartId === assignment.id
                             ? "Đang mở..."
@@ -242,7 +283,7 @@ const StudentAssignmentsPage = () => {
         </div>
       )}
 
-
+      {/* Attempt History Modal */}
       <Modal
         isOpen={attemptsAssignment != null}
         onClose={closeAttemptHistory}
@@ -257,6 +298,9 @@ const StudentAssignmentsPage = () => {
               </div>
               <div className="mt-1 text-sm text-gray-500">
                 {typeLabel[attemptsAssignment.type]}
+                {attemptsAssignment.attemptLimit != null && (
+                  <> · Số lượt cho phép: {attemptsAssignment.attemptLimit}</>
+                )}
               </div>
             </div>
 
@@ -296,34 +340,61 @@ const StudentAssignmentsPage = () => {
                             {formatDateTime(attempt.submittedAt)}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                            {attempt.autoScore ?? "-"} /{" "}
-                            {attempt.maxScore ?? "-"}
+                            {attemptsAssignment.showScore
+                              ? `${attempt.displayedScore ?? attempt.autoScore ?? "-"} / ${attempt.maxScore ?? "-"}`
+                              : "Không hiển thị"}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
-                              <button
-                                type="button"
-                                className="text-xs text-gray-900 underline"
-                                onClick={() =>
-                                  navigate(
-                                    `/student/submission-attempts/${attempt.id}`,
-                                  )
-                                }
-                              >
-                                Mở
-                              </button>
-                              {attempt.status !== "IN_PROGRESS" && (
+                              {attempt.status === "IN_PROGRESS" ? (
                                 <button
                                   type="button"
-                                  className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
-                                  disabled={
-                                    pendingResultAttemptId != null
+                                  className="text-xs font-medium text-primary underline"
+                                  onClick={() =>
+                                    navigate(
+                                      `/student/submission-attempts/${attempt.id}`,
+                                    )
                                   }
-                                  onClick={() => openReleasedResult(attempt.id)}
                                 >
-                                  {pendingResultAttemptId === attempt.id
-                                    ? "Đang tải..."
-                                    : "Xem kết quả"}
+                                  Tiếp tục làm bài
+                                </button>
+                              ) : attemptsAssignment.allowReview ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="text-xs font-medium text-gray-900 underline"
+                                    onClick={() =>
+                                      navigate(
+                                        `/student/submission-attempts/${attempt.id}`,
+                                      )
+                                    }
+                                  >
+                                    Xem lại bài làm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                                    disabled={pendingResultAttemptId != null}
+                                    onClick={() =>
+                                      openReleasedResult(attempt.id)
+                                    }
+                                  >
+                                    {pendingResultAttemptId === attempt.id
+                                      ? "Đang tải..."
+                                      : "Nhận xét GV"}
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="text-xs text-gray-400 underline"
+                                  onClick={() =>
+                                    toast.info(
+                                      "Giáo viên không cho phép xem lại bài làm.",
+                                    )
+                                  }
+                                >
+                                  Không được xem lại
                                 </button>
                               )}
                             </div>
@@ -339,6 +410,73 @@ const StudentAssignmentsPage = () => {
         )}
       </Modal>
 
+      {/* Password Modal */}
+      <Modal
+        isOpen={passwordAssignment != null}
+        onClose={() => {
+          setPasswordAssignment(null);
+          setPasswordInput("");
+          setPasswordError("");
+        }}
+        title="Nhập mật khẩu đề thi"
+        maxWidth="max-w-md"
+      >
+        {passwordAssignment && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Bài tập <strong>{passwordAssignment.title}</strong> yêu cầu mật
+              khẩu để bắt đầu làm bài.
+            </p>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700">
+                Mật khẩu
+              </label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError("");
+                }}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handlePasswordSubmit()
+                }
+                placeholder="Nhập mật khẩu..."
+                className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                autoFocus
+              />
+              {passwordError && (
+                <p className="text-xs text-red-600">{passwordError}</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-input border border-surface-border px-4 py-2 text-sm text-gray-700 hover:bg-surface-hover"
+                onClick={() => {
+                  setPasswordAssignment(null);
+                  setPasswordInput("");
+                  setPasswordError("");
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="rounded-input bg-primary px-4 py-2 text-sm text-white hover:bg-primary-active disabled:opacity-50"
+                disabled={pendingStartId === passwordAssignment.id}
+                onClick={handlePasswordSubmit}
+              >
+                {pendingStartId === passwordAssignment.id
+                  ? "Đang mở..."
+                  : "Bắt đầu"}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Released Result Modal */}
       <Modal
         isOpen={releasedResult != null}
         onClose={closeReleasedResult}

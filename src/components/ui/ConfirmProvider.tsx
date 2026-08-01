@@ -98,13 +98,18 @@ export const ConfirmDialog = ({
         onClick={onCancel}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 transform transition-all animate-[slideIn_0.2s_ease-out] text-left">
+      <div
+        className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100 transform transition-all animate-[slideIn_0.2s_ease-out] text-left"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+      >
         <div className="flex items-start gap-4">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.bgIcon}`}>
             {style.icon}
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
-            <h3 className="text-base font-semibold text-gray-900 leading-6">
+            <h3 id="confirm-dialog-title" className="text-base font-semibold text-gray-900 leading-6">
               {title}
             </h3>
             <div className="mt-2 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
@@ -117,6 +122,7 @@ export const ConfirmDialog = ({
           <button
             type="button"
             onClick={onCancel}
+            autoFocus
             className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden transition-colors"
           >
             {cancelText}
@@ -138,17 +144,30 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   const [confirmState, setConfirmState] = useState<{
     options: ConfirmOptions;
     resolve: (value: boolean) => void;
+    triggerElement: HTMLElement | null;
   } | null>(null);
 
   const confirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
     return new Promise<boolean>((resolve) => {
-      setConfirmState({ options, resolve });
+      setConfirmState({
+        options,
+        resolve,
+        triggerElement:
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null,
+      });
     });
   }, []);
+
+  const restoreTriggerFocus = (triggerElement: HTMLElement | null) => {
+    requestAnimationFrame(() => triggerElement?.focus({ preventScroll: true }));
+  };
 
   const handleConfirm = () => {
     if (confirmState) {
       confirmState.resolve(true);
+      restoreTriggerFocus(confirmState.triggerElement);
       setConfirmState(null);
     }
   };
@@ -156,6 +175,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   const handleCancel = () => {
     if (confirmState) {
       confirmState.resolve(false);
+      restoreTriggerFocus(confirmState.triggerElement);
       setConfirmState(null);
     }
   };

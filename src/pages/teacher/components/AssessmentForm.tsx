@@ -1,8 +1,9 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { questionBankApi } from "../../../api/questionBankApi";
 import { questionCollectionApi } from "../../../api/questionCollectionApi";
 import { Button } from "../../../components/ui/Button";
+import { useConfirm } from "../../../components/ui/ConfirmDialog";
 import { Input } from "../../../components/ui/Input";
 import { editorFileUploadService } from "../../../components/editor/services/fileUploadService";
 import { SearchInput } from "../../../components/ui/SharedComponents";
@@ -13,11 +14,9 @@ import {
   type EditorDocument,
 } from "../../../components/editor";
 import type {
+  AssessmentBlockRequest,
   AssessmentDetailResponse,
-  AssessmentItemRequest,
-  AssessmentItemResponse,
   AssessmentRequest,
-  AssessmentType,
   PlaybackMode,
 } from "../../../types/assessmentBuilder";
 import type { FileMetadata } from "../../../types/file";
@@ -35,14 +34,11 @@ interface AssessmentFormProps {
   onCancel: () => void;
 }
 
-type SelectedQuestion = {
-  questionId: number;
-  questionType: QuestionType;
-  label: string | null;
+interface FormBlock {
+  id?: number;
+  title: string;
   content: EditorDocument;
-  defaultPoints: number | null;
-  points: string;
-};
+}
 
 const PAGE_SIZE = 8;
 
@@ -52,26 +48,6 @@ const emptyQuestionPage: QuestionPageResponse<QuestionResponse> = {
   totalPages: 0,
   size: PAGE_SIZE,
   number: 0,
-};
-
-const previewContent = (document: EditorDocument) => {
-  const text = editorDocumentToPlainText(document);
-  if (text.length <= 90) return text || "-";
-  return `${text.slice(0, 90)}...`;
-};
-
-const questionIdentity = (question: QuestionResponse) =>
-  [
-    question.questionCode,
-    question.sectionCode,
-    question.displayOrder ? `#${question.displayOrder}` : null,
-  ]
-    .filter(Boolean)
-    .join(" - ");
-
-const typeLabel: Record<QuestionType, string> = {
-  MULTIPLE_CHOICE: "Multiple Choice",
-  ESSAY: "Essay",
 };
 
 const formatFileSize = (bytes?: number | null) => {
@@ -84,48 +60,36 @@ const formatFileSize = (bytes?: number | null) => {
   return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
-const toSelectedQuestion = (
-  item: AssessmentItemResponse,
-): SelectedQuestion => ({
-  questionId: item.questionId,
-  questionType: item.questionType,
-  label: item.title,
-  content: item.content,
-  defaultPoints: item.points,
-  points: item.points != null ? String(item.points) : "",
-});
-
 export const AssessmentForm = ({
   initialData,
   onSubmit,
   onCancel,
 }: AssessmentFormProps) => {
+  const confirm = useConfirm();
   const [title, setTitle] = useState("");
-  const [content, setContent] =
-    useState<EditorDocument>(EMPTY_EDITOR_DOCUMENT);
-  const [type, setType] = useState<AssessmentType>("QUIZ");
   const [audioFile, setAudioFile] = useState<FileMetadata | null>(null);
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>("PRACTICE");
-  const [selectedQuestions, setSelectedQuestions] = useState<
-    SelectedQuestion[]
-  >([]);
+  const [isAudioUploading, setIsAudioUploading] = useState(false);
+  const [audioUploadProgress, setAudioUploadProgress] = useState(0);
+
+  // Multi-block document state
+  const [blocks, setBlocks] = useState<FormBlock[]>([
+    { title: "Nội dung chính", content: EMPTY_EDITOR_DOCUMENT },
+  ]);
+
+  // Question Picker Modal state
+  const [activeBlockIndexForPicker, setActiveBlockIndexForPicker] = useState<number | null>(null);
   const [questionQuery, setQuestionQuery] = useState("");
   const [collections, setCollections] = useState<QuestionCollectionResponse[]>([]);
   const [questionCollectionId, setQuestionCollectionId] = useState<number | "">("");
   const [questionSectionCode, setQuestionSectionCode] = useState("");
   const [questionSectionCodes, setQuestionSectionCodes] = useState<string[]>([]);
-  const [questionDifficulty, setQuestionDifficulty] =
-    useState<QuestionDifficulty | "">("");
+  const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficulty | "">("");
   const [questionType, setQuestionType] = useState<QuestionType | "">("");
-  const [pickerSelectedIds, setPickerSelectedIds] = useState<Set<number>>(
-    new Set(),
-  );
+  const [pickerSelectedIds, setPickerSelectedIds] = useState<Set<number>>(new Set());
   const [questionPickerPage, setQuestionPickerPage] = useState(0);
-  const [questionPage, setQuestionPage] =
-    useState<QuestionPageResponse<QuestionResponse>>(emptyQuestionPage);
+  const [questionPage, setQuestionPage] = useState<QuestionPageResponse<QuestionResponse>>(emptyQuestionPage);
   const [isQuestionLoading, setIsQuestionLoading] = useState(false);
-  const [isAudioUploading, setIsAudioUploading] = useState(false);
-  const [audioUploadProgress, setAudioUploadProgress] = useState(0);
   const [questionError, setQuestionError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -133,44 +97,35 @@ export const AssessmentForm = ({
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
-      setContent(initialData.content ?? EMPTY_EDITOR_DOCUMENT);
-      setType(initialData.type);
       setAudioFile(initialData.audioFile ?? null);
       setPlaybackMode(initialData.playbackMode ?? "PRACTICE");
-      setSelectedQuestions(
-        initialData.items
-          .slice()
-          .sort((a, b) => a.displayOrder - b.displayOrder)
-          .map(toSelectedQuestion),
-      );
+
+      if (initialData.blocks && initialData.blocks.length > 0) {
+        setBlocks(
+          initialData.blocks.map((b) => ({
+            id: b.id,
+            title: b.title || `Content Block ${b.position + 1}`,
+            content: b.content ?? EMPTY_EDITOR_DOCUMENT,
+          })),
+        );
+      } else {
+        setBlocks([
+          {
+            title: "Nội dung chính",
+            content: initialData.content ?? EMPTY_EDITOR_DOCUMENT,
+          },
+        ]);
+      }
     } else {
       setTitle("");
-      setContent(EMPTY_EDITOR_DOCUMENT);
-      setType("QUIZ");
       setAudioFile(null);
       setPlaybackMode("PRACTICE");
-      setSelectedQuestions([]);
+      setBlocks([{ title: "Content Block 1", content: EMPTY_EDITOR_DOCUMENT }]);
     }
-    setAudioUploadProgress(0);
     setError("");
   }, [initialData]);
 
-  const selectedQuestionIds = useMemo(
-    () => new Set(selectedQuestions.map((question) => question.questionId)),
-    [selectedQuestions],
-  );
-
-  const questionPickerPageCount = Math.max(questionPage.totalPages, 1);
-  const groupedQuestions = useMemo(() => {
-    const groups = new Map<string, QuestionResponse[]>();
-    questionPage.content.forEach((question) => {
-      const current = groups.get(question.sectionCode) ?? [];
-      current.push(question);
-      groups.set(question.sectionCode, current);
-    });
-    return [...groups.entries()];
-  }, [questionPage.content]);
-
+  // Fetch collections
   useEffect(() => {
     questionCollectionApi
       .findAll()
@@ -193,6 +148,7 @@ export const AssessmentForm = ({
   }, [questionCollectionId]);
 
   const loadQuestions = useCallback(async () => {
+    if (activeBlockIndexForPicker === null) return;
     try {
       setIsQuestionLoading(true);
       setQuestionError("");
@@ -210,12 +166,13 @@ export const AssessmentForm = ({
       );
     } catch (err: any) {
       setQuestionError(
-        err?.response?.data?.message ?? "Unable to load questions.",
+        err?.response?.data?.message ?? "Không thể tải câu hỏi.",
       );
     } finally {
       setIsQuestionLoading(false);
     }
   }, [
+    activeBlockIndexForPicker,
     questionCollectionId,
     questionDifficulty,
     questionPickerPage,
@@ -225,125 +182,108 @@ export const AssessmentForm = ({
   ]);
 
   useEffect(() => {
+    if (activeBlockIndexForPicker === null) return;
     const timeout = window.setTimeout(() => {
-      loadQuestions();
+      void loadQuestions();
     }, 250);
-
     return () => window.clearTimeout(timeout);
-  }, [loadQuestions]);
+  }, [activeBlockIndexForPicker, loadQuestions]);
 
-  const handleQuestionSearchChange = (value: string) => {
-    setQuestionQuery(value);
-    setQuestionPickerPage(0);
-    setPickerSelectedIds(new Set());
-  };
-
-  const handleQuestionTypeChange = (value: QuestionType | "") => {
-    setQuestionType(value);
-    setQuestionPickerPage(0);
-    setPickerSelectedIds(new Set());
-  };
-
-  const selectQuestionCollection = (value: number) => {
-    setQuestionCollectionId(value);
-    setQuestionSectionCode("");
-    setQuestionPickerPage(0);
-    setPickerSelectedIds(new Set());
-  };
-
-  const togglePickerQuestion = (questionId: number) => {
-    setPickerSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(questionId)) next.delete(questionId);
-      else next.add(questionId);
-      return next;
-    });
-  };
-
-  const toggleAllPickerPage = () => {
-    const selectableIds = questionPage.content
-      .filter((question) => !selectedQuestionIds.has(question.id))
-      .map((question) => question.id);
-    setPickerSelectedIds((current) => {
-      const next = new Set(current);
-      if (selectableIds.every((id) => next.has(id))) {
-        selectableIds.forEach((id) => next.delete(id));
-      } else {
-        selectableIds.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  };
-
-  const goToPreviousQuestionPage = () => {
-    setQuestionPickerPage((current) => Math.max(current - 1, 0));
-    setPickerSelectedIds(new Set());
-  };
-
-  const goToNextQuestionPage = () => {
-    setQuestionPickerPage((current) =>
-      current + 1 >= questionPage.totalPages ? current : current + 1,
-    );
-    setPickerSelectedIds(new Set());
-  };
-
-  const addSelectedQuestions = () => {
-    const questions = questionPage.content.filter(
-      (question) =>
-        pickerSelectedIds.has(question.id) &&
-        !selectedQuestionIds.has(question.id),
-    );
-    if (questions.length === 0) return;
-    setSelectedQuestions((current) => [
-      ...current,
-      ...questions.map((question) => ({
-        questionId: question.id,
-        questionType: question.type,
-        label: questionIdentity(question),
-        content: question.content,
-        defaultPoints: question.points,
-        points: "",
-      })),
+  // Block handlers
+  const handleAddBlock = () => {
+    setBlocks((prev) => [
+      ...prev,
+      {
+        title: `Content Block ${prev.length + 1}`,
+        content: EMPTY_EDITOR_DOCUMENT,
+      },
     ]);
-    setPickerSelectedIds(new Set());
-    setError("");
   };
 
-  const removeQuestion = (questionId: number) => {
-    setSelectedQuestions((current) =>
-      current.filter((question) => question.questionId !== questionId),
-    );
+  const handleRemoveBlock = async (index: number) => {
+    if (blocks.length <= 1) {
+      setError("Đề thi phải có ít nhất 1 Content Block.");
+      return;
+    }
+    const confirmed = await confirm({
+      title: "Xóa Content Block?",
+      message: `Bạn có chắc muốn xóa Block ${index + 1}? Tất cả nội dung và câu hỏi nhúng trong block này sẽ bị xóa khỏi đề.`,
+      confirmText: "Xóa Block",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+    setBlocks((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const moveQuestion = (index: number, direction: -1 | 1) => {
-    setSelectedQuestions((current) => {
-      const targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= current.length) {
-        return current;
-      }
-
-      const next = [...current];
-      const currentItem = next[index];
-      next[index] = next[targetIndex];
-      next[targetIndex] = currentItem;
+  const handleMoveBlock = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= blocks.length) return;
+    setBlocks((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[target];
+      next[target] = temp;
       return next;
     });
   };
 
-  const updateItemPoints = (questionId: number, points: string) => {
-    setSelectedQuestions((current) =>
-      current.map((question) =>
-        question.questionId === questionId ? { ...question, points } : question,
-      ),
+  const handleBlockContentChange = (index: number, content: EditorDocument) => {
+    setBlocks((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, content } : b)),
     );
+  };
+
+  const handleBlockTitleChange = (index: number, title: string) => {
+    setBlocks((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, title } : b)),
+    );
+  };
+
+  // Insert embedded question into current active block's TipTap document
+  const handleInsertSelectedQuestionsToBlock = () => {
+    if (activeBlockIndexForPicker === null) return;
+    const selectedQuestions = questionPage.content.filter((q) =>
+      pickerSelectedIds.has(q.id),
+    );
+    if (selectedQuestions.length === 0) return;
+
+    setBlocks((prev) =>
+      prev.map((block, idx) => {
+        if (idx !== activeBlockIndexForPicker) return block;
+
+        const currentContent = block.content ?? EMPTY_EDITOR_DOCUMENT;
+        const existingNodes = Array.isArray(currentContent.content)
+          ? [...currentContent.content]
+          : [];
+
+        const questionNodes = selectedQuestions.map((q) => ({
+          type: "assessmentQuestion",
+          attrs: {
+            questionId: q.id,
+            points: q.points ?? 1,
+          },
+        }));
+
+        return {
+          ...block,
+          content: {
+            ...currentContent,
+            type: "doc",
+            content: [...existingNodes, ...questionNodes],
+          },
+        };
+      }),
+    );
+
+    setActiveBlockIndexForPicker(null);
+    setPickerSelectedIds(new Set());
   };
 
   const uploadAssessmentAudio = async (file: File) => {
     if (!file.type.startsWith("audio/")) {
-      setError("Vui lÃ²ng chá»n má»™t file audio.");
+      setError("Vui lòng chọn một file audio.");
       return;
     }
-
     try {
       setIsAudioUploading(true);
       setAudioUploadProgress(0);
@@ -352,524 +292,451 @@ export const AssessmentForm = ({
         setAudioUploadProgress(progress),
       );
       if (uploaded.type !== "AUDIO") {
-        setError("File Ä‘Ã£ táº£i lÃªn khÃ´ng pháº£i audio.");
+        setError("File đã tải lên không phải audio.");
         return;
       }
       setAudioFile(uploaded);
-      setAudioUploadProgress(100);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "KhÃ´ng thá»ƒ táº£i audio.");
+      setError(err?.response?.data?.message ?? "Không thể tải audio.");
     } finally {
       setIsAudioUploading(false);
     }
   };
 
-  const totalPoints = useMemo(
-    () =>
-      selectedQuestions.reduce((sum, question) => {
-        const value = question.points.trim()
-          ? Number(question.points)
-          : question.defaultPoints;
-        return Number.isFinite(value) && value != null ? sum + value : sum;
-      }, 0),
-    [selectedQuestions],
-  );
-
-  const validate = () => {
-    if (!title.trim()) {
-      return "Vui lÃ²ng nháº­p tiÃªu Ä‘á» Ä‘á» thi.";
+  // Count total questions across all TipTap blocks
+  const countQuestionsInDoc = (node: any): number => {
+    if (!node) return 0;
+    let count = 0;
+    if (node.type === "assessmentQuestion") count += 1;
+    if (Array.isArray(node.content)) {
+      for (const child of node.content) {
+        count += countQuestionsInDoc(child);
+      }
     }
-    if (title.trim().length > 255) {
-      return "TiÃªu Ä‘á» Ä‘á» thi khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 255 kÃ½ tá»±.";
-    }
-    const invalidPoints = selectedQuestions.some((question) => {
-      if (!question.points.trim()) return false;
-      const value = Number(question.points);
-      return !Number.isFinite(value) || value <= 0;
-    });
-    if (invalidPoints) {
-      return "Äiá»ƒm sá»‘ cá»§a cÃ¢u há»i pháº£i lá»›n hÆ¡n 0.";
-    }
-    return "";
+    return count;
   };
 
-  const buildRequest = (): AssessmentRequest => ({
-    title: title.trim(),
-    description: editorDocumentToPlainText(content).slice(0, 500) || null,
-    content,
-    type,
-    audioFileId: audioFile?.id ?? null,
-    playbackMode,
-    items: selectedQuestions.map<AssessmentItemRequest>((question, index) => ({
-      questionId: question.questionId,
-      points: question.points.trim() ? Number(question.points) : null,
-      displayOrder: index + 1,
-    })),
-  });
+  const totalQuestionsEmbedded = useMemo(() => {
+    return blocks.reduce((sum, b) => sum + countQuestionsInDoc(b.content), 0);
+  }, [blocks]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
 
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+    if (!title.trim()) {
+      setError("Vui lòng nhập tiêu đề đề thi.");
       return;
     }
 
+    const blockRequests: AssessmentBlockRequest[] = blocks.map((b, i) => ({
+      id: b.id,
+      position: i,
+      title: b.title.trim() || `Content Block ${i + 1}`,
+      content: b.content ?? EMPTY_EDITOR_DOCUMENT,
+    }));
+
+    const request: AssessmentRequest = {
+      title: title.trim(),
+      description: editorDocumentToPlainText(blocks[0]?.content).slice(0, 500) || null,
+      audioFileId: audioFile?.id ?? null,
+      playbackMode,
+      blocks: blockRequests,
+    };
+
     try {
       setIsSaving(true);
-      await onSubmit(buildRequest());
+      await onSubmit(request);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? "KhÃ´ng thá»ƒ lÆ°u Ä‘á» thi.");
+      setError(err?.response?.data?.message ?? "Không thể lưu đề thi.");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <Input
-          label="TiÃªu Ä‘á»"
-          value={title}
-          maxLength={255}
-          onChange={(event) => setTitle(event.target.value)}
-          placeholder="TiÃªu Ä‘á» Ä‘á» thi"
-        />
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Loáº¡i Ä‘á» thi</label>
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as AssessmentType)}
-            className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-          >
-            <option value="QUIZ">Tráº¯c nghiá»‡m</option>
-            <option value="HOMEWORK">BÃ i táº­p vá» nhÃ </option>
-            <option value="EXAM">BÃ i kiá»ƒm tra</option>
-          </select>
+    <form onSubmit={handleSubmit} className="space-y-6 relative">
+      {/* Header Panel */}
+      <div className="glass-panel overflow-visible rounded-card p-6 shadow-sm ring-1 ring-black/5 space-y-6">
+        <div className="border-b border-surface-border pb-3">
+          <h3 className="text-lg font-semibold text-gray-900">Thông tin đề thi</h3>
+          <p className="text-sm text-gray-500">
+            Thiết lập tiêu đề, loại đề thi và tệp audio dùng chung.
+          </p>
         </div>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            Audio nghe chung
-          </label>
-          <div className="rounded-card border border-surface-border bg-white p-3">
-            {audioFile ? (
-              <div className="space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-gray-900">
-                      {audioFile.originalName}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {audioFile.mimeType}
-                      {audioFile.size ? ` Â· ${formatFileSize(audioFile.size)}` : ""}
-                    </div>
+        <div className="grid gap-4">
+          <Input
+            label="Tiêu đề đề thi"
+            value={title}
+            maxLength={255}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Ví dụ: TOEIC Mock Test #1"
+          />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Audio dùng chung (tùy chọn)</label>
+            <div className="rounded-card border border-surface-border bg-white p-3">
+              {audioFile ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="truncate text-sm font-medium text-gray-900">
+                      {audioFile.originalName} ({formatFileSize(audioFile.size)})
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAudioFile(null)}
+                    >
+                      Xóa
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAudioFile(null)}
-                    disabled={isAudioUploading || isSaving}
-                  >
-                    XÃ³a audio
-                  </Button>
+                  <audio controls src={audioFile.url} className="w-full" />
                 </div>
-                <audio
-                  controls
-                  preload="metadata"
-                  src={audioFile.url}
-                  className="w-full"
-                >
-                  TrÃ¬nh duyá»‡t khÃ´ng há»— trá»£ audio.
-                </audio>
-              </div>
-            ) : (
-              <div className="text-sm text-gray-500">ChÆ°a cÃ³ audio.</div>
-            )}
-            <label className="mt-3 inline-flex cursor-pointer items-center rounded-input border border-surface-border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-surface-hover">
-              {isAudioUploading
-                ? `Äang táº£i ${audioUploadProgress}%`
-                : audioFile
-                  ? "Thay audio"
-                  : "Táº£i audio"}
-              <input
-                type="file"
-                accept=".mp3,.wav,.m4a,.ogg,audio/*"
-                className="sr-only"
-                disabled={isAudioUploading || isSaving}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (file) void uploadAssessmentAudio(file);
-                }}
-              />
-            </label>
+              ) : (
+                <label className="inline-flex cursor-pointer items-center rounded-input border border-surface-border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-surface-hover">
+                  {isAudioUploading ? `Đang tải ${audioUploadProgress}%` : "Tải audio đính kèm"}
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="sr-only"
+                    disabled={isAudioUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadAssessmentAudio(f);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Chế độ phát</label>
+            <select
+              value={playbackMode}
+              onChange={(event) => setPlaybackMode(event.target.value as PlaybackMode)}
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            >
+              <option value="PRACTICE">Luyện tập (Practice)</option>
+              <option value="EXAM">Thi chính thức (Exam)</option>
+            </select>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            Cháº¿ Ä‘á»™ phÃ¡t
-          </label>
-          <select
-            value={playbackMode}
-            onChange={(event) =>
-              setPlaybackMode(event.target.value as PlaybackMode)
-            }
-            className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+      {/* Multi-Block Document Workspace */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Cấu trúc các Content Block</h3>
+            <p className="text-sm text-gray-500">
+              Mỗi Content Block là một TipTap Editor độc lập. Bạn có thể soạn văn bản, chèn audio/ảnh/video và chèn các câu hỏi trực tiếp vào đúng vị trí nội dung.
+            </p>
+          </div>
+          <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+            Đã chèn {totalQuestionsEmbedded} câu hỏi
+          </span>
+        </div>
+
+        {blocks.map((block, index) => (
+          <div
+            key={index}
+            className="rounded-card border border-surface-border bg-white p-5 shadow-sm ring-1 ring-black/5 space-y-4"
           >
-            <option value="PRACTICE">Practice</option>
-            <option value="EXAM">Exam</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">
-          Ná»™i dung Ä‘á» thi
-        </label>
-        <p className="mb-2 text-xs text-gray-500">
-          Soáº¡n hÆ°á»›ng dáº«n, ná»™i dung chung vÃ  chÃ¨n hÃ¬nh áº£nh, audio, video hoáº·c tÃ i liá»‡u.
-        </p>
-        <RichTextEditor
-          value={content}
-          onChange={setContent}
-          placeholder="Nháº­p ná»™i dung Ä‘á» thi..."
-          minHeight={320}
-        />
-      </div>
-
-      <div className="space-y-5">
-        <div className="space-y-3">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">
-              Chá»n cÃ¢u há»i
-            </h4>
-            <p className="mt-1 text-xs text-gray-500">
-              Chá»n cÃ¡c cÃ¢u há»i Ä‘ang hoáº¡t Ä‘á»™ng tá»« NgÃ¢n hÃ ng cÃ¢u há»i.
-            </p>
-            <p className="mt-2 text-sm font-medium text-gray-700">
-              ÄÃ£ chá»n: {selectedQuestions.length} cÃ¢u há»i
-            </p>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-            <aside className="max-h-[32rem] overflow-y-auto rounded-card border border-surface-border bg-white">
-              <div className="border-b border-surface-border px-4 py-3 text-sm font-semibold text-gray-900">
-                Collections
+            {/* Block Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border pb-3">
+              <div className="flex items-center gap-3 flex-1 min-w-[240px]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  {index + 1}
+                </span>
+                <input
+                  type="text"
+                  value={block.title}
+                  onChange={(e) => handleBlockTitleChange(index, e.target.value)}
+                  className="font-semibold text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-primary outline-none px-1 py-0.5 text-base w-full max-w-xs"
+                  placeholder={`Content Block ${index + 1}`}
+                />
               </div>
-              {collections.map((collection) => (
-                <button
-                  key={collection.id}
+
+              <div className="flex items-center gap-2">
+                <Button
                   type="button"
-                  onClick={() => selectQuestionCollection(collection.id)}
-                  className={`flex w-full items-center justify-between gap-2 border-b border-surface-border px-4 py-3 text-left text-sm ${
-                    questionCollectionId === collection.id
-                      ? "bg-blue-50 font-medium text-primary"
-                      : "hover:bg-surface-hover"
-                  }`}
+                  variant="ghost"
+                  size="sm"
+                  disabled={index === 0}
+                  onClick={() => handleMoveBlock(index, -1)}
+                  title="Di chuyển lên"
                 >
-                  <span className="truncate">{collection.name}</span>
-                  <span className="text-xs text-gray-400">
-                    {collection.questionCount}
-                  </span>
-                </button>
-              ))}
-            </aside>
+                  ↑
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={index === blocks.length - 1}
+                  onClick={() => handleMoveBlock(index, 1)}
+                  title="Di chuyển xuống"
+                >
+                  ↓
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:bg-red-50"
+                  onClick={() => handleRemoveBlock(index)}
+                  title="Xóa Block"
+                >
+                  Xóa Block
+                </Button>
+              </div>
+            </div>
 
-            <div className="min-w-0 space-y-3">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_140px_140px_150px]">
-            <SearchInput
-              value={questionQuery}
-              onChange={handleQuestionSearchChange}
-              placeholder="TÃ¬m kiáº¿m cÃ¢u há»i..."
+            {/* Block TipTap Editor */}
+            <RichTextEditor
+              value={block.content}
+              onChange={(updatedContent) => handleBlockContentChange(index, updatedContent)}
+              placeholder={`Nhập nội dung văn bản, hướng dẫn hoặc chèn câu hỏi cho Block ${index + 1}...`}
+              minHeight={260}
+              onInsertQuestion={() => {
+                setActiveBlockIndexForPicker(index);
+                setPickerSelectedIds(new Set());
+              }}
             />
-            <select
-              value={questionSectionCode}
-              onChange={(event) => {
-                setQuestionSectionCode(event.target.value);
-                setQuestionPickerPage(0);
-                setPickerSelectedIds(new Set());
-              }}
-              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-            >
-              <option value="">Táº¥t cáº£ Section</option>
-              {questionSectionCodes.map((code) => (
-                <option key={code} value={code}>{code}</option>
-              ))}
-            </select>
-            <select
-              value={questionDifficulty}
-              onChange={(event) => {
-                setQuestionDifficulty(
-                  event.target.value as QuestionDifficulty | "",
-                );
-                setQuestionPickerPage(0);
-                setPickerSelectedIds(new Set());
-              }}
-              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-            >
-              <option value="">Táº¥t cáº£ Ä‘á»™ khÃ³</option>
-              <option value="EASY">Dá»…</option>
-              <option value="MEDIUM">Trung bÃ¬nh</option>
-              <option value="HARD">KhÃ³</option>
-            </select>
-            <select
-              value={questionType}
-              onChange={(event) =>
-                handleQuestionTypeChange(event.target.value as QuestionType | "")
-              }
-              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
-            >
-              <option value="">Táº¥t cáº£ loáº¡i</option>
-              <option value="MULTIPLE_CHOICE">Tráº¯c nghiá»‡m</option>
-              <option value="ESSAY">Tá»± luáº­n</option>
-            </select>
           </div>
+        ))}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm">
-            <label className="flex items-center gap-2 text-gray-700">
-              <input
-                type="checkbox"
-                checked={
-                  questionPage.content.some(
-                    (question) => !selectedQuestionIds.has(question.id),
-                  ) &&
-                  questionPage.content
-                    .filter((question) => !selectedQuestionIds.has(question.id))
-                    .every((question) => pickerSelectedIds.has(question.id))
-                }
-                onChange={toggleAllPickerPage}
-              />
-              Chá»n táº¥t cáº£ trang hiá»‡n táº¡i
-            </label>
-            <Button
-              type="button"
-              size="sm"
-              disabled={pickerSelectedIds.size === 0}
-              onClick={addSelectedQuestions}
-            >
-              ThÃªm Ä‘Ã£ chá»n ({pickerSelectedIds.size})
-            </Button>
-          </div>
-
-          {questionError && (
-            <p className="text-sm text-red-600">{questionError}</p>
-          )}
-
-          <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
-            {isQuestionLoading ? (
-              <div className="p-4 text-sm text-gray-500">Äang táº£i...</div>
-            ) : questionPage.content.length === 0 ? (
-              <div className="p-4 text-sm text-gray-400">
-                KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i nÃ o.
-              </div>
-            ) : (
-              <div>
-                {groupedQuestions.map(([section, questions]) => (
-                  <section key={section}>
-                    <div className="sticky top-0 border-y border-surface-border bg-surface-page px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                      {section}
-                    </div>
-                    <div className="divide-y divide-surface-border">
-                      {questions.map((question) => {
-                        const isSelected = selectedQuestionIds.has(question.id);
-                        return (
-                          <label
-                            key={question.id}
-                            className={`flex gap-3 p-4 ${
-                              isSelected
-                                ? "bg-surface-page opacity-60"
-                                : "cursor-pointer hover:bg-surface-hover"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                isSelected || pickerSelectedIds.has(question.id)
-                              }
-                              disabled={isSelected}
-                              onChange={() => togglePickerQuestion(question.id)}
-                              className="mt-1"
-                            />
-                            <span className="min-w-0 flex-1">
-                              <span className="flex flex-wrap items-center gap-2">
-                                <span className="font-semibold text-gray-500">
-                                  {question.displayOrder}
-                                </span>
-                                <span className="text-sm font-medium text-gray-900">
-                                  {questionIdentity(question)}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {typeLabel[question.type]}
-                                </span>
-                              </span>
-                              <span className="mt-1 line-clamp-2 block text-xs text-gray-500">
-                                {previewContent(question.content)}
-                              </span>
-                            </span>
-                            {isSelected && (
-                              <span className="text-xs text-gray-500">
-                                ÄÃ£ thÃªm
-                              </span>
-                            )}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              Trang {questionPage.number + 1} / {questionPickerPageCount}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={goToPreviousQuestionPage}
-                disabled={isQuestionLoading || questionPage.number <= 0}
-              >
-                TrÆ°á»›c
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={goToNextQuestionPage}
-                disabled={
-                  isQuestionLoading ||
-                  questionPage.number + 1 >= questionPickerPageCount
-                }
-              >
-                Sau
-              </Button>
-            </div>
-          </div>
-            </div>
-          </div>
+        {/* Add Block Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAddBlock}
+            className="border-dashed border-2 px-6 py-3 text-primary border-primary/40 hover:border-primary hover:bg-primary/5"
+          >
+            + Thêm Content Block
+          </Button>
         </div>
+      </div>
 
-        <div className="space-y-3">
-          <div>
-            <h4 className="text-sm font-medium text-gray-900">
-              CÃ¢u há»i Ä‘Ã£ chá»n
-            </h4>
-            <p className="mt-1 text-xs text-gray-500">
-              Sáº¯p xáº¿p láº¡i thá»© tá»± cÃ¢u há»i vÃ  ghi Ä‘Ã¨ Ä‘iá»ƒm sá»‘ khi cáº§n.
-            </p>
-          </div>
+      {error && (
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200">
+          {error}
+        </div>
+      )}
 
-          <div className="rounded-card border border-surface-border bg-white px-4 py-3 text-sm text-gray-700">
-            Tá»•ng Ä‘iá»ƒm:{" "}
-            <span className="font-medium text-gray-900">
-              {totalPoints > 0 ? totalPoints.toFixed(2) : "-"}
-            </span>
-          </div>
+      {/* Submit Actions Footer */}
+      <div className="flex items-center justify-end gap-3 sticky bottom-4 glass-panel p-4 rounded-card border border-surface-border shadow-lg">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSaving}>
+          Hủy
+        </Button>
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? "Đang lưu đề thi..." : initialData ? "Cập nhật đề thi" : "Lưu bản nháp đề thi"}
+        </Button>
+      </div>
 
-          <div className="max-h-80 overflow-y-auto rounded-card border border-surface-border bg-white">
-            {selectedQuestions.length === 0 ? (
-              <div className="p-4 text-sm text-gray-400">
-                ChÆ°a cÃ³ cÃ¢u há»i nÃ o Ä‘Æ°á»£c chá»n.
-              </div>
-            ) : (
-              <div className="divide-y divide-surface-border">
-                {selectedQuestions.map((question, index) => (
-                  <div
-                    key={question.questionId}
-                    className="grid gap-3 p-4 hover:bg-surface-hover md:grid-cols-[auto_minmax(0,1fr)_120px_auto]"
+      {/* Question Picker Modal */}
+      {activeBlockIndexForPicker !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-card bg-white p-6 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-surface-border pb-3 mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                Chèn câu hỏi vào Content Block {activeBlockIndexForPicker + 1}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setActiveBlockIndexForPicker(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)] flex-1 overflow-hidden">
+              {/* Collection list sidebar */}
+              <aside className="max-h-full overflow-y-auto rounded-card border border-surface-border bg-white">
+                <div className="border-b border-surface-border px-3 py-2 text-xs font-semibold text-gray-900">
+                  Bộ sưu tập
+                </div>
+                {collections.map((col) => (
+                  <button
+                    key={col.id}
+                    type="button"
+                    onClick={() => {
+                      setQuestionCollectionId(col.id);
+                      setQuestionSectionCode("");
+                      setQuestionPickerPage(0);
+                    }}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-xs ${
+                      questionCollectionId === col.id
+                        ? "bg-blue-50 font-medium text-primary"
+                        : "hover:bg-surface-hover"
+                    }`}
                   >
-                    <div className="w-6 shrink-0 text-sm text-gray-400">
-                      {index + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">
-                          {question.label || "Cau hoi chua co danh tinh"}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {typeLabel[question.questionType]}
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-gray-500">
-                        {previewContent(question.content)}
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        Äiá»ƒm máº·c Ä‘á»‹nh: {question.defaultPoints ?? "-"}
-                      </p>
-                    </div>
-                    <Input
-                      label="Äiá»ƒm sá»‘"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={question.points}
-                      onChange={(event) =>
-                        updateItemPoints(question.questionId, event.target.value)
-                      }
-                      placeholder={
-                        question.defaultPoints != null
-                          ? String(question.defaultPoints)
-                          : "Máº·c Ä‘á»‹nh"
-                      }
-                    />
-                    <div className="flex flex-wrap items-end justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={index === 0}
-                        onClick={() => moveQuestion(index, -1)}
-                      >
-                        LÃªn
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={index === selectedQuestions.length - 1}
-                        onClick={() => moveQuestion(index, 1)}
-                      >
-                        Xuá»‘ng
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeQuestion(question.questionId)}
-                      >
-                        XÃ³a
-                      </Button>
-                    </div>
-                  </div>
+                    <span className="truncate">{col.name}</span>
+                    <span className="text-gray-400">{col.questionCount}</span>
+                  </button>
                 ))}
+              </aside>
+
+              {/* Questions table & filters */}
+              <div className="flex flex-col min-w-0 space-y-3 overflow-hidden">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <SearchInput
+                    value={questionQuery}
+                    onChange={(val) => {
+                      setQuestionQuery(val);
+                      setQuestionPickerPage(0);
+                    }}
+                    placeholder="Tìm câu hỏi..."
+                  />
+                  <select
+                    value={questionSectionCode}
+                    onChange={(e) => {
+                      setQuestionSectionCode(e.target.value);
+                      setQuestionPickerPage(0);
+                    }}
+                    className="rounded-input border border-surface-border bg-white px-2 py-1.5 text-xs text-gray-900"
+                  >
+                    <option value="">Tất cả Section</option>
+                    {questionSectionCodes.map((code) => (
+                      <option key={code} value={code}>{code}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={questionDifficulty}
+                    onChange={(e) => {
+                      setQuestionDifficulty(e.target.value as QuestionDifficulty | "");
+                      setQuestionPickerPage(0);
+                    }}
+                    className="rounded-input border border-surface-border bg-white px-2 py-1.5 text-xs text-gray-900"
+                  >
+                    <option value="">Tất cả độ khó</option>
+                    <option value="EASY">Dễ</option>
+                    <option value="MEDIUM">Trung bình</option>
+                    <option value="HARD">Khó</option>
+                  </select>
+                  <select
+                    value={questionType}
+                    onChange={(e) => {
+                      setQuestionType(e.target.value as QuestionType | "");
+                      setQuestionPickerPage(0);
+                    }}
+                    className="rounded-input border border-surface-border bg-white px-2 py-1.5 text-xs text-gray-900"
+                  >
+                    <option value="">Tất cả dạng câu hỏi</option>
+                    <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+                    <option value="ESSAY">Tự luận</option>
+                  </select>
+                </div>
+
+                {/* Questions list */}
+                <div className="flex-1 overflow-y-auto rounded-card border border-surface-border bg-white p-3 space-y-2">
+                  {isQuestionLoading ? (
+                    <div className="py-8 text-center text-xs text-gray-400">Đang tải câu hỏi...</div>
+                  ) : questionError ? (
+                    <div className="py-8 text-center text-xs text-red-500">{questionError}</div>
+                  ) : questionPage.content.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-gray-400">Không tìm thấy câu hỏi nào.</div>
+                  ) : (
+                    questionPage.content.map((q) => {
+                      const isSelected = pickerSelectedIds.has(q.id);
+                      return (
+                        <div
+                          key={q.id}
+                          onClick={() => {
+                            setPickerSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(q.id)) next.delete(q.id);
+                              else next.add(q.id);
+                              return next;
+                            });
+                          }}
+                          className={`flex cursor-pointer items-start gap-3 rounded-card border p-3 transition-colors ${
+                            isSelected
+                              ? "border-primary bg-blue-50/50"
+                              : "border-surface-border hover:bg-surface-hover"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="mt-1"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-gray-900">
+                                Câu #{q.id}
+                              </span>
+                              <span className="text-xs text-gray-500 font-mono">
+                                [{q.questionCode}]
+                              </span>
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                                {q.type}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-gray-700 line-clamp-2">
+                              {editorDocumentToPlainText(q.content) || "Không có văn bản"}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
+                  <span>Trang {questionPickerPage + 1} / {Math.max(questionPage.totalPages, 1)}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={questionPickerPage === 0}
+                      onClick={() => setQuestionPickerPage((p) => Math.max(p - 1, 0))}
+                    >
+                      Trước
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={questionPickerPage + 1 >= questionPage.totalPages}
+                      onClick={() => setQuestionPickerPage((p) => p + 1)}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Modal actions */}
+            <div className="flex items-center justify-end gap-3 border-t border-surface-border pt-4 mt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setActiveBlockIndexForPicker(null)}
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                disabled={pickerSelectedIds.size === 0}
+                onClick={handleInsertSelectedQuestionsToBlock}
+              >
+                Chèn đã chọn ({pickerSelectedIds.size})
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onCancel}>
-          Há»§y
-        </Button>
-        <Button type="submit" isLoading={isSaving}>
-          {initialData ? "Cáº­p nháº­t" : "Táº¡o má»›i"}
-        </Button>
-      </div>
+      )}
     </form>
   );
 };

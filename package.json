@@ -7,6 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test:assessment-document": "node scripts/verify-assessment-document-editor.mjs",
+    "test:teacher-assignment-structured": "node scripts/verify-teacher-assignment-structured.mjs",
+    "test:student-assignment-structured": "node scripts/verify-student-assignment-structured.mjs",
+    "test:structured-review-result": "node scripts/verify-structured-review-result.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

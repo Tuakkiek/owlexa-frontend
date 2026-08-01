@@ -30,7 +30,7 @@ export const ResizableImage = Image.extend({
     };
   },
 }).configure({
-  allowBase64: false,
+  allowBase64: true,
   inline: false,
   resize: {
     enabled: true,

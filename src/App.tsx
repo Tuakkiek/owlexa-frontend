@@ -3,6 +3,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import ProtectedRoute from "./router/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import ExamLayout from "./components/layout/ExamLayout";
 import TeachersPage from "./pages/owner/TeachersPage";
 import StudentsPage from "./pages/owner/StudentsPage";
 import ClassesPage from "./pages/owner/ClassesPage";
@@ -32,6 +33,7 @@ import QuestionBankPage from "./pages/teacher/QuestionBankPage";
 import QuestionEditorPage from "./pages/teacher/QuestionEditorPage";
 import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
 import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
+import TeacherArchivedAssignmentsPage from "./pages/teacher/TeacherArchivedAssignmentsPage";
 
 
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
@@ -167,9 +169,14 @@ function App() {
                   path="/teacher/assessments"
                   element={<AssessmentBuilderPage />}
                 />
+
                 <Route
                   path="/teacher/assignments"
                   element={<TeacherAssignmentsPage />}
+                />
+                <Route
+                  path="/teacher/assignments/archived"
+                  element={<TeacherArchivedAssignmentsPage />}
                 />
 
 
@@ -198,11 +205,6 @@ function App() {
                   path="/student/assignments"
                   element={<StudentAssignmentsPage />}
                 />
-                <Route
-                  path="/student/submission-attempts/:attemptId"
-                  element={<StudentSubmissionAttemptPage />}
-                />
-
               </Route>
 
               {/* CASHIER Routes */}
@@ -287,6 +289,15 @@ function App() {
                   </div>
                 }
               />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={["STUDENT"]} />}>
+              <Route element={<ExamLayout />}>
+                <Route
+                  path="/student/submission-attempts/:attemptId"
+                  element={<StudentSubmissionAttemptPage />}
+                />
+              </Route>
             </Route>
 
             {/* Fallback for undefined routes */}

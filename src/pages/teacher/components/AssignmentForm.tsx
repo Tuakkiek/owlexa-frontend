@@ -7,7 +7,6 @@ import { Input } from "../../../components/ui/Input";
 import { SearchInput } from "../../../components/ui/SharedComponents";
 import type {
   AssessmentListResponse,
-  AssessmentType,
   PageResponse as AssessmentPageResponse,
 } from "../../../types/assessmentBuilder";
 import type {
@@ -59,11 +58,7 @@ const toIsoOrNull = (value: string) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
-};
+
 
 const targetKey = (target: SelectedTarget) =>
   target.targetType === "CLASS"
@@ -81,6 +76,9 @@ export const AssignmentForm = ({
   const [openAt, setOpenAt] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [attemptLimit, setAttemptLimit] = useState("");
+  const [showScore, setShowScore] = useState(true);
+  const [allowReview, setAllowReview] = useState(true);
+  const [accessPassword, setAccessPassword] = useState("");
   const [selectedTargets, setSelectedTargets] = useState<SelectedTarget[]>([]);
   const [assessmentQuery, setAssessmentQuery] = useState("");
   const [assessmentsPage, setAssessmentsPage] =
@@ -105,6 +103,9 @@ export const AssignmentForm = ({
       setAttemptLimit(
         initialData.attemptLimit != null ? String(initialData.attemptLimit) : "",
       );
+      setShowScore(initialData.showScore ?? true);
+      setAllowReview(initialData.allowReview ?? true);
+      setAccessPassword(initialData.accessPassword ?? "");
       setSelectedTargets(
         initialData.targets.map((target) => ({
           targetType: target.targetType,
@@ -121,6 +122,9 @@ export const AssignmentForm = ({
       setOpenAt("");
       setDueAt("");
       setAttemptLimit("");
+      setShowScore(true);
+      setAllowReview(true);
+      setAccessPassword("");
       setSelectedTargets([]);
     }
     setError("");
@@ -261,6 +265,9 @@ export const AssignmentForm = ({
     openAt: toIsoOrNull(openAt),
     dueAt: toIsoOrNull(dueAt),
     attemptLimit: attemptLimit.trim() ? Number(attemptLimit) : null,
+    showScore,
+    allowReview,
+    accessPassword: accessPassword.trim() || null,
     targets: selectedTargets.map<AssignmentTargetRequest>((target) => ({
       targetType: target.targetType,
       classId: target.targetType === "CLASS" ? target.classId : null,
@@ -304,7 +311,7 @@ export const AssignmentForm = ({
             <option value="">Chọn đề thi</option>
             {assessmentsPage.content.map((assessment) => (
               <option key={assessment.id} value={assessment.id}>
-                {assessment.title} ({typeLabel[assessment.type]})
+                {assessment.title}
               </option>
             ))}
           </select>
@@ -316,6 +323,11 @@ export const AssignmentForm = ({
           {isAssessmentLoading && (
             <p className="text-xs text-gray-500">Đang tải đề thi...</p>
           )}
+          <p className="text-xs text-gray-500">
+            Published legacy and structured assessments are both available.
+            Snapshot content is created when the assignment is published and
+            remains read-only.
+          </p>
         </div>
 
         <Input
@@ -362,6 +374,62 @@ export const AssignmentForm = ({
           onChange={(event) => setAttemptLimit(event.target.value)}
           placeholder="Tùy chọn"
         />
+      </div>
+
+      {/* Assignment Configuration */}
+      <div className="rounded-card border border-surface-border bg-white p-4 space-y-4">
+        <h4 className="text-sm font-medium text-gray-900">Cấu hình bài tập</h4>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Show Score Toggle */}
+          <label className="flex items-center gap-3 cursor-pointer rounded-input border border-surface-border px-4 py-3 hover:bg-surface-hover transition-colors">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={showScore}
+                onChange={(e) => setShowScore(e.target.checked)}
+              />
+              <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-primary transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-900">Hiện điểm</div>
+              <div className="text-xs text-gray-500">Cho phép học sinh xem điểm sau khi nộp bài</div>
+            </div>
+          </label>
+
+          {/* Allow Review Toggle */}
+          <label className="flex items-center gap-3 cursor-pointer rounded-input border border-surface-border px-4 py-3 hover:bg-surface-hover transition-colors">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={allowReview}
+                onChange={(e) => setAllowReview(e.target.checked)}
+              />
+              <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-primary transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-900">Cho xem lại bài</div>
+              <div className="text-xs text-gray-500">Cho phép học sinh xem lại bài làm sau khi nộp</div>
+            </div>
+          </label>
+
+          {/* Access Password */}
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Mật khẩu đề thi</label>
+            <input
+              type="text"
+              value={accessPassword}
+              onChange={(e) => setAccessPassword(e.target.value)}
+              placeholder="Để trống nếu không cần mật khẩu"
+              className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            />
+            <p className="text-xs text-gray-500">Học sinh phải nhập mật khẩu để bắt đầu làm bài</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

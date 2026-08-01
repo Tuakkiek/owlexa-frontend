@@ -36,7 +36,11 @@ const statusLabel: Record<SubmissionAttemptStatus, string> = {
 const formatSummaryScore = (submission: TeacherSubmissionSummaryResponse) => {
   if (!submission.latestStatus) return "-";
   if (submission.latestStatus === "IN_PROGRESS") return "Chưa nộp";
-  return `${submission.latestAutoScore ?? "-"} / ${submission.maxScore ?? "-"}`;
+  if (submission.isGraded) {
+    const score = submission.latestFinalScore ?? submission.latestAutoScore ?? 0;
+    return `${score} / ${submission.maxScore ?? "-"}`;
+  }
+  return "Chưa chấm";
 };
 
 interface TeacherSubmissionListProps {

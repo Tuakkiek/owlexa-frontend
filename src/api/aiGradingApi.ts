@@ -30,6 +30,15 @@ export const aiGradingApi = {
     return response.data;
   },
 
+  listJobs: async (
+    attemptId: number,
+  ): Promise<AIGradingJobSummaryResponse[]> => {
+    const response = await axiosClient.get(
+      `${TEACHER_BASE_URL}/submission-attempts/${attemptId}/ai-grading-jobs`,
+    );
+    return response.data;
+  },
+
   getLatestResult: async (
     attemptId: number,
   ): Promise<AIGradingResultResponse> => {
