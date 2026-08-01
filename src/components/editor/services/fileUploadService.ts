@@ -35,20 +35,31 @@ export const editorFileUploadService = {
     file: File,
     onProgress: (progress: number) => void,
   ): Promise<UploadedFile> => {
+    console.log("[editorFileUploadService] Uploading file to /api/files/upload:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
     const formData = new FormData();
     formData.append("file", file);
-    const response = await axiosClient.post<UploadedFile>(
-      "/api/files/upload",
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          const total = event.total ?? file.size;
-          const progress = total > 0 ? Math.round((event.loaded * 100) / total) : 0;
-          onProgress(Math.min(progress, 100));
+    try {
+      const response = await axiosClient.post<UploadedFile>(
+        "/api/files/upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (event) => {
+            const total = event.total ?? file.size;
+            const progress = total > 0 ? Math.round((event.loaded * 100) / total) : 0;
+            onProgress(Math.min(progress, 100));
+          },
         },
-      },
-    );
-    return response.data;
+      );
+      console.log("[editorFileUploadService] Upload HTTP 200/201 response data:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("[editorFileUploadService] Upload HTTP request failed:", error);
+      throw error;
+    }
   },
 };

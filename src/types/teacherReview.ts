@@ -1,5 +1,10 @@
 import type { AssessmentType } from "./assessmentBuilder";
-import type { SubmissionAttemptStatus } from "./submission";
+
+import type {
+  StudentAttemptItemResponse,
+  SubmissionAnswerResponse,
+  SubmissionAttemptStatus,
+} from "./submission";
 
 export type { PageResponse } from "./pagination";
 
@@ -97,11 +102,15 @@ export interface StudentReviewResultResponse {
   submissionAttemptId: number;
   assignmentTitleSnapshot: string;
   assignmentTypeSnapshot: AssessmentType;
+
   attemptNumber: number;
   finalScore: number;
   maxScore: number;
   overallComment: string | null;
   releasedAt: string;
+  items: StudentAttemptItemResponse[];
+
+  answers: SubmissionAnswerResponse[];
   essayItems: StudentReviewItemResultResponse[];
 }
 

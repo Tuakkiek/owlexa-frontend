@@ -56,6 +56,14 @@ const QuestionEditorPage = () => {
     void load();
   }, [load]);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/teacher/questions");
+    }
+  };
+
   const save = async (request: QuestionRequest) => {
     if (isEdit) {
       await questionBankApi.update(Number(questionId), request);
@@ -64,17 +72,17 @@ const QuestionEditorPage = () => {
       const created = await questionBankApi.create(request);
       toast.success(`Đã tạo câu hỏi ${created.questionCode}.`);
     }
-    navigate("/teacher/questions");
+    handleBack();
   };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <button
         type="button"
-        onClick={() => navigate("/teacher/questions")}
-        className="text-sm font-medium text-gray-600 hover:text-gray-900"
+        onClick={handleBack}
+        className="text-sm font-medium text-gray-600 hover:text-gray-900 cursor-pointer"
       >
-        ← Quay lại Question Bank
+        ← Quay lại trang trước
       </button>
       <PageHeader
         title={isEdit ? "Chỉnh sửa câu hỏi" : "Tạo câu hỏi"}
@@ -90,7 +98,7 @@ const QuestionEditorPage = () => {
           <p className="text-sm text-gray-600">
             Hãy tạo Collection trước khi tạo câu hỏi.
           </p>
-          <Button className="mt-4" onClick={() => navigate("/teacher/questions")}>
+          <Button className="mt-4" onClick={handleBack}>
             Về Question Bank
           </Button>
         </div>
@@ -102,7 +110,7 @@ const QuestionEditorPage = () => {
             collections={collections}
             gradingCriteria={criteria}
             onSubmit={save}
-            onCancel={() => navigate("/teacher/questions")}
+            onCancel={handleBack}
           />
         </div>
       )}

@@ -27,6 +27,7 @@ import type {
   UploadProgressItem,
 } from "./types";
 import { EMPTY_EDITOR_DOCUMENT } from "./types";
+import { AssessmentQuestionNode } from "./extensions/AssessmentQuestionNode";
 import "./editor.css";
 
 interface RichTextEditorProps {
@@ -36,6 +37,7 @@ interface RichTextEditorProps {
   className?: string;
   editable?: boolean;
   minHeight?: number;
+  onInsertQuestion?: () => void;
 }
 
 const toEditorNode = (file: UploadedFile): JSONContent => {
@@ -74,6 +76,7 @@ export const RichTextEditor = ({
   className = "",
   editable = true,
   minHeight = 260,
+  onInsertQuestion,
 }: RichTextEditorProps) => {
   const [uploads, setUploads] = useState<UploadProgressItem[]>([]);
 
@@ -164,6 +167,7 @@ export const RichTextEditor = ({
       VideoNode,
       PdfAttachmentNode,
       FileAttachmentNode,
+      AssessmentQuestionNode,
       Placeholder.configure({ placeholder }),
       FileHandler.configure({
         consumePasteEvent: true,
@@ -232,6 +236,7 @@ export const RichTextEditor = ({
           editor={editor}
           disabled={false}
           onFilesSelected={(files) => void uploadFiles(editor, files)}
+          onInsertQuestion={onInsertQuestion}
         />
       )}
       {editable && (

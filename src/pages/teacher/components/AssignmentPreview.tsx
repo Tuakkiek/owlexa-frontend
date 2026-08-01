@@ -3,17 +3,28 @@ import type {
   AssignmentItemResponse,
   AssignmentStatus,
 } from "../../../types/assignment";
-import type { AssessmentType, PlaybackMode } from "../../../types/assessmentBuilder";
+import type {
+  AssessmentBlockResponse,
+  PlaybackMode,
+} from "../../../types/assessmentBuilder";
 import type { FileMetadata } from "../../../types/file";
 import type { QuestionType } from "../../../types/questionBank";
+import {
+  RichTextRenderer,
+  isEmptyEditorDocument,
+  type EditorDocument,
+} from "../../../components/editor";
 import { formatDateTime } from "../../../utils/dateTime";
 import { stripHtml } from "../../../utils/text";
-import { RichTextRenderer } from "../../../components/editor";
+import {
+  extractQuestionIdsFromDoc,
+  stripQuestionNodes,
+} from "../../../utils/editorDoc";
 
 interface AssignmentPreviewProps {
   title: string;
   description: string | null;
-  type: AssessmentType;
+  content: EditorDocument;
   status: AssignmentStatus;
   openAt: string | null;
   dueAt: string | null;
@@ -22,36 +33,31 @@ interface AssignmentPreviewProps {
   audioFile?: FileMetadata | null;
   playbackMode?: PlaybackMode | null;
   items: AssignmentItemResponse[];
+  blocks?: AssessmentBlockResponse[] | null;
 }
 
-const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
-};
-
 const statusLabel: Record<AssignmentStatus, string> = {
-  DRAFT: "Draft",
-  SCHEDULED: "Scheduled",
-  ACTIVE: "Active",
-  CLOSED: "Closed",
-  ARCHIVED: "Archived",
+  DRAFT: "Nháp",
+  SCHEDULED: "Đã lên lịch",
+  ACTIVE: "Đang diễn ra",
+  CLOSED: "Đã đóng",
+  ARCHIVED: "Đã lưu trữ",
 };
 
 const questionTypeLabel: Record<QuestionType, string> = {
-  MULTIPLE_CHOICE: "Multiple Choice",
-  ESSAY: "Essay",
+  MULTIPLE_CHOICE: "Trắc nghiệm",
+  ESSAY: "Tự luận",
 };
 
 const playbackModeLabel: Record<PlaybackMode, string> = {
-  EXAM: "Exam playback",
-  PRACTICE: "Practice playback",
+  EXAM: "Chế độ thi",
+  PRACTICE: "Chế độ luyện tập",
 };
 
 export const AssignmentPreview = ({
   title,
   description,
-  type,
+  content,
   status,
   openAt,
   dueAt,
@@ -60,42 +66,89 @@ export const AssignmentPreview = ({
   audioFile,
   playbackMode,
   items,
+  blocks,
 }: AssignmentPreviewProps) => {
-  const sortedItems = items.slice().sort((a, b) => a.displayOrder - b.displayOrder);
+  const sortedItems = items
+    .slice()
+    .sort((a, b) => a.displayOrder - b.displayOrder);
   const totalPoints = sortedItems.reduce(
     (sum, item) => (item.points != null ? sum + item.points : sum),
     0,
   );
+
+  const getQuestionContextDoc = (
+    item: AssignmentItemResponse,
+    index: number,
+  ): EditorDocument | null => {
+    if (blocks && blocks.length > 0) {
+      for (const block of blocks) {
+        if (!block.content) continue;
+        const qIds = extractQuestionIdsFromDoc(block.content);
+        if (qIds.includes(item.assessmentItemId ?? item.id)) {
+          return stripQuestionNodes(block.content);
+        }
+      }
+      if (blocks[index]?.content) {
+        return stripQuestionNodes(blocks[index].content);
+      }
+    }
+    return null;
+  };
+
+  const renderQuestionContent = (
+    item: AssignmentItemResponse,
+    itemIndex: number,
+  ) => {
+    const contextDoc = getQuestionContextDoc(item, itemIndex);
+    const hasContext = contextDoc != null && !isEmptyEditorDocument(contextDoc);
+    return (
+      <div className="mt-3 space-y-3 text-sm text-gray-700">
+        {hasContext && (
+          <div className="rounded-input border border-surface-border bg-surface-page px-3 py-2 text-xs text-gray-500">
+            <RichTextRenderer value={contextDoc!} />
+          </div>
+        )}
+        <RichTextRenderer value={item.content} />
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-5">
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <Badge>{typeLabel[type]}</Badge>
           <Badge>{statusLabel[status]}</Badge>
         </div>
         {description && <p className="text-sm text-gray-600">{description}</p>}
+        <div className="rounded-card border border-surface-border bg-white p-4 text-sm text-gray-700">
+          <RichTextRenderer value={content} />
+        </div>
         <div className="grid gap-3 rounded-card border border-surface-border bg-white p-4 text-sm text-gray-600 md:grid-cols-2">
-          <div>Open: {formatDateTime(openAt)}</div>
-          <div>Due: {formatDateTime(dueAt)}</div>
-          <div>Attempt limit: {attemptLimit ?? "-"}</div>
-          <div>Snapshot at: {formatDateTime(assessmentSnapshotAt)}</div>
+          <div>Mở: {formatDateTime(openAt)}</div>
+          <div>Hạn nộp: {formatDateTime(dueAt)}</div>
+          <div>Giới hạn lượt làm: {attemptLimit ?? "-"}</div>
+          <div>Bản chụp lúc: {formatDateTime(assessmentSnapshotAt)}</div>
           <div>
-            {sortedItems.length} questions -{" "}
-            {totalPoints > 0 ? `${totalPoints.toFixed(2)} points` : "No points"}
+            {sortedItems.length} câu hỏi -{" "}
+            {totalPoints > 0 ? `${totalPoints.toFixed(2)} điểm` : "Không có điểm"}
           </div>
         </div>
         {audioFile && (
           <div className="rounded-card border border-surface-border bg-white p-4">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-gray-900">
-                Listening audio
+                Audio nghe
               </span>
               <Badge>{playbackModeLabel[playbackMode ?? "PRACTICE"]}</Badge>
             </div>
-            <audio controls preload="metadata" src={audioFile.url} className="w-full">
-              Browser does not support audio.
+            <audio
+              controls
+              preload="metadata"
+              src={audioFile.url}
+              className="w-full"
+            >
+              Trình duyệt không hỗ trợ audio.
             </audio>
           </div>
         )}
@@ -103,11 +156,11 @@ export const AssignmentPreview = ({
 
       {sortedItems.length === 0 ? (
         <div className="rounded-card border border-surface-border bg-white py-10 text-center text-sm text-gray-400">
-          No snapshot questions available.
+          Không có câu hỏi bản chụp nào.
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedItems.map((item, index) => (
+          {sortedItems.map((item, itemIndex) => (
             <div
               key={item.id}
               className="rounded-card border border-surface-border bg-white p-4"
@@ -116,7 +169,7 @@ export const AssignmentPreview = ({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      Question {index + 1}
+                      Câu hỏi {item.displayOrder}
                     </span>
                     <span className="text-xs text-gray-500">
                       {questionTypeLabel[item.questionType]}
@@ -129,13 +182,11 @@ export const AssignmentPreview = ({
                   )}
                 </div>
                 <div className="text-sm text-gray-600">
-                  Points: {item.points ?? "-"}
+                  Điểm: {item.points ?? "-"}
                 </div>
               </div>
 
-              <div className="mt-3 text-sm text-gray-700">
-                <RichTextRenderer value={item.content} />
-              </div>
+              {renderQuestionContent(item, itemIndex)}
 
               {item.questionType === "MULTIPLE_CHOICE" && (
                 <div className="mt-4 space-y-2">
@@ -155,7 +206,7 @@ export const AssignmentPreview = ({
                         </span>
                         {option.isCorrect && (
                           <span className="text-xs font-medium text-gray-900">
-                            Correct
+                            Đúng
                           </span>
                         )}
                       </div>
@@ -165,7 +216,7 @@ export const AssignmentPreview = ({
 
               {item.questionType === "ESSAY" && (
                 <div className="mt-4 rounded-input border border-surface-border bg-surface-page px-3 py-2 text-sm text-gray-600">
-                  Grading criteria: {item.gradingCriteriaName ?? "-"}
+                  Tiêu chí chấm điểm: {item.gradingCriteriaName ?? "-"}
                 </div>
               )}
             </div>

@@ -2,22 +2,23 @@ import { Badge } from "../../../components/ui/SharedComponents";
 import type {
   AssessmentDetailResponse,
   AssessmentStatus,
-  AssessmentType,
   PlaybackMode,
 } from "../../../types/assessmentBuilder";
 import type { QuestionType } from "../../../types/questionBank";
 import { stripHtml } from "../../../utils/text";
-import { RichTextRenderer } from "../../../components/editor";
+import {
+  RichTextRenderer,
+  isEmptyEditorDocument,
+  type EditorDocument,
+} from "../../../components/editor";
+import {
+  extractQuestionIdsFromDoc,
+  stripQuestionNodes,
+} from "../../../utils/editorDoc";
 
 interface AssessmentPreviewProps {
   assessment: AssessmentDetailResponse;
 }
-
-const typeLabel: Record<AssessmentType, string> = {
-  QUIZ: "Quiz",
-  HOMEWORK: "Homework",
-  EXAM: "Exam",
-};
 
 const statusLabel: Record<AssessmentStatus, string> = {
   DRAFT: "Draft",
@@ -45,6 +46,40 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
     0,
   );
 
+  const getQuestionContextDoc = (
+    item: any,
+    index: number,
+  ): EditorDocument | null => {
+    if (assessment.blocks && assessment.blocks.length > 0) {
+      for (const block of assessment.blocks) {
+        if (!block.content) continue;
+        const qIds = extractQuestionIdsFromDoc(block.content);
+        if (qIds.includes(item.questionId ?? item.id)) {
+          return stripQuestionNodes(block.content);
+        }
+      }
+      if (assessment.blocks[index]?.content) {
+        return stripQuestionNodes(assessment.blocks[index].content);
+      }
+    }
+    return null;
+  };
+
+  const renderQuestionContent = (item: any, itemIndex: number) => {
+    const contextDoc = getQuestionContextDoc(item, itemIndex);
+    const hasContext = contextDoc != null && !isEmptyEditorDocument(contextDoc);
+    return (
+      <div className="mt-3 space-y-3 text-sm text-gray-700">
+        {hasContext && (
+          <div className="rounded-input border border-surface-border bg-surface-page px-3 py-2 text-xs text-gray-500">
+            <RichTextRenderer value={contextDoc!} />
+          </div>
+        )}
+        <RichTextRenderer value={item.content} />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div className="space-y-2">
@@ -52,10 +87,10 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
           <h3 className="text-lg font-semibold text-gray-900">
             {assessment.title}
           </h3>
-          <Badge>{typeLabel[assessment.type]}</Badge>
           <Badge>{statusLabel[assessment.status]}</Badge>
         </div>
-        <RichTextRenderer value={assessment.content} />
+        {(!assessment.blocks || assessment.blocks.length === 0) &&
+          assessment.content && <RichTextRenderer value={assessment.content} />}
         {assessment.audioFile && (
           <div className="rounded-card border border-surface-border bg-white p-4">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -86,7 +121,7 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedItems.map((item, index) => (
+          {sortedItems.map((item, itemIndex) => (
             <div
               key={item.id}
               className="rounded-card border border-surface-border bg-white p-4"
@@ -95,7 +130,7 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      Question {index + 1}
+                      Question {item.displayOrder}
                     </span>
                     <span className="text-xs text-gray-500">
                       {questionTypeLabel[item.questionType]}
@@ -112,9 +147,7 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
                 </div>
               </div>
 
-              <div className="mt-3 text-sm text-gray-700">
-                <RichTextRenderer value={item.content} />
-              </div>
+              {renderQuestionContent(item, itemIndex)}
 
               {item.questionType === "MULTIPLE_CHOICE" && (
                 <div className="mt-4 space-y-2">
