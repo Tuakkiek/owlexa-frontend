@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
 import { Badge } from "../../../components/ui/SharedComponents";
-import { ScheduleForm } from "./ScheduleForm";
+import { ScheduleRuleForm } from "./ScheduleRuleForm";
+import { ScheduleEventForm } from "./ScheduleEventForm";
 import { EnrollStudentModal } from "./EnrollStudentModal";
 import { DocumentUploadModal } from "./DocumentUploadModal";
 import { useConfirm } from "../../../components/ui/ConfirmDialog";
@@ -13,7 +14,12 @@ import { classApi } from "../../../api/classApi";
 import { studentApi } from "../../../api/studentApi";
 import { teacherApi } from "../../../api/teacherApi";
 import { documentApi } from "../../../api/documentApi";
-import type { ScheduleResponse, ScheduleRequest, ScheduleType } from "../../../types/schedule";
+import type {
+  ScheduleEventRequest,
+  ScheduleEventResponse,
+  ScheduleRuleRequest,
+  ScheduleRuleResponse,
+} from "../../../types/schedule";
 import type { EnrollmentResponse } from "../../../types/enrollment";
 import { ENROLLMENT_STATUS_LABELS } from "../../../types/enrollment";
 import type { TeacherResponse } from "../../../types/teacher";
@@ -26,13 +32,6 @@ import { formatCurrency } from "../../../utils/money";
 import { courseApi } from "../../../api/courseApi";
 import type { CourseResponse } from "../../../types/course";
 
-
-const SCHEDULE_TYPE_COLORS: Record<ScheduleType, string> = {
-  THEORY_CLASS: "bg-emerald-50 border-emerald-200",
-  ONLINE_CLASS: "bg-blue-50 border-blue-200",
-  EXAM: "bg-amber-50 border-amber-200",
-  CANCELLED: "bg-rose-50 border-rose-200 opacity-60",
-};
 
 type Tab = "schedule" | "students" | "fees" | "documents";
 const CLASS_STATUS_OPTIONS: ClassStatus[] = ["PLANNED", "ACTIVE", "FINISHED"];
@@ -48,10 +47,13 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const { toast } = useToast();
 
   const [tab, setTab] = useState<Tab>("schedule");
-  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<ScheduleResponse | null>(null);
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [scheduleRules, setScheduleRules] = useState<ScheduleRuleResponse[]>([]);
+  const [scheduleEvents, setScheduleEvents] = useState<ScheduleEventResponse[]>([]);
+  const [editingEvent, setEditingEvent] = useState<ScheduleEventResponse | null>(null);
+  const [generatingRuleId, setGeneratingRuleId] = useState<number | null>(null);
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentResponse[]>([]);
   const [isLoadingEnrollments, setIsLoadingEnrollments] = useState(false);
@@ -70,7 +72,6 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(cls.name);
-  const [editMaxStudents, setEditMaxStudents] = useState(cls.maxStudents ?? 30);
   const [editMonthlyFee, setEditMonthlyFee] = useState(cls.monthFee ?? 0);
   const [editCourseId, setEditCourseId] = useState<number | undefined>(cls.courseId || undefined);
   const [editStatus, setEditStatus] = useState<ClassStatus>(cls.status);
@@ -83,7 +84,6 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
 
   const resetEditState = useCallback(() => {
     setEditName(cls.name);
-    setEditMaxStudents(cls.maxStudents ?? 30);
     setEditMonthlyFee(cls.monthFee ?? 0);
     setEditCourseId(cls.courseId || undefined);
     setEditStatus(cls.status);
@@ -112,7 +112,8 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
       await classApi.update(cls.id, {
         name: editName.trim(),
         courseId: editCourseId || (null as any),
-        maxStudent: editMaxStudents,
+        startDate: cls.startDate || undefined,
+        teacherUserId: cls.teacherUserId || undefined,
         monthlyFee: editMonthlyFee,
       });
       setIsEditing(false);
@@ -128,9 +129,14 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const loadSchedules = useCallback(async () => {
     setIsLoadingSchedules(true);
     try {
-      const [s, t] = await Promise.all([scheduleApi.findAllByClass(cls.id), teacherApi.findAll()]);
-      setSchedules(s);
+      const [t, rules, events] = await Promise.all([
+        teacherApi.findAll(),
+        scheduleApi.findRulesByClass(cls.id),
+        scheduleApi.findEventsByClass(cls.id),
+      ]);
       setTeachers(t);
+      setScheduleRules(rules);
+      setScheduleEvents(events);
     } catch {
       // silent
     } finally {
@@ -217,48 +223,80 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     }
   };
 
-  const handleSaveSchedule = async (data: ScheduleRequest) => {
+  const handleCreateRule = async (data: ScheduleRuleRequest) => {
     try {
-      if (editingSchedule) {
-        await scheduleApi.update(cls.id, editingSchedule.id, data);
-        toast.success("Cập nhật lịch học thành công.");
-      } else {
-        await scheduleApi.create(cls.id, data);
-        toast.success("Thêm lịch học thành công.");
-      }
-      setIsScheduleModalOpen(false);
-      setEditingSchedule(null);
+      await scheduleApi.createRule(cls.id, data);
+      toast.success("Tạo quy tắc lịch lặp thành công.");
+      setIsRuleModalOpen(false);
       loadSchedules();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Không thể lưu lịch học.");
+      toast.error(err?.response?.data?.message ?? "Không thể tạo quy tắc lịch.");
     }
   };
 
-  const handleDeleteSchedule = async (schedule: ScheduleResponse) => {
+  const handleGenerateRule = async (rule: ScheduleRuleResponse) => {
+    try {
+      setGeneratingRuleId(rule.id);
+      const created = await scheduleApi.generateEvents(cls.id, rule.id);
+      toast.success(`Đã sinh ${created.length} buổi học từ quy tắc.`);
+      loadSchedules();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể sinh lịch học.");
+    } finally {
+      setGeneratingRuleId(null);
+    }
+  };
+
+  const handleCreateEvent = async (data: ScheduleEventRequest) => {
+    try {
+      await scheduleApi.createEvent(cls.id, data);
+      toast.success("Tạo sự kiện lịch thành công.");
+      setIsEventModalOpen(false);
+      loadSchedules();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể tạo sự kiện lịch.");
+    }
+  };
+
+  const handleUpdateEvent = async (data: ScheduleEventRequest) => {
+    if (!editingEvent) return;
+
+    try {
+      await scheduleApi.updateEvent(cls.id, editingEvent.id, data);
+      toast.success("Cập nhật riêng buổi học thành công.");
+      setEditingEvent(null);
+      setIsEventModalOpen(false);
+      loadSchedules();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể cập nhật buổi học.");
+    }
+  };
+
+  const openEditEventModal = (event: ScheduleEventResponse) => {
+    setEditingEvent(event);
+    setIsEventModalOpen(true);
+  };
+
+  const closeEventModal = () => {
+    setEditingEvent(null);
+    setIsEventModalOpen(false);
+  };
+
+  const handleCancelEvent = async (event: ScheduleEventResponse) => {
     const confirmed = await confirm({
-      title: "Xóa lịch học?",
-      message: `Bạn có chắc chắn muốn xóa buổi học ${DAY_LABELS[schedule.dayOfWeek]} ${schedule.startTime}-${schedule.endTime}?`,
-      confirmText: "Xóa buổi học",
-      variant: "danger",
+      title: "Hủy buổi học/sự kiện?",
+      message: `Bạn có chắc muốn hủy sự kiện ngày ${new Date(event.eventDate).toLocaleDateString("vi-VN")} không? Rule gốc sẽ không bị thay đổi.`,
+      confirmText: "Hủy sự kiện",
+      variant: "warning",
     });
     if (!confirmed) return;
 
     try {
-      await scheduleApi.delete(cls.id, schedule.id);
-      toast.success("Xóa lịch học thành công.");
+      await scheduleApi.cancelEvent(cls.id, event.id);
+      toast.success("Đã hủy riêng sự kiện này.");
       loadSchedules();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Không thể xóa lịch học.");
-    }
-  };
-
-  const handleTypeChange = async (schedule: ScheduleResponse, newType: ScheduleType) => {
-    try {
-      await scheduleApi.updateType(cls.id, schedule.id, newType);
-      toast.success("Cập nhật hình thức học thành công.");
-      loadSchedules();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Không thể cập nhật hình thức học.");
+      toast.error(err?.response?.data?.message ?? "Không thể hủy sự kiện.");
     }
   };
 
@@ -462,16 +500,6 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700">Sĩ số tối đa</label>
-                <input
-                  type="number"
-                  value={editMaxStudents}
-                  onChange={(e) => setEditMaxStudents(Number(e.target.value))}
-                  min={1}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-950"
-                />
-              </div>
-              <div>
                 <label className="block text-xs font-medium text-gray-700">Học phí hàng tháng (VNĐ)</label>
                 <input
                   type="number"
@@ -544,21 +572,17 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                 <span className="font-medium text-gray-955">{formatCurrency(cls.monthFee)}/tháng</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
-                <span className="text-gray-500">Sĩ số tối đa:</span>
-                <span className="font-medium text-gray-950">{cls.maxStudents} học sinh</span>
-              </div>
-              <div className="flex justify-between border-b pb-1.5">
                 <span className="text-gray-500">Học sinh đăng ký:</span>
                 <span className="font-medium text-gray-950">{enrollments.length} học sinh</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-gray-500">Số lịch học trong tuần:</span>
-                <span className="font-medium text-gray-955">{schedules.length} buổi</span>
+                <span className="font-medium text-gray-955">{scheduleEvents.length} buổi</span>
               </div>
               <div className="flex justify-between border-b pb-1.5">
                 <span className="text-gray-500">Giáo viên gán:</span>
-                <span className="font-medium text-gray-950 text-right truncate max-w-[180px]" title={schedules.map(s => s.teacherUserFullName).filter((name, idx, self) => name && self.indexOf(name) === idx).join(", ")}>
-                  {schedules.map(s => s.teacherUserFullName).filter((name, idx, self) => name && self.indexOf(name) === idx).join(", ") || "Chưa có"}
+                <span className="font-medium text-gray-950 text-right truncate max-w-[180px]" title={cls.teacherName || undefined}>
+                  {cls.teacherName || "Chưa gán"}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-1.5 col-span-2">
@@ -600,71 +624,120 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
           {/* ── Schedule Tab ── */}
           {tab === "schedule" && (
             <div className="space-y-4">
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   className="border border-primary bg-primary text-white hover:bg-primary-hover px-3 py-1 text-xs font-medium rounded-lg"
+                  onClick={() => setIsRuleModalOpen(true)}
+                >
+                  + Tạo lịch lặp
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="px-3 py-1 text-xs font-medium rounded-lg"
                   onClick={() => {
-                    setEditingSchedule(null);
-                    setIsScheduleModalOpen(true);
+                    setEditingEvent(null);
+                    setIsEventModalOpen(true);
                   }}
                 >
-                  + Thêm buổi học
+                  + Tạo sự kiện lẻ
                 </Button>
               </div>
               {isLoadingSchedules ? (
                 <div className="py-8 text-center text-sm text-gray-500">Đang tải...</div>
-              ) : schedules.length === 0 ? (
+              ) : scheduleRules.length === 0 && scheduleEvents.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
                   Chưa có lịch học nào cho lớp này.
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {schedules.map((s) => (
-                    <div
-                      key={s.id}
-                      className={`flex items-center justify-between rounded-lg border p-3 ${
-                        SCHEDULE_TYPE_COLORS[s.type] || "bg-white border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="rounded-lg bg-white/80 border px-2 py-0.5 text-xs font-medium shadow-sm">
-                          {DAY_LABELS[s.dayOfWeek] ?? `Day ${s.dayOfWeek}`}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {s.startTime?.slice(0, 5)} – {s.endTime?.slice(0, 5)}
-                        </span>
-                        <span className="text-sm text-gray-600">Phòng {s.roomName}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500 font-medium">{s.teacherUserFullName}</span>
-                        <select
-                          value={s.type}
-                          onChange={(e) => handleTypeChange(s, e.target.value as ScheduleType)}
-                          className="rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-xs font-medium text-gray-900 focus:border-primary focus:outline-none"
-                        >
-                          <option value="THEORY_CLASS">Lý thuyết</option>
-                          <option value="ONLINE_CLASS">Trực tuyến</option>
-                          <option value="EXAM">Thi</option>
-                          <option value="CANCELLED">Tạm ngưng</option>
-                        </select>
-                        <button
-                          className="text-xs text-blue-600 underline font-medium"
-                          onClick={() => {
-                            setEditingSchedule(s);
-                            setIsScheduleModalOpen(true);
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className="text-xs text-red-600 underline font-medium"
-                          onClick={() => handleDeleteSchedule(s)}
-                        >
-                          Xóa
-                        </button>
-                      </div>
+                <div className="space-y-6">
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">Quy tắc lịch lặp</h3>
+                      <p className="text-xs text-gray-500">Rule chỉ mô tả thứ/giờ/khoảng ngày. Nhấn Generate để sinh Lesson Events.</p>
                     </div>
-                  ))}
+                    {scheduleRules.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-gray-300 py-6 text-center text-sm text-gray-500">
+                        Chưa có rule lặp nào.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {scheduleRules.map((rule) => (
+                          <div key={rule.id} className="rounded-card border border-surface-border bg-white p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
+                                  <span>{rule.daysOfWeek.map((day) => DAY_LABELS[day]).join(", ")}</span>
+                                  <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs text-primary">{rule.type === "ONLINE_CLASS" ? "Online" : "Học"}</span>
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {new Date(rule.startDate).toLocaleDateString("vi-VN")} - {new Date(rule.endDate).toLocaleDateString("vi-VN")} · {rule.startTime.slice(0, 5)} - {rule.endTime.slice(0, 5)}
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                  GV: {rule.teacherUserFullName} · Phòng: {rule.roomName} · Đã sinh: {rule.generatedEventCount} buổi
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => handleGenerateRule(rule)}
+                                isLoading={generatingRuleId === rule.id}
+                              >
+                                Tạo lịch
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">Lesson / Exam / Practice Events</h3>
+                      <p className="text-xs text-gray-500">Đây là các buổi thật. Hủy/đổi phòng/đổi giờ ở đây sẽ không phá rule gốc.</p>
+                    </div>
+                    {scheduleEvents.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-gray-300 py-6 text-center text-sm text-gray-500">
+                        Chưa có event nào được sinh hoặc tạo riêng.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {scheduleEvents.map((event) => (
+                          <div key={event.id} className={`flex flex-col gap-3 rounded-card border p-4 sm:flex-row sm:items-center sm:justify-between ${event.status === "CANCELLED" ? "border-red-200 bg-red-50/60" : "border-surface-border bg-white"}`}>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
+                                <span>{event.lessonNumber ? `Lesson #${event.lessonNumber}` : event.title || event.eventType}</span>
+                                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{event.eventType}</span>
+                                {event.status !== "SCHEDULED" && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-700">{event.status}</span>}
+                              </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {new Date(event.eventDate).toLocaleDateString("vi-VN")} · {event.startTime.slice(0, 5)} - {event.endTime.slice(0, 5)} · Phòng: {event.roomName || "—"}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">GV: {event.teacherUserFullName || "—"}</p>
+                            </div>
+                            <div className="flex self-start gap-2 sm:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => openEditEventModal(event)}
+                                className="rounded-btn border border-surface-border bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-surface-hover"
+                              >
+                                Sửa
+                              </button>
+                              {event.status !== "CANCELLED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelEvent(event)}
+                                  className="rounded-btn border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                >
+                                  Hủy buổi này
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
                 </div>
               )}
             </div>
@@ -683,7 +756,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
               </div>
               <div className="text-sm text-gray-600">
                 <span className="font-medium text-gray-900">{enrollments.length}</span>
-                /{cls.maxStudents} học sinh đang ghi danh
+                học sinh đang ghi danh
               </div>
               {isLoadingEnrollments ? (
                 <div className="py-8 text-center text-sm text-gray-500">Đang tải...</div>
@@ -877,21 +950,26 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
         </div>
       </div>
       <Modal
-        isOpen={isScheduleModalOpen}
-        onClose={() => {
-          setIsScheduleModalOpen(false);
-          setEditingSchedule(null);
-        }}
-        title={editingSchedule ? "Chinh sua buoi hoc" : "Them buoi hoc"}
+        isOpen={isRuleModalOpen}
+        onClose={() => setIsRuleModalOpen(false)}
+        title="Tạo lịch học lặp"
       >
-        <ScheduleForm
-          initialData={editingSchedule ?? undefined}
+        <ScheduleRuleForm
           teachers={teachers}
-          onSubmit={handleSaveSchedule}
-          onCancel={() => {
-            setIsScheduleModalOpen(false);
-            setEditingSchedule(null);
-          }}
+          onSubmit={handleCreateRule}
+          onCancel={() => setIsRuleModalOpen(false)}
+        />
+      </Modal>
+      <Modal
+        isOpen={isEventModalOpen}
+        onClose={closeEventModal}
+        title={editingEvent ? "Chỉnh sửa riêng buổi học" : "Tạo sự kiện lịch lẻ"}
+      >
+        <ScheduleEventForm
+          teachers={teachers}
+          initialData={editingEvent ?? undefined}
+          onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
+          onCancel={closeEventModal}
         />
       </Modal>
       <EnrollStudentModal

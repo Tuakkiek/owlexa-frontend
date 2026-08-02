@@ -3,8 +3,10 @@ import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { courseApi } from "../../../api/courseApi";
+import { teacherApi } from "../../../api/teacherApi";
 import type { ClassRequest } from "../../../types/class";
 import type { CourseResponse } from "../../../types/course";
+import type { TeacherResponse } from "../../../types/teacher";
 
 interface ClassFormProps {
   initialData?: Partial<ClassRequest>;
@@ -21,16 +23,22 @@ export const ClassForm = ({
   const [courseId, setCourseId] = useState<number | "">(
     initialData?.courseId ?? "",
   );
-  const [maxStudent, setMaxStudent] = useState(initialData?.maxStudent ?? 20);
+  const [startDate, setStartDate] = useState(initialData?.startDate ?? "");
+  const [teacherUserId, setTeacherUserId] = useState<number | "">(initialData?.teacherUserId ?? "");
   const [monthlyFee, setMonthlyFee] = useState(initialData?.monthlyFee ?? 0);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [courses, setCourses] = useState<CourseResponse[]>([]);
+  const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
 
   useEffect(() => {
     courseApi
       .findAll()
       .then(setCourses)
+      .catch(() => {});
+    teacherApi
+      .findAll()
+      .then(setTeachers)
       .catch(() => {});
   }, []);
 
@@ -38,7 +46,8 @@ export const ClassForm = ({
     if (initialData) {
       setName(initialData.name ?? "");
       setCourseId(initialData.courseId ?? "");
-      setMaxStudent(initialData.maxStudent ?? 20);
+      setStartDate(initialData.startDate ?? "");
+      setTeacherUserId(initialData.teacherUserId ?? "");
       setMonthlyFee(initialData.monthlyFee ?? 0);
     }
   }, [initialData]);
@@ -47,10 +56,7 @@ export const ClassForm = ({
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = "Tên lớp không được để trống";
     if (!courseId) errs.courseId = "Vui lòng chọn khóa học";
-    if (initialData) {
-      if (maxStudent < 1) errs.maxStudent = "Sĩ số tối thiểu là 1";
-      if (monthlyFee < 0) errs.monthlyFee = "Học phí không được âm";
-    }
+    if (initialData && monthlyFee < 0) errs.monthlyFee = "Học phí không được âm";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -63,7 +69,8 @@ export const ClassForm = ({
       await onSubmit({
         name: name.trim(),
         courseId: Number(courseId),
-        maxStudent: initialData ? maxStudent : undefined,
+        startDate: startDate || undefined,
+        teacherUserId: teacherUserId ? Number(teacherUserId) : undefined,
         monthlyFee: initialData ? monthlyFee : undefined,
       });
     } finally {
@@ -93,8 +100,8 @@ export const ClassForm = ({
             if (val) {
               const c = courses.find((co) => co.id === Number(val));
               if (c && c.defaultMonthlyFee) setMonthlyFee(c.defaultMonthlyFee);
-              if (c && c.defaultMaxStudents)
-                setMaxStudent(c.defaultMaxStudents);
+              if (c && c.defaultTeacherUserId)
+                setTeacherUserId(c.defaultTeacherUserId);
             }
           }}
           className={`w-full border bg-white px-3 py-2 text-sm focus:outline-none focus:border-primary ${
@@ -112,18 +119,34 @@ export const ClassForm = ({
           <p className="mt-1 text-xs text-red-500">{errors.courseId}</p>
         )}
       </div>
+      <Input
+        label="Ngày khai giảng"
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+      />
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">
+          Giáo viên phụ trách
+        </label>
+        <select
+          value={teacherUserId}
+          onChange={(e) => setTeacherUserId(e.target.value ? Number(e.target.value) : "")}
+          className="w-full border bg-white px-3 py-2 text-sm focus:outline-none focus:border-primary border-gray-300"
+        >
+          <option value="">-- Chưa gán --</option>
+          {teachers.map((teacher) => (
+            <option key={teacher.userId} value={teacher.userId}>
+              {teacher.fullName}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {initialData && (
         <>
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Sĩ số tối đa"
-              type="number"
-              value={maxStudent}
-              onChange={(e) => setMaxStudent(Number(e.target.value))}
-              error={errors.maxStudent}
-              min={1}
-            />
             <Input
               label="Học phí / tháng (VND)"
               type="number"
