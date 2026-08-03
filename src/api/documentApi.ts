@@ -5,6 +5,7 @@ export interface StudentDocumentRequest {
   title: string;
   type: "PDF" | "VIDEO" | "OTHER";
   url: string;
+  description?: string;
 }
 
 export const documentApi = {
@@ -31,6 +32,28 @@ export const documentApi = {
   ): Promise<StudentDocumentResponse> => {
     const response = await axiosClient.post(
       `/owner/classes/${classId}/documents`,
+      request,
+    );
+    return response.data;
+  },
+
+  // ── Teacher: class documents ──
+  findClassDocumentsAsTeacher: async (
+    classId: number,
+  ): Promise<StudentDocumentResponse[]> => {
+    const response = await axiosClient.get(
+      `/teacher/classes/${classId}/documents`,
+    );
+    return response.data;
+  },
+
+  // ── Teacher: upload document to class ──
+  createForClassAsTeacher: async (
+    classId: number,
+    request: StudentDocumentRequest,
+  ): Promise<StudentDocumentResponse> => {
+    const response = await axiosClient.post(
+      `/teacher/classes/${classId}/documents`,
       request,
     );
     return response.data;

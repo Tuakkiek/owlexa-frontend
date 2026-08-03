@@ -77,9 +77,7 @@ const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-surface-page px-4">
       <div className="w-full max-w-sm rounded-card border border-surface-border bg-white p-8">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-btn bg-primary text-lg font-semibold text-white">
-            O
-          </div>
+          <img src="/logo1.png" alt="Owlexa Logo" className="mx-auto mb-4 h-14 w-14 object-contain" />
           <h1 className="text-2xl font-semibold text-gray-900">Đăng nhập</h1>
           <p className="mt-1 text-sm text-gray-500">Owlexa Management System</p>
         </div>

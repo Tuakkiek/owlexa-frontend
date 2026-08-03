@@ -166,7 +166,6 @@ export const TeacherReviewDraftPanel = ({
         }
       }
     };
-    void loadReview;
 
     setReview(null);
     setOverallComment("");
@@ -184,11 +183,7 @@ export const TeacherReviewDraftPanel = ({
     }
 
     setIsLoading(true);
-    void createDraft().finally(() => {
-      if (!cancelled) {
-        setIsLoading(false);
-      }
-    });
+    void loadReview();
 
     return () => {
       cancelled = true;

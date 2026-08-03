@@ -15,6 +15,7 @@ interface DocumentUploadModalProps {
   classId: number;
   className: string;
   onUploaded: (doc: StudentDocumentResponse) => void;
+  isTeacher?: boolean;
 }
 
 const DOCUMENT_TYPES: Array<{
@@ -32,10 +33,12 @@ export const DocumentUploadModal = ({
   classId,
   className,
   onUploaded,
+  isTeacher = false,
 }: DocumentUploadModalProps) => {
   const [title, setTitle] = useState("");
   const [type, setType] = useState<StudentDocumentRequest["type"]>("PDF");
   const [url, setUrl] = useState("");
+  const [description, setDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -45,6 +48,7 @@ export const DocumentUploadModal = ({
       setTitle("");
       setType("PDF");
       setUrl("");
+      setDescription("");
       setError("");
       setSuccess(false);
     }
@@ -65,11 +69,16 @@ export const DocumentUploadModal = ({
 
     try {
       setIsLoading(true);
-      const result = await documentApi.createForClass(classId, {
+      const req: StudentDocumentRequest = {
         title: title.trim(),
         type,
         url: url.trim(),
-      });
+        description: description.trim() || undefined,
+      };
+      const result = isTeacher
+        ? await documentApi.createForClassAsTeacher(classId, req)
+        : await documentApi.createForClass(classId, req);
+
       setSuccess(true);
       onUploaded(result);
       setTimeout(() => onClose(), 1000);
@@ -111,7 +120,7 @@ export const DocumentUploadModal = ({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Tiêu đề tài liệu"
+            label="Tiêu đề tài liệu *"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="VD: Bài tập Unit 5"
@@ -138,12 +147,25 @@ export const DocumentUploadModal = ({
           </div>
 
           <Input
-            label="URL tài liệu"
+            label="URL tài liệu *"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://drive.google.com/..."
             error={error && !url ? error : ""}
           />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Mô tả ngắn (tùy chọn)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Nhập ghi chú hoặc hướng dẫn sử dụng tài liệu..."
+              rows={3}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+            />
+          </div>
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">

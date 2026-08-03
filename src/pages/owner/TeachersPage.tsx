@@ -15,6 +15,8 @@ import { PermissionModal } from "../../components/permission/PermissionModal";
 import { TemporaryPasswordDialog } from "../../components/ui/TemporaryPasswordDialog";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
+import { usePermissions } from "../../hooks/usePermissions";
+import { useAuthStore } from "../../store/authStore";
 import { teacherApi } from "../../api/teacherApi";
 import type {
   TeacherResponse,
@@ -41,6 +43,12 @@ const formatSalary = (
 export const TeachersPage = () => {
   const confirm = useConfirm();
   const { toast } = useToast();
+  const user = useAuthStore((state) => state.user);
+  const { hasPermission } = usePermissions();
+  const isOwner = user?.roleName === "OWNER";
+  const canManageTeachers = isOwner && hasPermission("TEACHER_ASSIGN");
+  const canManagePermissions = isOwner;
+  const canViewSalary = isOwner && hasPermission("SALARY_VIEW");
 
   const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,15 +111,26 @@ export const TeachersPage = () => {
       const created = await teacherApi.create(data);
       setIsAddModalOpen(false);
       setFieldError(null);
-      toast.success("Thêm giáo viên thành công.");
+      setSearch("");
+      setTeachers((current) => {
+        const withoutDuplicate = current.filter(
+          (teacher) => teacher.userId !== created.userId,
+        );
+        return [created, ...withoutDuplicate];
+      });
       if (created.temporaryPassword) {
         setCreatedUser({
           fullName: created.fullName,
           phoneNumber: created.phoneNumber,
           temporaryPassword: created.temporaryPassword,
         });
+        toast.success("Đã tạo giáo viên mới. Mật khẩu tạm thời đang hiển thị.");
+      } else {
+        toast.success(
+          "Đã thêm giáo viên vào trung tâm. Tài khoản này đã tồn tại nên không tạo mật khẩu tạm mới.",
+        );
       }
-      loadTeachers();
+      await loadTeachers();
     } catch (err: any) {
       const message =
         err?.response?.data?.message ?? "Không thể tạo giáo viên.";
@@ -197,17 +216,19 @@ export const TeachersPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader title="Giáo viên">
-        <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={() => setIsBulkAddModalOpen(true)}
-          >
-            Nhập nhiều
-          </Button>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            + Thêm giáo viên
-          </Button>
-        </div>
+        {canManageTeachers && (
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setIsBulkAddModalOpen(true)}
+            >
+              Nhập nhiều
+            </Button>
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              + Thêm giáo viên
+            </Button>
+          </div>
+        )}
       </PageHeader>
 
       {error && <ErrorBanner message={error} />}
@@ -238,8 +259,10 @@ export const TeachersPage = () => {
               <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <th className="px-6 py-3">Họ tên</th>
                 <th className="px-6 py-3">Số điện thoại</th>
-                <th className="px-6 py-3">Lương</th>
-                <th className="px-6 py-3 text-right">Thao tác</th>
+                {canViewSalary && <th className="px-6 py-3">Lương</th>}
+                {(canManageTeachers || canManagePermissions || canViewSalary) && (
+                  <th className="px-6 py-3 text-right">Thao tác</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
@@ -254,37 +277,49 @@ export const TeachersPage = () => {
                   <td className="px-6 py-4 text-gray-600">
                     {teacher.phoneNumber}
                   </td>
-                  <td className="px-6 py-4 text-gray-700">
-                    {formatSalary(teacher.salary, teacher.currency)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-3 text-sm">
-                      <button
-                        className="text-primary hover:text-primary-hover transition-colors"
-                        onClick={() => setPermissionTeacher(teacher)}
-                      >
-                        Phân quyền
-                      </button>
-                      <button
-                        className="text-gray-600 hover:text-gray-900 transition-colors"
-                        onClick={() => setEditingTeacher(teacher)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className="text-gray-600 hover:text-gray-900 transition-colors"
-                        onClick={() => setSalaryTeacher(teacher)}
-                      >
-                        Lương
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                        onClick={() => handleDelete(teacher)}
-                      >
-                        Gỡ
-                      </button>
-                    </div>
-                  </td>
+                  {canViewSalary && (
+                    <td className="px-6 py-4 text-gray-700">
+                      {formatSalary(teacher.salary, teacher.currency)}
+                    </td>
+                  )}
+                  {(canManageTeachers || canManagePermissions || canViewSalary) && (
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-3 text-sm">
+                        {canManagePermissions && (
+                          <button
+                            className="text-primary hover:text-primary-hover transition-colors"
+                            onClick={() => setPermissionTeacher(teacher)}
+                          >
+                            Phân quyền
+                          </button>
+                        )}
+                        {canManageTeachers && (
+                          <button
+                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                            onClick={() => setEditingTeacher(teacher)}
+                          >
+                            Sửa
+                          </button>
+                        )}
+                        {canViewSalary && (
+                          <button
+                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                            onClick={() => setSalaryTeacher(teacher)}
+                          >
+                            Lương
+                          </button>
+                        )}
+                        {canManageTeachers && (
+                          <button
+                            className="text-gray-400 hover:text-red-600 transition-colors"
+                            onClick={() => handleDelete(teacher)}
+                          >
+                            Gỡ
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -322,7 +357,7 @@ export const TeachersPage = () => {
             initialData={{
               fullName: editingTeacher.fullName,
               phoneNumber: editingTeacher.phoneNumber,
-              email: "",
+              email: editingTeacher.email ?? "",
             }}
             onSubmit={handleUpdate}
             onCancel={() => {

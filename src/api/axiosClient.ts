@@ -170,6 +170,24 @@ axiosClient.interceptors.response.use(
       }
     }
 
+    // ── 403 Forbidden: user is authenticated but missing a required permission ──
+    // Refresh the stored permissions from the server and redirect to /unauthorized.
+    if (error.response?.status === 403 && !originalRequest._forbiddenHandled) {
+      originalRequest._forbiddenHandled = true;
+      try {
+        const res = await axiosClient.get("/account");
+        if (res.data?.permissions) {
+          useAuthStore.getState().updateUser({ permissions: res.data.permissions });
+        }
+      } catch {
+        // If /account also fails, permissions are already stale — proceed with redirect.
+      }
+      if (window.location.pathname !== "/unauthorized") {
+        window.location.href = "/unauthorized";
+      }
+      return Promise.reject(error);
+    }
+
     normalizeApiErrorMessage(error);
     return Promise.reject(error);
   },
