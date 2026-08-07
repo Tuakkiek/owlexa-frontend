@@ -54,6 +54,7 @@ const API_MESSAGE_TRANSLATIONS: Array<[RegExp, string]> = [
   [/^Course must define a positive default session count before creating a recurring schedule\.?$/i, "Khóa học cần có số buổi học lớn hơn 0 trước khi tạo lịch lặp."],
   [/^User is not (a )?TEACHER\.?$/i, "Người dùng được chọn không phải là giáo viên."],
   [/^Teacher is not (a )?member of this center\.?$/i, "Giáo viên không thuộc trung tâm hiện tại."],
+  [/^File exceeds maximum allowed size\.?$/i, "Dung lượng tệp vượt quá giới hạn cho phép (tối đa 2GB)."],
 ];
 
 const translateApiMessage = (message: unknown): unknown => {

@@ -475,55 +475,55 @@ export const PaymentDialog = ({
           )}
 
           {/* Bank Info */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Ngân hàng:</span>
-              <span className="font-semibold text-gray-900">
+          <div className="rounded-2xl border border-gray-200/80 bg-gray-50/80 p-4 space-y-3 text-sm shadow-2xs">
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 text-xs font-semibold">Ngân hàng</span>
+              <span className="font-bold text-gray-900 text-xs bg-white px-2.5 py-1 rounded-lg border border-gray-200">
                 {qrData.bankName}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Số tài khoản:</span>
-              <span className="font-mono font-semibold text-gray-900">
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 text-xs font-semibold">Số tài khoản</span>
+              <span className="font-mono font-bold text-gray-900 text-sm">
                 {qrData.accountNumber || "—"}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Chủ tài khoản:</span>
-              <span className="font-semibold text-gray-900">
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 text-xs font-semibold">Chủ tài khoản</span>
+              <span className="font-bold text-gray-900 text-xs">
                 {qrData.accountHolder}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Số tiền:</span>
-              <span className="font-bold text-red-600">
+            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+              <span className="text-gray-500 text-xs font-semibold">Số tiền</span>
+              <span className="font-black text-primary text-base">
                 {formatMoney(qrData.amount)}
               </span>
             </div>
-            <div className="border-t border-gray-200 pt-2">
-              <span className="text-gray-500 text-xs">
-                Nội dung chuyển khoản:
-              </span>
-              <p className="mt-1 font-mono text-sm font-semibold text-gray-900 break-all">
-                {qrData.transferContent}
-              </p>
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-gray-600 text-xs font-bold">Nội dung chuyển khoản</span>
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md">Bắt buộc chính xác</span>
+              </div>
+              <div className="bg-white border-2 border-primary/40 rounded-xl p-2.5 shadow-2xs hover:border-primary transition-colors">
+                <p className="font-mono text-xs font-bold text-gray-900 tracking-wide select-all break-all leading-normal">
+                  {qrData.transferContent}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Status */}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
-            <span className="text-amber-700 font-medium">
-              Đang chờ thanh toán...
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3.5 py-2 rounded-full shadow-2xs">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
+            <span>Đang chờ chuyển khoản, hệ thống sẽ tự động gạch nợ...</span>
           </div>
 
-          <p className="text-xs text-gray-400 text-center">
-            Trạng thái sẽ tự động cập nhật khi nhận được thanh toán.
-          </p>
-
-          <div className="flex justify-end gap-2 border-t pt-4">
-            <Button type="button" variant="secondary" onClick={handleClose}>
+          <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
+            <Button type="button" variant="secondary" onClick={handleClose} className="w-full py-2.5 font-semibold">
               Đóng
             </Button>
           </div>

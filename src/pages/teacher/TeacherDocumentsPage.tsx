@@ -5,6 +5,7 @@ import type { ClassResponse } from "../../types/class";
 import type { StudentDocumentResponse } from "../../types/document";
 import { DocumentUploadModal } from "../owner/components/DocumentUploadModal";
 import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 import { PageHeader, Card, LoadingSkeleton, ErrorBanner } from "../../components/ui/SharedComponents";
 
 export default function TeacherDocumentsPage() {
@@ -16,6 +17,9 @@ export default function TeacherDocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  const [deletingDoc, setDeletingDoc] = useState<StudentDocumentResponse | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load teacher's assigned classes
   const loadClasses = useCallback(async () => {
@@ -77,6 +81,21 @@ export default function TeacherDocumentsPage() {
 
   const handleDocumentUploaded = (newDoc: StudentDocumentResponse) => {
     setDocuments((prev) => [newDoc, ...prev]);
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!selectedClassId || !deletingDoc) return;
+    try {
+      setIsDeleting(true);
+      setError(null);
+      await documentApi.deleteForClassAsTeacher(selectedClassId, deletingDoc.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== deletingDoc.id));
+      setDeletingDoc(null);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Không thể xóa tài liệu.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getDocTypeBadge = (type: string) => {
@@ -200,14 +219,26 @@ export default function TeacherDocumentsPage() {
           {filteredDocuments.map((doc) => (
             <div
               key={doc.id}
-              className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md"
+              className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md group"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
                   {getDocTypeBadge(doc.type)}
-                  <span className="text-xs text-gray-400">
-                    {new Date(doc.uploadedAt).toLocaleDateString("vi-VN")}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">
+                      {new Date(doc.uploadedAt).toLocaleDateString("vi-VN")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setDeletingDoc(doc)}
+                      className="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      title="Xóa tài liệu"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <h3 className="font-semibold text-gray-900 text-base line-clamp-2 mb-2" title={doc.title}>
                   {doc.title}
@@ -250,6 +281,41 @@ export default function TeacherDocumentsPage() {
           onUploaded={handleDocumentUploaded}
           isTeacher={true}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingDoc && (
+        <Modal
+          isOpen={!!deletingDoc}
+          onClose={() => setDeletingDoc(null)}
+          title="Xác nhận xóa tài liệu"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Bạn có chắc chắn muốn xóa tài liệu{" "}
+              <strong className="text-gray-900 font-semibold">
+                "{deletingDoc.title}"
+              </strong>{" "}
+              khỏi lớp học này không? Hành động này không thể hoàn tác.
+            </p>
+            <div className="flex justify-end gap-2 border-t pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setDeletingDoc(null)}
+                disabled={isDeleting}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteDocument}
+                isLoading={isDeleting}
+              >
+                Xóa tài liệu
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

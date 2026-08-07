@@ -281,7 +281,7 @@ export const OwnerPaymentsPage = () => {
                           to={`/owner/payments/${payment.id}/receipt`}
                           className="text-xs font-medium text-primary hover:underline"
                         >
-                          BL
+                          Biên lai
                         </Link>
                         {payment.status !== "VOIDED" &&
                           payment.status !== "EXPIRED" && (

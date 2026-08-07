@@ -37,6 +37,16 @@ export const documentApi = {
     return response.data;
   },
 
+  // ── Owner: delete document ──
+  deleteForClass: async (
+    classId: number,
+    documentId: number,
+  ): Promise<void> => {
+    await axiosClient.delete(
+      `/owner/classes/${classId}/documents/${documentId}`,
+    );
+  },
+
   // ── Teacher: class documents ──
   findClassDocumentsAsTeacher: async (
     classId: number,
@@ -57,5 +67,15 @@ export const documentApi = {
       request,
     );
     return response.data;
+  },
+
+  // ── Teacher: delete document ──
+  deleteForClassAsTeacher: async (
+    classId: number,
+    documentId: number,
+  ): Promise<void> => {
+    await axiosClient.delete(
+      `/teacher/classes/${classId}/documents/${documentId}`,
+    );
   },
 };
