@@ -3,7 +3,6 @@ import { scheduleApi } from "../../api/scheduleApi";
 import { classApi } from "../../api/classApi";
 import { attendanceApi } from "../../api/attendanceApi";
 import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
 import {
   PageHeader,
   ErrorBanner,
@@ -17,10 +16,8 @@ import type {
   AttendanceResponse,
   AttendanceStatus,
 } from "../../types/attendance";
-import { STATUS_META } from "../../types/attendance";
 import type { ScheduleResponse } from "../../types/schedule";
 import type { TeacherClassStudents } from "../../types/teacherClassStudents";
-import { DAY_LABELS } from "../../types/schedule";
 
 interface AttendanceRow {
   studentUserId: number;
@@ -30,19 +27,115 @@ interface AttendanceRow {
   note: string;
 }
 
+const DAY_LABELS: Record<number, string> = {
+  0: "Chủ nhật",
+  1: "Thứ Hai",
+  2: "Thứ Ba",
+  3: "Thứ Tư",
+  4: "Thứ Năm",
+  5: "Thứ Sáu",
+  6: "Thứ Bảy",
+};
+
+const STATUS_META: Record<
+  AttendanceStatus,
+  { label: string; className: string }
+> = {
+  PRESENT: {
+    label: "Có mặt",
+    className: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  },
+  ABSENT: {
+    label: "Vắng",
+    className: "border-rose-300 bg-rose-50 text-rose-700",
+  },
+  LATE: {
+    label: "Muộn",
+    className: "border-amber-300 bg-amber-50 text-amber-700",
+  },
+  EXCUSED: {
+    label: "Xin phép",
+    className: "border-blue-300 bg-blue-50 text-blue-700",
+  },
+};
+
+const ATTENDANCE_STATUSES: AttendanceStatus[] = [
+  "PRESENT",
+  "ABSENT",
+  "LATE",
+  "EXCUSED",
+];
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value?: string | null) {
+  if (!value) return null;
+
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
+}
+
+function formatDate(value?: string | null) {
+  const date = parseLocalDate(value);
+  if (!date) return "";
+
+  return `${String(date.getDate()).padStart(2, "0")}/${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}/${date.getFullYear()}`;
+}
+
+function formatTime(value?: string | null) {
+  return value ? value.slice(0, 5) : "--:--";
+}
+
+function isAttendableSchedule(schedule: ScheduleResponse) {
+  return schedule.type !== "CANCELLED" && schedule.eventStatus !== "CANCELLED";
+}
+
+function sortByDateAndTime(a: ScheduleResponse, b: ScheduleResponse) {
+  return (
+    (a.eventDate ?? "").localeCompare(b.eventDate ?? "") ||
+    a.startTime.localeCompare(b.startTime)
+  );
+}
+
+function pickDefaultSchedule(schedules: ScheduleResponse[]) {
+  const todayKey = toDateKey(new Date());
+  const active = schedules.filter(isAttendableSchedule).sort(sortByDateAndTime);
+
+  return (
+    active.find((schedule) => schedule.eventDate === todayKey) ??
+    active.find((schedule) => (schedule.eventDate ?? "") >= todayKey) ??
+    active[0] ??
+    null
+  );
+}
+
 export default function TeacherAttendancePage() {
   const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [classes, setClasses] = useState<TeacherClassStudents[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(
     null,
   );
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(toDateKey(new Date()));
   const [rows, setRows] = useState<AttendanceRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const visibleSchedules = useMemo(
+    () => schedules.filter(isAttendableSchedule).sort(sortByDateAndTime),
+    [schedules],
+  );
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -53,11 +146,12 @@ export default function TeacherAttendancePage() {
         classApi.findMyClassesWithStudentsAsTeacher(),
       ]);
 
+      const defaultSchedule = pickDefaultSchedule(scheduleData);
+
       setSchedules(scheduleData);
       setClasses(classData);
-      setSelectedScheduleId(
-        (current) => current ?? scheduleData[0]?.id ?? null,
-      );
+      setSelectedScheduleId((current) => current ?? defaultSchedule?.id ?? null);
+      setDate((current) => defaultSchedule?.eventDate ?? current);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu điểm danh.",
@@ -73,8 +167,9 @@ export default function TeacherAttendancePage() {
 
   const selectedSchedule = useMemo(
     () =>
-      schedules.find((schedule) => schedule.id === selectedScheduleId) ?? null,
-    [schedules, selectedScheduleId],
+      visibleSchedules.find((schedule) => schedule.id === selectedScheduleId) ??
+      null,
+    [visibleSchedules, selectedScheduleId],
   );
 
   const selectedClass = useMemo(
@@ -151,6 +246,14 @@ export default function TeacherAttendancePage() {
     );
   };
 
+  const handleScheduleChange = (scheduleId: number) => {
+    const schedule = visibleSchedules.find((item) => item.id === scheduleId);
+    setSelectedScheduleId(scheduleId);
+    if (schedule?.eventDate) {
+      setDate(schedule.eventDate);
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedSchedule || rows.length === 0) return;
 
@@ -194,49 +297,54 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      <Card className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
-        <div>
+      <Card className="grid gap-4 lg:grid-cols-[minmax(280px,1.4fr)_220px_minmax(260px,0.8fr)_auto] lg:items-end">
+        <div className="min-w-0">
           <label className="mb-1 block text-sm font-medium text-gray-700">
             Buổi học
           </label>
           <select
             value={selectedScheduleId ?? ""}
-            onChange={(event) =>
-              setSelectedScheduleId(Number(event.target.value))
-            }
+            onChange={(event) => handleScheduleChange(Number(event.target.value))}
             className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
           >
             <option value="" disabled>
               Chọn buổi học
             </option>
-            {schedules.map((schedule) => (
+            {visibleSchedules.map((schedule) => (
               <option key={schedule.id} value={schedule.id}>
-                {DAY_LABELS[schedule.dayOfWeek]} · {schedule.className} ·{" "}
-                {schedule.startTime.slice(0, 5)}-{schedule.endTime.slice(0, 5)}
+                {formatDate(schedule.eventDate)} · {schedule.className} ·{" "}
+                {formatTime(schedule.startTime)}-{formatTime(schedule.endTime)}
               </option>
             ))}
           </select>
         </div>
 
-        <Input
-          label="Ngày điểm danh"
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-        />
+        <div className="min-w-0">
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Ngày điểm danh
+          </label>
+          <input
+            type="date"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
+          />
+        </div>
 
-        <div className="rounded-input border border-surface-border bg-surface-hover px-4 py-3">
+        <div className="min-w-0 rounded-input border border-surface-border bg-surface-hover px-4 py-3">
           <div className="text-sm font-medium text-gray-700">
             Thông tin buổi học
           </div>
           <div className="mt-1 text-sm text-gray-500">
             {selectedSchedule ? (
               <>
-                {currentDayName} · {selectedSchedule.className}
+                {currentDayName} · {formatDate(selectedSchedule.eventDate)}
                 <br />
-                Phòng {selectedSchedule.roomName} ·{" "}
-                {selectedSchedule.startTime.slice(0, 5)}-
-                {selectedSchedule.endTime.slice(0, 5)}
+                {selectedSchedule.className}
+                <br />
+                Phòng {selectedSchedule.roomName || "Chưa gán"} ·{" "}
+                {formatTime(selectedSchedule.startTime)}-
+                {formatTime(selectedSchedule.endTime)}
               </>
             ) : (
               "Chưa chọn buổi học"
@@ -255,16 +363,14 @@ export default function TeacherAttendancePage() {
         </Button>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["PRESENT", "ABSENT", "EXCUSED"] as AttendanceStatus[]).map(
-          (status) => (
-            <StatCard
-              key={status}
-              label={STATUS_META[status].label}
-              value={summary[status]}
-            />
-          ),
-        )}
+      <div className="grid gap-4 sm:grid-cols-4">
+        {ATTENDANCE_STATUSES.map((status) => (
+          <StatCard
+            key={status}
+            label={STATUS_META[status].label}
+            value={summary[status]}
+          />
+        ))}
       </div>
 
       {isLoading || isLoadingAttendance ? (
@@ -274,7 +380,7 @@ export default function TeacherAttendancePage() {
       ) : !selectedClass ? (
         <EmptyState message="Không tìm thấy danh sách học sinh của lớp này." />
       ) : rows.length === 0 ? (
-        <EmptyState message="Chưa có học sinh nào trong lớp hoặc chưa có dữ liệu điểm danh cho ngày này." />
+        <EmptyState message="Chưa có học sinh nào trong lớp này." />
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
           <div className="border-b border-surface-border px-6 py-4">
@@ -282,8 +388,7 @@ export default function TeacherAttendancePage() {
               Học sinh trong lớp {selectedClass.className}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              {rows.length} học sinh · {DAY_LABELS[selectedSchedule.dayOfWeek]}{" "}
-              · {date}
+              {rows.length} học sinh · {currentDayName} · {formatDate(date)}
             </p>
           </div>
 
@@ -291,7 +396,7 @@ export default function TeacherAttendancePage() {
             {rows.map((row) => (
               <div
                 key={row.studentUserId}
-                className="grid gap-4 px-6 py-4 lg:grid-cols-[1.2fr_1fr_1.4fr] lg:items-center"
+                className="grid gap-4 px-6 py-4 lg:grid-cols-[1.2fr_1.1fr_1.4fr] lg:items-center"
               >
                 <div>
                   <p className="font-medium text-gray-900">
@@ -303,27 +408,23 @@ export default function TeacherAttendancePage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {(["PRESENT", "ABSENT", "EXCUSED"] as AttendanceStatus[]).map(
-                    (status) => {
-                      const active = row.status === status;
-                      return (
-                        <button
-                          key={status}
-                          type="button"
-                          onClick={() =>
-                            updateRow(row.studentUserId, { status })
-                          }
-                          className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
-                            active
-                              ? STATUS_META[status].className
-                              : "border-surface-border bg-white text-gray-600 hover:bg-surface-hover"
-                          }`}
-                        >
-                          {STATUS_META[status].label}
-                        </button>
-                      );
-                    },
-                  )}
+                  {ATTENDANCE_STATUSES.map((status) => {
+                    const active = row.status === status;
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => updateRow(row.studentUserId, { status })}
+                        className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                          active
+                            ? STATUS_META[status].className
+                            : "border-surface-border bg-white text-gray-600 hover:bg-surface-hover"
+                        }`}
+                      >
+                        {STATUS_META[status].label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div>

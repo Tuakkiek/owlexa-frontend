@@ -34,6 +34,42 @@ const axiosClient = axios.create({
   withCredentials: true, // Important for sending/receiving HttpOnly cookies
 });
 
+const API_MESSAGE_TRANSLATIONS: Array<[RegExp, string]> = [
+  [/^Room is already booked at this time\.?$/i, "Phòng đã được đặt vào thời gian này."],
+  [/^Room is already booked by an active recurring rule\.?$/i, "Phòng đã được đặt bởi một lịch lặp đang hoạt động."],
+  [/^Room (.+) is already occupied on (.+) from (.+) to (.+)\.?$/i, "Phòng $1 đã có lịch vào $2 từ $3 đến $4."],
+  [/^Teacher already has an active recurring rule at this time\.?$/i, "Giáo viên đã có lịch lặp khác vào thời gian này."],
+  [/^Teacher (.+) is already teaching another class during this time\.?$/i, "Giáo viên $1 đã có lớp khác vào thời gian này."],
+  [/^Student (.+) already has another class during this time\.?$/i, "Học viên $1 đã có lớp khác vào thời gian này."],
+  [/^A student in this class already has another recurring schedule at this time\.?$/i, "Có học viên trong lớp này đã có lịch lặp khác vào thời gian này."],
+  [/^Schedule already exists for this class at this time\.?$/i, "Lớp này đã có lịch học vào thời gian này."],
+  [/^Schedule overlaps with an existing schedule for this class\.?$/i, "Lớp này đã có lịch học trùng thời gian."],
+  [/^Schedule overlaps with an active recurring rule for this class\.?$/i, "Lớp này đã có quy tắc lịch lặp trùng thời gian."],
+  [/^Schedule event overlaps with an existing event\.?$/i, "Sự kiện lịch bị trùng với một sự kiện đã có."],
+  [/^Schedule event overlaps with an existing event for this class\.?$/i, "Lớp này đã có buổi học hoặc sự kiện trùng thời gian."],
+  [/^startTime must be before endTime\.?$/i, "Giờ bắt đầu phải trước giờ kết thúc."],
+  [/^Start time must be before end time\.?$/i, "Giờ bắt đầu phải trước giờ kết thúc."],
+  [/^Start time and end time are required\.?$/i, "Vui lòng nhập giờ bắt đầu và giờ kết thúc."],
+  [/^daysOfWeek values must be from 1 to 7\.?$/i, "Thứ học phải nằm trong khoảng từ 1 đến 7."],
+  [/^Course must define a positive default session count before creating a recurring schedule\.?$/i, "Khóa học cần có số buổi học lớn hơn 0 trước khi tạo lịch lặp."],
+  [/^User is not (a )?TEACHER\.?$/i, "Người dùng được chọn không phải là giáo viên."],
+  [/^Teacher is not (a )?member of this center\.?$/i, "Giáo viên không thuộc trung tâm hiện tại."],
+  [/^File exceeds maximum allowed size\.?$/i, "Dung lượng tệp vượt quá giới hạn cho phép (tối đa 2GB)."],
+];
+
+const translateApiMessage = (message: unknown): unknown => {
+  if (typeof message !== "string") return message;
+  const match = API_MESSAGE_TRANSLATIONS.find(([pattern]) => pattern.test(message));
+  return match ? message.replace(match[0], match[1]) : message;
+};
+
+const normalizeApiErrorMessage = (error: any) => {
+  const data = error?.response?.data;
+  if (data && typeof data === "object" && "message" in data) {
+    data.message = translateApiMessage(data.message);
+  }
+};
+
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
@@ -135,6 +171,25 @@ axiosClient.interceptors.response.use(
       }
     }
 
+    // ── 403 Forbidden: user is authenticated but missing a required permission ──
+    // Refresh the stored permissions from the server and redirect to /unauthorized.
+    if (error.response?.status === 403 && !originalRequest._forbiddenHandled) {
+      originalRequest._forbiddenHandled = true;
+      try {
+        const res = await axiosClient.get("/account");
+        if (res.data?.permissions) {
+          useAuthStore.getState().updateUser({ permissions: res.data.permissions });
+        }
+      } catch {
+        // If /account also fails, permissions are already stale — proceed with redirect.
+      }
+      if (window.location.pathname !== "/unauthorized") {
+        window.location.href = "/unauthorized";
+      }
+      return Promise.reject(error);
+    }
+
+    normalizeApiErrorMessage(error);
     return Promise.reject(error);
   },
 );

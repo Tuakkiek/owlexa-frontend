@@ -144,8 +144,8 @@ export const ClassesPage = () => {
           value={classes.filter((c) => c.isActive).length}
         />
         <StatCard
-          label="Tổng sĩ số"
-          value={classes.reduce((s, c) => s + c.maxStudents, 0)}
+          label="Tổng học viên"
+          value={classes.reduce((s, c) => s + c.studentCount, 0)}
         />
       </div>
 
@@ -169,7 +169,7 @@ export const ClassesPage = () => {
               <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <th className="px-6 py-3">Tên lớp</th>
                 <th className="px-6 py-3">Khóa học</th>
-                <th className="px-6 py-3 text-right">Sĩ số</th>
+                <th className="px-6 py-3 text-right">Học viên</th>
                 <th className="px-6 py-3 text-center">Trạng thái</th>
                 <th className="px-6 py-3 text-right">Thao tác</th>
               </tr>
@@ -188,7 +188,7 @@ export const ClassesPage = () => {
                     {cls.courseName ?? "—"}
                   </td>
                   <td className="px-6 py-4 text-right text-gray-600">
-                    {cls.maxStudents}
+                    {cls.studentCount}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <Badge variant={cls.isActive ? "success" : "default"}>
@@ -238,7 +238,8 @@ export const ClassesPage = () => {
               ? {
                   name: editingClass.name,
                   courseId: editingClass.courseId ?? undefined,
-                  maxStudent: editingClass.maxStudents,
+                  startDate: editingClass.startDate ?? undefined,
+                  teacherUserId: editingClass.teacherUserId ?? undefined,
                   monthlyFee: editingClass.monthFee,
                 }
               : undefined

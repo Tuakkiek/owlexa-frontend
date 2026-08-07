@@ -5,6 +5,7 @@ export interface StudentDocumentRequest {
   title: string;
   type: "PDF" | "VIDEO" | "OTHER";
   url: string;
+  description?: string;
 }
 
 export const documentApi = {
@@ -34,5 +35,47 @@ export const documentApi = {
       request,
     );
     return response.data;
+  },
+
+  // ── Owner: delete document ──
+  deleteForClass: async (
+    classId: number,
+    documentId: number,
+  ): Promise<void> => {
+    await axiosClient.delete(
+      `/owner/classes/${classId}/documents/${documentId}`,
+    );
+  },
+
+  // ── Teacher: class documents ──
+  findClassDocumentsAsTeacher: async (
+    classId: number,
+  ): Promise<StudentDocumentResponse[]> => {
+    const response = await axiosClient.get(
+      `/teacher/classes/${classId}/documents`,
+    );
+    return response.data;
+  },
+
+  // ── Teacher: upload document to class ──
+  createForClassAsTeacher: async (
+    classId: number,
+    request: StudentDocumentRequest,
+  ): Promise<StudentDocumentResponse> => {
+    const response = await axiosClient.post(
+      `/teacher/classes/${classId}/documents`,
+      request,
+    );
+    return response.data;
+  },
+
+  // ── Teacher: delete document ──
+  deleteForClassAsTeacher: async (
+    classId: number,
+    documentId: number,
+  ): Promise<void> => {
+    await axiosClient.delete(
+      `/teacher/classes/${classId}/documents/${documentId}`,
+    );
   },
 };

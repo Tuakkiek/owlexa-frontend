@@ -9,14 +9,15 @@ export const CLASS_STATUS_LABELS: Record<ClassStatus, string> = {
 export interface ClassRequest {
   name: string;
   courseId: number;
-  maxStudent?: number;
+  startDate?: string;
+  teacherUserId?: number;
   monthlyFee?: number;
+  status?: ClassStatus;
 }
 
 export interface ClassResponse {
   id: number;
   name: string;
-  maxStudents: number;
   monthFee: number;
   status: ClassStatus;
   isActive: boolean;
@@ -24,4 +25,12 @@ export interface ClassResponse {
   courseId: number | null;
   courseName: string | null;
   courseCode: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  teacherUserId?: number | null;
+  teacherName?: string | null;
+  studentCount: number;
+  scheduleCount?: number;
+  teachers?: string[];
+  createdAt?: string;
 }

@@ -15,6 +15,8 @@ export interface RoomResponse {
   capacity: number | null;
   description: string | null;
   isActive: boolean;
+  isInUse: boolean;
+  usageCount: number;
   centerId: number;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +24,8 @@ export interface RoomResponse {
 
 export interface RoomScheduleSummaryResponse {
   id: number;
+  source: "RULE" | "EVENT" | "LEGACY" | string;
+  eventDate?: string | null;
   dayOfWeek: string;
   startTime: string;
   endTime: string;
@@ -33,6 +37,7 @@ export interface RoomScheduleSummaryResponse {
 export interface RoomDependencyDto {
   className: string;
   teacherName: string;
+  source?: string | null;
   dayOfWeek: string;
   timeRange: string;
 }

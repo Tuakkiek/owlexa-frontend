@@ -834,8 +834,8 @@ const StudentSubmissionAttemptPage = () => {
         onChange={(event) =>
           updateEssayAnswer(item.assignmentItemId, event.target.value)
         }
-        rows={7}
-        className="mt-5 w-full rounded-input border border-surface-border bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:bg-surface-page disabled:text-gray-500"
+        rows={22}
+        className="mt-5 w-full min-h-[260px] resize-y rounded-input border border-surface-border bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:bg-surface-page disabled:text-gray-500"
         placeholder="Nhập câu trả lời của bạn..."
       />
     );

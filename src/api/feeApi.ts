@@ -32,6 +32,27 @@ export const feeApi = {
     return response.data;
   },
 
+  getClassFees: async (classId: number, roleName?: string): Promise<FeeRecordResponse[]> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/classes/${classId}/fee-records`);
+    return response.data;
+  },
+
+
+
+  updateClassFeeDueDate: async (
+    classId: number,
+    dueDate: string,
+    roleName?: string,
+  ): Promise<FeeRecordResponse[]> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
+    const response = await axiosClient.put(
+      `${prefix}/classes/${classId}/fee-records/due-date`,
+      { dueDate },
+    );
+    return response.data;
+  },
+
   collectCash: async (
     feeRecordId: number,
     request: CashPaymentRequest,

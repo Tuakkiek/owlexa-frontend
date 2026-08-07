@@ -23,7 +23,6 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
   const [editCode, setEditCode] = useState(course.code);
   const [editDescription, setEditDescription] = useState(course.description ?? "");
   const [editMonthlyFee, setEditMonthlyFee] = useState(course.defaultMonthlyFee ?? 0);
-  const [editMaxStudents, setEditMaxStudents] = useState(course.defaultMaxStudents ?? 30);
   const [editIsActive, setEditIsActive] = useState(course.isActive);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,7 +53,6 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
     setEditCode(course.code);
     setEditDescription(course.description ?? "");
     setEditMonthlyFee(course.defaultMonthlyFee ?? 0);
-    setEditMaxStudents(course.defaultMaxStudents ?? 30);
     setEditIsActive(course.isActive);
   }, [course]);
 
@@ -71,7 +69,6 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
         code: editCode.trim(),
         description: editDescription.trim(),
         defaultMonthlyFee: editMonthlyFee,
-        defaultMaxStudents: editMaxStudents,
         isActive: editIsActive,
       });
       setIsEditing(false);
@@ -155,16 +152,6 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700">Sĩ số mặc định</label>
-                <input
-                  type="number"
-                  value={editMaxStudents}
-                  onChange={(e) => setEditMaxStudents(Number(e.target.value))}
-                  min={1}
-                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none bg-white text-gray-955"
-                />
-              </div>
-              <div>
                 <label className="block text-xs font-medium text-gray-700">Trạng thái hoạt động</label>
                 <select
                   value={editIsActive ? "true" : "false"}
@@ -194,7 +181,6 @@ export const CourseDetailDrawer = ({ course, onClose, onRefresh }: CourseDetailD
                   setEditCode(course.code);
                   setEditDescription(course.description ?? "");
                   setEditMonthlyFee(course.defaultMonthlyFee ?? 0);
-                  setEditMaxStudents(course.defaultMaxStudents ?? 30);
                   setEditIsActive(course.isActive);
                 }}
                 className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"

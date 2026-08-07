@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { roomApi } from "../../api/roomApi";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import {
-  PageHeader,
-  SearchInput,
+  Badge,
   ErrorBanner,
   LoadingSkeleton,
-  Badge,
+  PageHeader,
+  SearchInput,
 } from "../../components/ui/SharedComponents";
-import { RoomForm } from "./components/RoomForm";
-import { RoomDetailDrawer } from "./components/RoomDetailDrawer";
-import { roomApi } from "../../api/roomApi";
-import type { RoomRequest, RoomResponse } from "../../types/room";
-
 import { useConfirm } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
+import type { RoomRequest, RoomResponse } from "../../types/room";
+import { RoomDetailDrawer } from "./components/RoomDetailDrawer";
+import { RoomForm } from "./components/RoomForm";
 
 const RoomsPage = () => {
   const confirm = useConfirm();
@@ -34,9 +33,7 @@ const RoomsPage = () => {
       setError("");
       setRooms(await roomApi.findAll());
     } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Không thể tải danh sách phòng học.",
-      );
+      setError(err?.response?.data?.message ?? "Không thể tải danh sách phòng học.");
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +46,11 @@ const RoomsPage = () => {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     if (!q) return rooms;
-    return rooms.filter((r) => r.name.toLowerCase().includes(q));
+    return rooms.filter(
+      (room) =>
+        room.name.toLowerCase().includes(q) ||
+        room.code.toLowerCase().includes(q),
+    );
   }, [rooms, query]);
 
   const openCreate = () => {
@@ -81,16 +82,17 @@ const RoomsPage = () => {
       } catch (err: any) {
         toast.error(err?.response?.data?.message ?? "Không thể cập nhật phòng học.");
       }
-    } else {
-      try {
-        await roomApi.create(request);
-        toast.success("Tạo phòng học thành công.");
-        setIsModalOpen(false);
-        setEditingRoom(null);
-        await loadRooms();
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message ?? "Không thể tạo phòng học.");
-      }
+      return;
+    }
+
+    try {
+      await roomApi.create(request);
+      toast.success("Tạo phòng học thành công.");
+      setIsModalOpen(false);
+      setEditingRoom(null);
+      await loadRooms();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể tạo phòng học.");
     }
   };
 
@@ -98,11 +100,11 @@ const RoomsPage = () => {
     try {
       const validation = await roomApi.validateDelete(room.id);
       if (!validation.canDelete) {
-        let msg = `${validation.message}\n\nĐang được sử dụng bởi các lịch học:\n`;
-        validation.dependencies.forEach((d) => {
-          msg += `- Lớp ${d.className} (${d.dayOfWeek} ${d.timeRange})\n`;
+        let msg = `${validation.message}\n\nĐang được sử dụng bởi các lịch:\n`;
+        validation.dependencies.forEach((dependency) => {
+          msg += `- Lớp ${dependency.className} (${dependency.dayOfWeek} ${dependency.timeRange})\n`;
         });
-        msg += `\nVui lòng điều chỉnh hoặc hủy các lịch học này trước khi xóa. Bạn cũng có thể Tắt kích hoạt phòng học này thay vì xóa.`;
+        msg += "\nVui lòng điều chỉnh hoặc hủy các lịch này trước khi xóa.";
         toast.warning(msg);
         return;
       }
@@ -154,6 +156,7 @@ const RoomsPage = () => {
                 <th className="px-6 py-3">Mã</th>
                 <th className="px-6 py-3">Tên phòng</th>
                 <th className="px-6 py-3">Sức chứa</th>
+                <th className="px-6 py-3">Sử dụng</th>
                 <th className="px-6 py-3">Trạng thái</th>
                 <th className="px-6 py-3 text-right">Thao tác</th>
               </tr>
@@ -162,7 +165,7 @@ const RoomsPage = () => {
               {filtered.map((room) => (
                 <tr
                   key={room.id}
-                  className="hover:bg-surface-hover cursor-pointer"
+                  className="cursor-pointer hover:bg-surface-hover"
                   onClick={() => setSelectedRoom(room)}
                 >
                   <td className="px-6 py-4 font-medium text-gray-900">
@@ -170,14 +173,22 @@ const RoomsPage = () => {
                   </td>
                   <td className="px-6 py-4 text-gray-900">{room.name}</td>
                   <td className="px-6 py-4 text-gray-500">
-                    {room.capacity ?? "—"}
+                    {room.capacity ?? "-"}
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge variant={room.isInUse ? "warning" : "default"}>
+                      {room.isInUse ? `Đang dùng (${room.usageCount})` : "Chưa dùng"}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4">
                     <Badge variant={room.isActive ? "success" : "default"}>
                       {room.isActive ? "Hoạt động" : "Không hoạt động"}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="px-6 py-4 text-right"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <div className="flex justify-end gap-2">
                       <button
                         className="text-xs text-blue-600 underline"

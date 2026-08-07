@@ -1,13 +1,17 @@
+import type { PermissionOverrideItem } from "./permission";
+
 export interface TeacherRequest {
   fullName: string;
   email: string;
   phoneNumber: string;
+  permissionOverrides?: PermissionOverrideItem[];
 }
 
 export interface TeacherResponse {
   userId: number;
   fullName: string;
   phoneNumber: string;
+  email?: string | null;
   centerId: number;
   temporaryPassword?: string;
   salary?: string | null;

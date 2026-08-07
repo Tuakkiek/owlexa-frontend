@@ -203,7 +203,7 @@ export default function OwnerAttendancePage() {
       >
         {studentRows.length > 0 && (
           <Button variant="secondary" onClick={handleExportCSV}>
-            📥 Xuất CSV
+            Xuất CSV
           </Button>
         )}
       </PageHeader>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { feeApi } from "../../api/feeApi";
 import { scheduleApi } from "../../api/scheduleApi";
+import { documentApi } from "../../api/documentApi";
 import {
   PageHeader,
   StatCard,
@@ -11,12 +12,14 @@ import {
 import { Button } from "../../components/ui/Button";
 import type { FeeRecordResponse } from "../../types/fee";
 import type { ScheduleResponse } from "../../types/schedule";
+import type { StudentDocumentResponse } from "../../types/document";
 import { formatMoney, remainingBalance } from "../../utils/money";
 
 const StudentDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
+  const [documents, setDocuments] = useState<StudentDocumentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,12 +27,14 @@ const StudentDashboardPage = () => {
     try {
       setIsLoading(true);
       setError(null);
-      const [scheduleData, feeData] = await Promise.all([
+      const [scheduleData, feeData, docData] = await Promise.all([
         scheduleApi.findMySchedulesAsStudent(),
         feeApi.getMyFees(),
+        documentApi.getMyDocuments(),
       ]);
       setSchedules(scheduleData);
       setFees(feeData);
+      setDocuments(docData);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Không thể tải dữ liệu.");
     } finally {
@@ -93,7 +98,11 @@ const StudentDashboardPage = () => {
           value={isLoading ? "..." : formatMoney(String(totalOwed))}
           helper={`${unpaidFees.length} hóa đơn`}
         />
-        <StatCard label="Tài liệu" value="—" helper="Danh sách" />
+        <StatCard
+          label="Tài liệu"
+          value={isLoading ? "..." : documents.length}
+          helper="Trong thư viện"
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

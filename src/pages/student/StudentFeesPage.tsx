@@ -80,6 +80,15 @@ const StudentFeesPage = () => {
 
   // Countdown state
   const [countdown, setCountdown] = useState("");
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, fieldName: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
 
   // ── Load data ────────────────────────────────────────────────────────
 
@@ -619,122 +628,144 @@ const StudentFeesPage = () => {
 
                       {/* Step: QR Display */}
                       {dialogStep === "qr" && pendingState && (
-                        <div className="space-y-3">
-                          <p className="text-xs font-bold text-center uppercase">
-                            Quét QR để thanh toán
-                          </p>
+                        <div className="space-y-4 animate-scale-in">
+                          {/* Header Alert / Countdown banner */}
+                          <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
+                            <div className="flex items-center gap-2">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                              </span>
+                              <span className="text-[11px] font-bold text-amber-900">
+                                Kiểm tra tự động
+                              </span>
+                            </div>
+                            {countdown && (
+                              <span className={`text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-full border ${
+                                getRemainingSeconds(pendingState.payment.expiresAt!) < 60
+                                  ? "bg-red-100 text-red-700 border-red-200 animate-pulse"
+                                  : "bg-white text-amber-800 border-amber-200"
+                              }`}>
+                                {countdown}
+                              </span>
+                            )}
+                          </div>
 
-                          {/* QR Image */}
-                          <div className="flex justify-center">
-                            <div className="rounded-lg border bg-white p-2">
-                              {pendingState.qr?.qrImage ? (
+                          {/* QR Image Frame */}
+                          <div className="flex flex-col items-center justify-center bg-gradient-to-b from-orange-50/40 via-white to-amber-50/20 border border-orange-200/70 shadow-2xs p-4 rounded-2xl relative">
+                            {pendingState.qr?.qrImage ? (
+                              <div className="p-2 bg-white rounded-xl border border-gray-200 shadow-xs">
                                 <img
                                   src={pendingState.qr.qrImage}
                                   alt={`VietQR ${pendingState.qr.paymentCode}`}
-                                  width={180}
-                                  height={180}
-                                  className="block"
+                                  className="block max-w-[190px] h-auto rounded-lg"
                                 />
-                              ) : (
-                                <div className="w-[180px] h-[180px] flex items-center justify-center">
-                                  <span className="text-xs text-gray-400">
-                                    Đang tải QR...
-                                  </span>
-                                </div>
-                              )}
+                              </div>
+                            ) : (
+                              <div className="w-[190px] h-[190px] flex flex-col items-center justify-center gap-2">
+                                <svg className="w-6 h-6 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span className="text-xs text-gray-400">Đang tải QR...</span>
+                              </div>
+                            )}
+                            
+                            <div className="mt-3 text-center">
+                              
+                             
                             </div>
                           </div>
 
-                          {/* Countdown */}
-                          {countdown && (
-                            <div className="text-center">
-                              <p className="text-xs text-gray-500">
-                                Thời gian còn lại
-                              </p>
-                              <p
-                                className={`text-lg font-bold font-mono ${
-                                  getRemainingSeconds(
-                                    pendingState.payment.expiresAt!,
-                                  ) < 60
-                                    ? "text-red-600"
-                                    : "text-gray-900"
-                                }`}
-                              >
-                                {countdown}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Payment info summary */}
-                          <div className="rounded-lg border bg-white p-2 text-xs space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">
-                                Mã giao dịch:
-                              </span>
-                              <span className="font-mono font-medium">
-                                {pendingState.payment.sepayRef ||
-                                  pendingState.payment.receiptNumber}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Số tiền:</span>
-                              <span className="font-bold">
-                                {formatMoney(pendingState.payment.amount)}
-                              </span>
-                            </div>
+                          {/* Detail Card with copy-to-clipboard */}
+                          <div className="bg-gray-50/90 p-3 rounded-xl space-y-2.5 text-xs border border-gray-200">
                             {pendingState.qr && (
                               <>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-500">
-                                    Ngân hàng:
+                                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                                  <span className="text-gray-500 font-medium">Ngân hàng</span>
+                                  <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">
+                                    {pendingState.qr.bankName}
                                   </span>
-                                  <span>{pendingState.qr.bankName}</span>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-500">STK:</span>
-                                  <span className="font-mono">
-                                    {pendingState.qr.accountNumber}
-                                  </span>
+                                
+                                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                                  <span className="text-gray-500 font-medium">Số tài khoản</span>
+                                  <div className="flex items-center gap-1.5 font-mono font-bold text-gray-900">
+                                    <span>{pendingState.qr.accountNumber}</span>
+                                    <button
+                                      onClick={() => handleCopy(pendingState.qr!.accountNumber, "accountNumber")}
+                                      className="px-1.5 py-0.5 bg-white hover:bg-gray-100 border border-gray-200 rounded text-[10px] font-semibold text-gray-600 hover:text-primary transition-colors"
+                                      title="Sao chép số tài khoản"
+                                    >
+                                      {copiedField === "accountNumber" ? "✓ Đã chép" : "Chép"}
+                                    </button>
+                                  </div>
                                 </div>
                               </>
                             )}
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Trạng thái:</span>
-                              <span
-                                className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS.PENDING}`}
-                              >
-                                {PAYMENT_STATUS_LABELS.PENDING}
+
+                            {/* Transfer Amount */}
+                            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                              <span className="text-gray-500 font-medium">Số tiền chuyển</span>
+                              <div className="flex items-center gap-1.5 font-black text-primary text-sm">
+                                <span>{formatMoney(pendingState.payment.amount)}</span>
+                                <button
+                                  onClick={() => handleCopy(String(pendingState.payment.amount), "amount")}
+                                  className="px-1.5 py-0.5 bg-white hover:bg-orange-50 border border-gray-200 rounded text-[10px] font-semibold text-gray-600 hover:text-primary transition-colors"
+                                  title="Sao chép số tiền chuyển"
+                                >
+                                  {copiedField === "amount" ? "✓ Đã chép" : "Chép"}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Transfer Content */}
+                            {pendingState.qr && (
+                              <div className="pt-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-gray-600 font-bold text-[11px]">Nội dung ghi</span>
+                               </div>
+                                <div className="flex items-center justify-between gap-2 bg-white border border-primary/30 rounded-lg p-2 hover:border-primary transition-colors">
+                                  <span className="font-mono font-bold text-gray-900 text-xs tracking-wide select-all break-words leading-normal">
+                                    {pendingState.qr.transferContent}
+                                  </span>
+                                  <button
+                                    onClick={() => handleCopy(pendingState.qr!.transferContent, "transferContent")}
+                                    className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded text-[11px] font-bold shrink-0 transition-colors"
+                                    title="Sao chép nội dung chuyển khoản"
+                                  >
+                                    {copiedField === "transferContent" ? "✓ Đã sao chép" : "Sao chép"}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Bottom Status Info / Action buttons */}
+                          <div className="flex flex-col items-center justify-center text-center space-y-2 pt-1">
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                              <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                               </span>
+                              <span className="font-semibold text-emerald-800">Đang chờ chuyển khoản, vui lòng đợi trong giây lát...</span>
+                            </div>
+
+                            <div className="flex gap-2 w-full pt-2">
+                              <button
+                                onClick={handleCancelPayment}
+                                className="flex-1 py-1.5 text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors"
+                              >
+                                Hủy thanh toán
+                              </button>
+                              <button
+                                onClick={closePaymentFlow}
+                                className="flex-1 py-1.5 text-xs font-semibold bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 rounded-lg transition-colors"
+                              >
+                                Đóng
+                              </button>
                             </div>
                           </div>
-
-                          {/* Transfer content */}
-                          {pendingState.qr && (
-                            <p className="text-xs text-center text-gray-400 font-mono break-all">
-                              ND: {pendingState.qr.transferContent}
-                            </p>
-                          )}
-
-                          {/* Action buttons */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={handleCancelPayment}
-                              className="flex-1 rounded-lg border border-red-300 text-red-600 py-1.5 text-xs font-medium hover:bg-red-50"
-                            >
-                              Hủy thanh toán
-                            </button>
-                            <button
-                              onClick={closePaymentFlow}
-                              className="flex-1 rounded-lg border border-gray-300 py-1.5 text-xs font-medium hover:bg-gray-100"
-                            >
-                              Đóng
-                            </button>
-                          </div>
-
-                          <p className="text-xs text-center text-gray-400">
-                            Hệ thống tự động kiểm tra trạng thái sau mỗi 5 giây.
-                            Sau khi chuyển khoản, vui lòng đợi trong giây lát.
-                          </p>
                         </div>
                       )}
 
