@@ -106,7 +106,7 @@ const CoursesPage = () => {
       if (!validation.canDelete) {
         let msg = `${validation.message}\n\nĐang được liên kết bởi các lớp học:\n`;
         validation.dependencies.forEach((d) => {
-          msg += `- Lớp ${d.className} (Sĩ số: ${d.studentCount}, Trạng thái: ${d.status})\n`;
+          msg += `- Lớp ${d.className} (Học viên: ${d.studentCount}, Trạng thái: ${d.status})\n`;
         });
         msg += `\nVui lòng điều chỉnh hoặc xóa các lớp học này trước khi xóa khóa học. Bạn cũng có thể Tắt kích hoạt khóa học này thay vì xóa.`;
         toast.warning(msg);

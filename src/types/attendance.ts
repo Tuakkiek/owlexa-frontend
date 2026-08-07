@@ -14,6 +14,7 @@ export interface AttendanceMarkRequest {
 export interface AttendanceResponse {
   id: number;
   scheduleId: number;
+  scheduleEventId?: number | null;
   classId: number;
   centerId: number;
   studentUserId: number;

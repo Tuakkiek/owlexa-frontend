@@ -22,6 +22,10 @@ export interface ScheduleResponse {
   startTime: string;
   endTime: string;
   type: ScheduleType;
+  eventDate?: string | null;
+  lessonNumber?: number | null;
+  eventStatus?: "SCHEDULED" | "CANCELLED" | "MOVED" | null;
+  source?: "RECURRING_LEGACY" | "EVENT" | string | null;
   createdAt: string;
 }
 
@@ -32,6 +36,69 @@ export interface ScheduleRequest {
   startTime: string;
   endTime: string;
   type?: ScheduleType;
+}
+
+export interface ScheduleRuleRequest {
+  teacherUserId: number;
+  roomId: number;
+  daysOfWeek: number[];
+  startDate: string;
+  startTime: string;
+  endTime: string;
+  type?: Exclude<ScheduleType, "CANCELLED">;
+}
+
+export interface ScheduleRuleResponse {
+  id: number;
+  classId: number;
+  teacherUserId: number;
+  teacherUserFullName: string;
+  roomId: number;
+  roomName: string;
+  repeatType: "WEEKLY";
+  daysOfWeek: number[];
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  type: Exclude<ScheduleType, "CANCELLED">;
+  isActive: boolean;
+  generatedEventCount: number;
+}
+
+export type ScheduleEventType = "LESSON" | "ONLINE_LESSON" | "PRACTICE" | "EXAM";
+export type ScheduleEventStatus = "SCHEDULED" | "CANCELLED" | "MOVED";
+
+export interface ScheduleEventRequest {
+  teacherUserId?: number;
+  roomId?: number;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  eventType: ScheduleEventType;
+  status?: ScheduleEventStatus;
+  title?: string;
+  note?: string;
+}
+
+export interface ScheduleEventResponse {
+  id: number;
+  classId: number;
+  className: string;
+  recurringRuleId: number | null;
+  teacherUserId: number | null;
+  teacherUserFullName: string | null;
+  roomId: number | null;
+  roomName: string | null;
+  eventDate: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  lessonNumber: number | null;
+  eventType: ScheduleEventType;
+  status: ScheduleEventStatus;
+  title: string | null;
+  note: string | null;
 }
 
 export const DAY_LABELS: Record<number, string> = {

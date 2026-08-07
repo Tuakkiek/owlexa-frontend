@@ -15,7 +15,6 @@ import CashiersPage from "./pages/owner/CashiersPage";
 import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
 import ReceiptPage from "./pages/owner/ReceiptPage";
 import DiscountManagementPage from "./pages/owner/DiscountManagementPage";
-import InstallmentManagementPage from "./pages/owner/InstallmentManagementPage";
 import AuditLogPage from "./pages/owner/AuditLogPage";
 import FinancialTimelinePage from "./pages/owner/FinancialTimelinePage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
@@ -27,13 +26,13 @@ import StudentSubmissionAttemptPage from "./pages/student/StudentSubmissionAttem
 
 import TeacherAttendancePage from "./pages/teacher/TeacherAttendancePage";
 import TeacherDashboardPage from "./pages/teacher/TeacherDashboardPage";
-import TeacherStudentsPage from "./pages/teacher/TeacherStudentsPage";
 import GradingCriteriaPage from "./pages/teacher/GradingCriteriaPage";
 import QuestionBankPage from "./pages/teacher/QuestionBankPage";
 import QuestionEditorPage from "./pages/teacher/QuestionEditorPage";
 import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
 import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
 import TeacherArchivedAssignmentsPage from "./pages/teacher/TeacherArchivedAssignmentsPage";
+import TeacherDocumentsPage from "./pages/teacher/TeacherDocumentsPage";
 
 
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
@@ -107,10 +106,6 @@ function App() {
                   path="/owner/discounts"
                   element={<DiscountManagementPage />}
                 />
-                <Route
-                  path="/owner/installments"
-                  element={<InstallmentManagementPage />}
-                />
                 <Route path="/owner/audit-logs" element={<AuditLogPage />} />
                 <Route
                   path="/owner/finance/timeline"
@@ -132,27 +127,73 @@ function App() {
               </Route>
 
               {/* TEACHER Routes */}
-              <Route element={<ProtectedRoute allowedRoles={["TEACHER"]} />}>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    anyOf={[
+                      "SCHEDULE_VIEW",
+                      "CLASS_VIEW",
+                      "ATTENDANCE_MARK",
+                      "TEST_VIEW",
+                      "TEST_GRADE",
+                      "ESSAY_GRADE",
+                    ]}
+                  />
+                }
+              >
                 <Route
                   path="/teacher/dashboard"
                   element={<TeacherDashboardPage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="SCHEDULE_VIEW"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/schedule"
                   element={<TeacherSchedulePage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="ATTENDANCE_MARK"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/attendance"
                   element={<TeacherAttendancePage />}
                 />
-                <Route
-                  path="/teacher/students"
-                  element={<TeacherStudentsPage />}
-                />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="ESSAY_GRADE"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/grading-criteria"
                   element={<GradingCriteriaPage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="TEST_VIEW"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/questions"
                   element={<QuestionBankPage />}
@@ -165,11 +206,28 @@ function App() {
                   path="/teacher/questions/:questionId/edit"
                   element={<QuestionEditorPage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="TEST_VIEW"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/assessments"
                   element={<AssessmentBuilderPage />}
                 />
-
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="ESSAY_GRADE"
+                  />
+                }
+              >
                 <Route
                   path="/teacher/assignments"
                   element={<TeacherAssignmentsPage />}
@@ -178,8 +236,19 @@ function App() {
                   path="/teacher/assignments/archived"
                   element={<TeacherArchivedAssignmentsPage />}
                 />
-
-
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["TEACHER"]}
+                    permission="DOCUMENT_VIEW"
+                  />
+                }
+              >
+                <Route
+                  path="/teacher/documents"
+                  element={<TeacherDocumentsPage />}
+                />
               </Route>
 
               {/* STUDENT Routes */}

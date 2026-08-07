@@ -8,4 +8,6 @@ export interface StudentDocumentResponse {
   url: string;
   classId: number;
   className: string;
+  uploaderName?: string;
+  description?: string;
 }

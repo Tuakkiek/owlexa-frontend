@@ -1,5 +1,11 @@
 import axiosClient from "./axiosClient";
-import type { ScheduleRequest, ScheduleResponse, ScheduleType } from "../types/schedule";
+import type {
+  ScheduleEventRequest,
+  ScheduleEventResponse,
+  ScheduleResponse,
+  ScheduleRuleRequest,
+  ScheduleRuleResponse,
+} from "../types/schedule";
 
 export const scheduleApi = {
   // ── Owner: all schedules in center ──
@@ -16,54 +22,80 @@ export const scheduleApi = {
     return response.data;
   },
 
+  findRulesByClass: async (classId: number): Promise<ScheduleRuleResponse[]> => {
+    const response = await axiosClient.get(
+      `/owner/classes/${classId}/schedule-rules`,
+    );
+    return response.data;
+  },
+
+  createRule: async (
+    classId: number,
+    request: ScheduleRuleRequest,
+  ): Promise<ScheduleRuleResponse> => {
+    const response = await axiosClient.post(
+      `/owner/classes/${classId}/schedule-rules`,
+      request,
+    );
+    return response.data;
+  },
+
+  generateEvents: async (
+    classId: number,
+    ruleId: number,
+  ): Promise<ScheduleEventResponse[]> => {
+    const response = await axiosClient.post(
+      `/owner/classes/${classId}/schedule-rules/${ruleId}/generate`,
+    );
+    return response.data;
+  },
+
+  findEventsByClass: async (classId: number): Promise<ScheduleEventResponse[]> => {
+    const response = await axiosClient.get(
+      `/owner/classes/${classId}/schedule-events`,
+    );
+    return response.data;
+  },
+
+  createEvent: async (
+    classId: number,
+    request: ScheduleEventRequest,
+  ): Promise<ScheduleEventResponse> => {
+    const response = await axiosClient.post(
+      `/owner/classes/${classId}/schedule-events`,
+      request,
+    );
+    return response.data;
+  },
+
+  updateEvent: async (
+    classId: number,
+    eventId: number,
+    request: ScheduleEventRequest,
+  ): Promise<ScheduleEventResponse> => {
+    const response = await axiosClient.put(
+      `/owner/classes/${classId}/schedule-events/${eventId}`,
+      request,
+    );
+    return response.data;
+  },
+
+  cancelEvent: async (
+    classId: number,
+    eventId: number,
+  ): Promise<ScheduleEventResponse> => {
+    const response = await axiosClient.patch(
+      `/owner/classes/${classId}/schedule-events/${eventId}/cancel`,
+    );
+    return response.data;
+  },
+
   // ── Owner: schedules by teacher ──
   findAllByTeacher: async (
     teacherUserId: number,
   ): Promise<ScheduleResponse[]> => {
     const response = await axiosClient.get(
       `/owner/classes/0/schedules/teacher/${teacherUserId}`,
-    );
-    return response.data;
-  },
-
-  create: async (
-    classId: number,
-    request: ScheduleRequest,
-  ): Promise<ScheduleResponse> => {
-    const response = await axiosClient.post(
-      `/owner/classes/${classId}/schedules`,
-      request,
-    );
-    return response.data;
-  },
-
-  update: async (
-    classId: number,
-    scheduleId: number,
-    request: ScheduleRequest,
-  ): Promise<ScheduleResponse> => {
-    const response = await axiosClient.put(
-      `/owner/classes/${classId}/schedules/${scheduleId}`,
-      request,
-    );
-    return response.data;
-  },
-
-  delete: async (classId: number, scheduleId: number): Promise<void> => {
-    await axiosClient.delete(
-      `/owner/classes/${classId}/schedules/${scheduleId}`,
-    );
-  },
-
-  updateType: async (
-    classId: number,
-    scheduleId: number,
-    type: ScheduleType,
-  ): Promise<ScheduleResponse> => {
-    const response = await axiosClient.patch(
-      `/owner/classes/${classId}/schedules/${scheduleId}/type`,
-      type,
-      { headers: { "Content-Type": "application/json" } }
     );
     return response.data;
   },

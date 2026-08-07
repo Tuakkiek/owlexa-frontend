@@ -87,12 +87,38 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
       path: "/teacher/attendance",
       permission: "ATTENDANCE_MARK",
     },
-    { name: "Học viên", path: "/teacher/students", permission: "CLASS_VIEW" },
-    { name: "Tiêu chí chấm điểm", path: "/teacher/grading-criteria" },
-    { name: "Ngân hàng câu hỏi", path: "/teacher/questions" },
-    { name: "Tạo đề thi", path: "/teacher/assessments" },
-    { name: "Bài tập", path: "/teacher/assignments", end: true },
-    { name: "Kho bài tập", path: "/teacher/assignments/archived", end: true },
+    {
+      name: "Tiêu chí chấm điểm",
+      path: "/teacher/grading-criteria",
+      permission: "ESSAY_GRADE",
+    },
+    {
+      name: "Ngân hàng câu hỏi",
+      path: "/teacher/questions",
+      permission: "TEST_VIEW",
+    },
+    {
+      name: "Tạo đề thi",
+      path: "/teacher/assessments",
+      permission: "TEST_VIEW",
+    },
+    {
+      name: "Tài liệu",
+      path: "/teacher/documents",
+      permission: "DOCUMENT_VIEW",
+    },
+    {
+      name: "Bài tập",
+      path: "/teacher/assignments",
+      permission: "ESSAY_GRADE",
+      end: true,
+    },
+    {
+      name: "Kho bài tập",
+      path: "/teacher/assignments/archived",
+      permission: "ESSAY_GRADE",
+      end: true,
+    },
   ],
   STUDENT: [
     { name: "Bảng điều khiển", path: "/student/dashboard" },
@@ -182,9 +208,7 @@ const AppLayout = () => {
         ].join(" ")}
       >
         <div className="flex h-16 items-center gap-3 border-b border-surface-border px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-primary text-sm font-semibold text-white">
-            O
-          </div>
+          <img src="/logo1.png" alt="Owlexa Logo" className="h-10 w-10 object-contain" />
           <div className="min-w-0">
             <div className="font-semibold leading-tight text-gray-900">
               Owlexa

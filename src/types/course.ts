@@ -3,8 +3,9 @@ export interface CourseRequest {
   name: string;
   description?: string;
   defaultDuration?: number;
+  defaultSessionCount?: number;
   defaultMonthlyFee?: number;
-  defaultMaxStudents?: number;
+  defaultTeacherUserId?: number;
   isActive?: boolean;
 }
 
@@ -14,8 +15,9 @@ export interface CourseResponse {
   name: string;
   description: string | null;
   defaultDuration: number | null;
+  defaultSessionCount: number | null;
   defaultMonthlyFee: number | null;
-  defaultMaxStudents: number | null;
+  defaultTeacherUserId: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
