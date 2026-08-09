@@ -46,22 +46,35 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
     0,
   );
 
-  const getQuestionContextDoc = (
-    item: any,
-    index: number,
-  ): EditorDocument | null => {
-    if (assessment.blocks && assessment.blocks.length > 0) {
-      for (const block of assessment.blocks) {
-        if (!block.content) continue;
-        const qIds = extractQuestionIdsFromDoc(block.content);
-        if (qIds.includes(item.questionId ?? item.id)) {
-          return stripQuestionNodes(block.content);
-        }
-      }
-      if (assessment.blocks[index]?.content) {
-        return stripQuestionNodes(assessment.blocks[index].content);
+  const getBlockForItem = (item: any, fallbackIndex: number) => {
+    if (!assessment.blocks || assessment.blocks.length === 0) return null;
+    const targetId = item.questionId ?? item.id;
+    for (const block of assessment.blocks) {
+      if (!block.content) continue;
+      const qIds = extractQuestionIdsFromDoc(block.content);
+      if (targetId != null && qIds.includes(targetId)) {
+        return block;
       }
     }
+    return assessment.blocks[fallbackIndex] ?? null;
+  };
+
+  const getQuestionContextDoc = (
+    item: any,
+    itemIndex: number,
+  ): EditorDocument | null => {
+    if (!assessment.blocks || assessment.blocks.length === 0) return null;
+
+    const currentBlock = getBlockForItem(item, itemIndex);
+    if (!currentBlock || !currentBlock.content) return null;
+
+    const prevItem = itemIndex > 0 ? sortedItems[itemIndex - 1] : null;
+    const prevBlock = prevItem ? getBlockForItem(prevItem, itemIndex - 1) : null;
+
+    if (currentBlock !== prevBlock) {
+      return stripQuestionNodes(currentBlock.content);
+    }
+
     return null;
   };
 
@@ -159,12 +172,14 @@ export const AssessmentPreview = ({ assessment }: AssessmentPreviewProps) => {
                         key={option.id}
                         className="flex gap-3 rounded-input border border-surface-border px-3 py-2 text-sm"
                       >
-                        <span className="text-gray-400">
-                          {optionIndex + 1}.
+                        <span className="text-gray-400 font-semibold">
+                          {String.fromCharCode(65 + optionIndex)}.
                         </span>
-                        <span className="min-w-0 flex-1 text-gray-700">
-                          {stripHtml(option.content) || "-"}
-                        </span>
+                        {stripHtml(option.content).trim() && (
+                          <span className="min-w-0 flex-1 text-gray-700">
+                            {stripHtml(option.content).trim()}
+                          </span>
+                        )}
                         {option.isCorrect && (
                           <span className="text-xs font-medium text-gray-900">
                             Correct

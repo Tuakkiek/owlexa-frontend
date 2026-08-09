@@ -75,6 +75,7 @@ export const AssignmentForm = ({
   const [description, setDescription] = useState("");
   const [openAt, setOpenAt] = useState("");
   const [dueAt, setDueAt] = useState("");
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState("");
   const [attemptLimit, setAttemptLimit] = useState("");
   const [showScore, setShowScore] = useState(true);
   const [allowReview, setAllowReview] = useState(true);
@@ -100,6 +101,9 @@ export const AssignmentForm = ({
       setDescription(initialData.description ?? "");
       setOpenAt(toDateTimeLocalValue(initialData.openAt));
       setDueAt(toDateTimeLocalValue(initialData.dueAt));
+      setTimeLimitMinutes(
+        initialData.timeLimitMinutes != null ? String(initialData.timeLimitMinutes) : "",
+      );
       setAttemptLimit(
         initialData.attemptLimit != null ? String(initialData.attemptLimit) : "",
       );
@@ -121,6 +125,7 @@ export const AssignmentForm = ({
       setDescription("");
       setOpenAt("");
       setDueAt("");
+      setTimeLimitMinutes("");
       setAttemptLimit("");
       setShowScore(true);
       setAllowReview(true);
@@ -243,6 +248,12 @@ export const AssignmentForm = ({
     if (title.trim().length > 255) {
       return "Tiêu đề bài tập không được vượt quá 255 ký tự.";
     }
+    if (timeLimitMinutes.trim()) {
+      const value = Number(timeLimitMinutes);
+      if (!Number.isInteger(value) || value < 1) {
+        return "Thời gian làm bài phải lớn hơn hoặc bằng 1 phút.";
+      }
+    }
     if (attemptLimit.trim()) {
       const value = Number(attemptLimit);
       if (!Number.isInteger(value) || value < 1) {
@@ -264,6 +275,7 @@ export const AssignmentForm = ({
     description: description.trim() || null,
     openAt: toIsoOrNull(openAt),
     dueAt: toIsoOrNull(dueAt),
+    timeLimitMinutes: timeLimitMinutes.trim() ? Number(timeLimitMinutes) : null,
     attemptLimit: attemptLimit.trim() ? Number(attemptLimit) : null,
     showScore,
     allowReview,
@@ -323,11 +335,7 @@ export const AssignmentForm = ({
           {isAssessmentLoading && (
             <p className="text-xs text-gray-500">Đang tải đề thi...</p>
           )}
-          <p className="text-xs text-gray-500">
-            Published legacy and structured assessments are both available.
-            Snapshot content is created when the assignment is published and
-            remains read-only.
-          </p>
+         
         </div>
 
         <Input
@@ -352,7 +360,7 @@ export const AssignmentForm = ({
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Input
           label="Thời gian mở"
           type="datetime-local"
@@ -372,6 +380,15 @@ export const AssignmentForm = ({
           step="1"
           value={attemptLimit}
           onChange={(event) => setAttemptLimit(event.target.value)}
+          placeholder="Tùy chọn"
+        />
+        <Input
+          label="Thời gian làm bài (Phút)"
+          type="number"
+          min="1"
+          step="1"
+          value={timeLimitMinutes}
+          onChange={(event) => setTimeLimitMinutes(event.target.value)}
           placeholder="Tùy chọn"
         />
       </div>

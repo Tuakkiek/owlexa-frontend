@@ -32,10 +32,12 @@ export interface SubmissionAttemptItemOptionResponse {
   assignmentItemOptionId: number;
   content: string;
   displayOrder: number;
+  isCorrect?: boolean | null;
 }
 
 export interface SubmissionAttemptItemResponse {
   assignmentItemId: number;
+  questionId?: number | null;
   questionType: QuestionType;
   title: string | null;
   content: EditorDocument;
@@ -51,6 +53,7 @@ export interface SubmissionAttemptItemResponse {
 
 export interface StudentAttemptItemResponse {
   assignmentItemId: number;
+  questionId?: number | null;
   questionType: QuestionType;
   title: string | null;
   content: EditorDocument;
@@ -74,6 +77,7 @@ export interface StudentAttemptSummaryResponse {
   attemptNumber: number;
   status: SubmissionAttemptStatus;
   startedAt: string;
+  expiresAt: string | null;
   lastSavedAt: string | null;
   submittedAt: string | null;
   autoScore: number | null;
@@ -132,10 +136,13 @@ export interface StudentAttemptDetailResponse {
   status: SubmissionAttemptStatus;
   attemptNumber: number;
   startedAt: string;
+  expiresAt: string | null;
   lastSavedAt: string | null;
   submittedAt: string | null;
   autoScore: number | null;
   maxScore: number | null;
+  audioPositionSeconds?: number;
+  audioCompleted?: boolean;
   audioFile: FileMetadata | null;
   playbackMode: PlaybackMode;
   items: StudentAttemptItemResponse[];
@@ -184,6 +191,7 @@ export interface TeacherAttemptDetailResponse {
   status: SubmissionAttemptStatus;
   attemptNumber: number;
   startedAt: string;
+  expiresAt: string | null;
   lastSavedAt: string | null;
   submittedAt: string | null;
   autoScore: number | null;

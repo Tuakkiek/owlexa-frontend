@@ -96,9 +96,9 @@ export const StudentsPage = () => {
       const message = err?.response?.data?.message ?? "Không thể tạo học sinh.";
       setError(message);
       toast.error(`${message}`);
-      if (message.includes("Email")) {
+      if (message.includes("Email") || message.includes("email")) {
         setFieldError("email");
-      } else if (message.includes("Phone")) {
+      } else if (message.includes("Phone") || message.includes("điện thoại")) {
         setFieldError("phoneNumber");
       }
     }
@@ -127,9 +127,9 @@ export const StudentsPage = () => {
         err?.response?.data?.message ?? "Không thể cập nhật học sinh.";
       setError(message);
       toast.error(`${message}`);
-      if (message.includes("Email")) {
+      if (message.includes("Email") || message.includes("email")) {
         setFieldError("email");
-      } else if (message.includes("Phone")) {
+      } else if (message.includes("Phone") || message.includes("điện thoại")) {
         setFieldError("phoneNumber");
       }
     }

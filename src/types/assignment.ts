@@ -29,6 +29,7 @@ export interface AssignmentRequest {
   description?: string | null;
   openAt?: string | null;
   dueAt?: string | null;
+  timeLimitMinutes?: number | null;
   attemptLimit?: number | null;
   showScore?: boolean | null;
   allowReview?: boolean | null;
@@ -66,6 +67,7 @@ export interface AssignmentItemOptionResponse {
 export interface AssignmentItemResponse {
   id: number;
   assessmentItemId: number | null;
+  questionId?: number | null;
   questionType: QuestionType;
   title: string | null;
   content: EditorDocument;
@@ -91,6 +93,7 @@ export interface AssignmentListResponse {
   content: EditorDocument;
   openAt: string | null;
   dueAt: string | null;
+  timeLimitMinutes: number | null;
   attemptLimit: number | null;
   assessmentSnapshotAt: string | null;
   createdAt: string;
@@ -108,6 +111,7 @@ export interface AssignmentDetailResponse {
   content: EditorDocument;
   openAt: string | null;
   dueAt: string | null;
+  timeLimitMinutes: number | null;
   attemptLimit: number | null;
   showScore: boolean;
   allowReview: boolean;
@@ -135,6 +139,7 @@ export interface StudentAssignmentListResponse {
   description: string | null;
   openAt: string | null;
   dueAt: string | null;
+  timeLimitMinutes: number | null;
   attemptLimit: number | null;
   showScore: boolean;
   allowReview: boolean;

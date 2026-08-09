@@ -17,7 +17,6 @@ import type {
   QuestionResponse,
   QuestionType,
 } from "../../../types/questionBank";
-import { stripHtml } from "../../../utils/text";
 
 interface QuestionFormProps {
   initialData?: QuestionResponse;
@@ -31,6 +30,8 @@ interface QuestionFormProps {
 const createEmptyOptions = (): QuestionOptionRequest[] => [
   { content: "", isCorrect: false, displayOrder: 1 },
   { content: "", isCorrect: false, displayOrder: 2 },
+  { content: "", isCorrect: false, displayOrder: 3 },
+  { content: "", isCorrect: false, displayOrder: 4 },
 ];
 
 export const QuestionForm = ({
@@ -169,9 +170,6 @@ export const QuestionForm = ({
     if (type === "MULTIPLE_CHOICE") {
       if (normalizedOptions.length < 2) {
         return "Câu hỏi trắc nghiệm phải có ít nhất 2 phương án.";
-      }
-      if (normalizedOptions.some((option) => !stripHtml(option.content))) {
-        return "Tất cả các phương án phải có nội dung.";
       }
       if (!normalizedOptions.some((option) => option.isCorrect)) {
         return "Vui lòng chọn ít nhất 1 đáp án đúng.";
@@ -351,7 +349,7 @@ export const QuestionForm = ({
                 className="grid gap-3 rounded-card border border-surface-border bg-white p-3 md:grid-cols-[minmax(0,1fr)_auto_auto]"
               >
                 <Input
-                  label={`Phương án ${index + 1}`}
+                  label={`Phương án ${String.fromCharCode(65 + index)}`}
                   value={option.content}
                   onChange={(event) =>
                     updateOption(index, { content: event.target.value })

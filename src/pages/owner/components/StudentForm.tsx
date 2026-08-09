@@ -39,14 +39,17 @@ export const StudentForm = ({
 
   const validate = (): boolean => {
     const newErrors: Partial<StudentRequest> = {};
+    const trimmedPhone = formData.phoneNumber.trim();
+    const trimmedEmail = formData.email.trim();
+
     if (!formData.fullName.trim())
       newErrors.fullName = "Họ tên không được để trống";
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       newErrors.email = "Email không hợp lệ";
     }
-    if (!formData.phoneNumber.trim()) {
+    if (!trimmedPhone) {
       newErrors.phoneNumber = "Số điện thoại không được để trống";
-    } else if (!/^0\d{9}$/.test(formData.phoneNumber)) {
+    } else if (!/^0\d{9}$/.test(trimmedPhone)) {
       newErrors.phoneNumber =
         "SĐT phải gồm 10 chữ số, bắt đầu bằng 0 (VD: 0912345678)";
     }
@@ -61,7 +64,11 @@ export const StudentForm = ({
 
     try {
       setIsLoading(true);
-      await onSubmit(formData);
+      await onSubmit({
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+      });
     } finally {
       setIsLoading(false);
     }

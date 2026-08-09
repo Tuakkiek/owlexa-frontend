@@ -76,22 +76,38 @@ export const AssignmentPreview = ({
     0,
   );
 
-  const getQuestionContextDoc = (
+  const getBlockForItem = (
     item: AssignmentItemResponse,
-    index: number,
-  ): EditorDocument | null => {
-    if (blocks && blocks.length > 0) {
-      for (const block of blocks) {
-        if (!block.content) continue;
-        const qIds = extractQuestionIdsFromDoc(block.content);
-        if (qIds.includes(item.assessmentItemId ?? item.id)) {
-          return stripQuestionNodes(block.content);
-        }
-      }
-      if (blocks[index]?.content) {
-        return stripQuestionNodes(blocks[index].content);
+    fallbackIndex: number,
+  ) => {
+    if (!blocks || blocks.length === 0) return null;
+    const targetId = item.assessmentItemId ?? item.id;
+    for (const block of blocks) {
+      if (!block.content) continue;
+      const qIds = extractQuestionIdsFromDoc(block.content);
+      if (targetId != null && qIds.includes(targetId)) {
+        return block;
       }
     }
+    return blocks[fallbackIndex] ?? null;
+  };
+
+  const getQuestionContextDoc = (
+    item: AssignmentItemResponse,
+    itemIndex: number,
+  ): EditorDocument | null => {
+    if (!blocks || blocks.length === 0) return null;
+
+    const currentBlock = getBlockForItem(item, itemIndex);
+    if (!currentBlock || !currentBlock.content) return null;
+
+    const prevItem = itemIndex > 0 ? sortedItems[itemIndex - 1] : null;
+    const prevBlock = prevItem ? getBlockForItem(prevItem, itemIndex - 1) : null;
+
+    if (currentBlock !== prevBlock) {
+      return stripQuestionNodes(currentBlock.content);
+    }
+
     return null;
   };
 
@@ -121,9 +137,11 @@ export const AssignmentPreview = ({
           <Badge>{statusLabel[status]}</Badge>
         </div>
         {description && <p className="text-sm text-gray-600">{description}</p>}
-        <div className="rounded-card border border-surface-border bg-white p-4 text-sm text-gray-700">
-          <RichTextRenderer value={content} />
-        </div>
+        {(!blocks || blocks.length === 0) && content && !isEmptyEditorDocument(content) && (
+          <div className="rounded-card border border-surface-border bg-white p-4 text-sm text-gray-700">
+            <RichTextRenderer value={content} />
+          </div>
+        )}
         <div className="grid gap-3 rounded-card border border-surface-border bg-white p-4 text-sm text-gray-600 md:grid-cols-2">
           <div>Mở: {formatDateTime(openAt)}</div>
           <div>Hạn nộp: {formatDateTime(dueAt)}</div>
@@ -198,12 +216,14 @@ export const AssignmentPreview = ({
                         key={option.id}
                         className="flex gap-3 rounded-input border border-surface-border px-3 py-2 text-sm"
                       >
-                        <span className="text-gray-400">
-                          {optionIndex + 1}.
+                        <span className="text-gray-400 font-semibold">
+                          {String.fromCharCode(65 + optionIndex)}.
                         </span>
-                        <span className="min-w-0 flex-1 text-gray-700">
-                          {stripHtml(option.content) || "-"}
-                        </span>
+                        {stripHtml(option.content).trim() && (
+                          <span className="min-w-0 flex-1 text-gray-700">
+                            {stripHtml(option.content).trim()}
+                          </span>
+                        )}
                         {option.isCorrect && (
                           <span className="text-xs font-medium text-gray-900">
                             Đúng

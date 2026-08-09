@@ -302,7 +302,6 @@ const QuestionBankPage = () => {
     <div className="mx-auto max-w-[1500px] space-y-6">
       <PageHeader
         title="Ngân hàng câu hỏi"
-        description="Tổ chức câu hỏi theo Collection, Section và thứ tự hiển thị."
       >
         <Button variant="secondary" onClick={() => setIsImportOpen(true)}>
           Import JSON

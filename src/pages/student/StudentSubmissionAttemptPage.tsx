@@ -24,13 +24,8 @@ import { formatDateTime } from "../../utils/dateTime";
 import { htmlToText } from "../../utils/text";
 import {
   RichTextRenderer,
-  isEmptyEditorDocument,
   type EditorDocument,
 } from "../../components/editor";
-import {
-  extractQuestionIdsFromDoc,
-  stripQuestionNodes,
-} from "../../utils/editorDoc";
 import { StudentAIResultOverview } from "./components/StudentAIResultOverview";
 
 const ITEMS_PER_PAGE = 5;
@@ -131,35 +126,112 @@ const ListeningAudioPlayer = ({
   audioFile,
   playbackMode,
   isActive,
+  attemptId,
+  serverAudioPositionSeconds = 0,
+  serverAudioCompleted = false,
 }: {
   audioFile: FileMetadata | null;
   playbackMode: PlaybackMode;
   isActive: boolean;
+  attemptId: number;
+  serverAudioPositionSeconds?: number;
+  serverAudioCompleted?: boolean;
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isCleaningUpRef = useRef(false);
-  const maxTimeRef = useRef(0);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [hasEnded, setHasEnded] = useState(false);
+  const [hasEnded, setHasEnded] = useState(serverAudioCompleted);
   const [audioError, setAudioError] = useState("");
   const audioId = audioFile?.id;
   const audioUrl = audioFile?.url;
 
+  const localKey = `owlexa:attempt:${attemptId}:audio-progress`;
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const getInitialPosition = useCallback(() => {
+    try {
+      const localRaw = localStorage.getItem(localKey);
+      if (localRaw) {
+        const localData = JSON.parse(localRaw);
+        if (localData && typeof localData.positionSeconds === "number") {
+          return Math.max(serverAudioPositionSeconds, localData.positionSeconds);
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return serverAudioPositionSeconds;
+  }, [localKey, serverAudioPositionSeconds]);
+
+  const getInitialCompleted = useCallback(() => {
+    try {
+      const localRaw = localStorage.getItem(localKey);
+      if (localRaw) {
+        const localData = JSON.parse(localRaw);
+        if (localData && typeof localData.audioCompleted === "boolean") {
+          return serverAudioCompleted || localData.audioCompleted;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return serverAudioCompleted;
+  }, [localKey, serverAudioCompleted]);
+
+  const maxTimeRef = useRef(getInitialPosition());
+
+  const persistLocal = useCallback((position: number, completed: boolean) => {
+    try {
+      localStorage.setItem(
+        localKey,
+        JSON.stringify({
+          positionSeconds: position,
+          audioCompleted: completed,
+          updatedAt: Date.now(),
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }, [localKey]);
+
+  const syncServer = useCallback(async (position: number, completed: boolean) => {
+    try {
+      await submissionApi.saveAudioProgress(attemptId, {
+        positionSeconds: Math.floor(position),
+        completed,
+      });
+    } catch {
+      // ignore
+    }
+  }, [attemptId]);
+
+  useEffect(() => {
+    const isCompleted = getInitialCompleted();
+    if (isCompleted) {
+      setHasEnded(true);
+      setHasStarted(false);
+      if (audioRef.current) {
+        audioRef.current.currentTime = getInitialPosition();
+      }
+    }
+  }, [getInitialCompleted, getInitialPosition]);
+
   useEffect(() => {
     const audio = audioRef.current;
     isCleaningUpRef.current = false;
-    maxTimeRef.current = 0;
     setAutoplayBlocked(false);
-    setHasStarted(false);
-    setHasEnded(false);
     setAudioError("");
 
-    if (!audio || !audioUrl || playbackMode !== "EXAM" || !isActive) {
+    if (!audio || !audioUrl || playbackMode !== "EXAM" || !isActive || hasEnded) {
       return;
     }
 
-    audio.currentTime = 0;
+    const initPos = getInitialPosition();
+    audio.currentTime = initPos;
+    maxTimeRef.current = initPos;
+
     const playPromise = audio.play();
     if (playPromise) {
       playPromise
@@ -171,7 +243,46 @@ const ListeningAudioPlayer = ({
       isCleaningUpRef.current = true;
       audio.pause();
     };
-  }, [audioId, audioUrl, isActive, playbackMode]);
+  }, [audioId, audioUrl, isActive, playbackMode, hasEnded, getInitialPosition]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      const audio = audioRef.current;
+      if (audio) {
+        syncServer(audio.currentTime, hasEnded);
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [syncServer, hasEnded]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        const audio = audioRef.current;
+        if (audio) {
+          persistLocal(audio.currentTime, hasEnded);
+        }
+      }
+    };
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => window.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [persistLocal, hasEnded]);
+
+  useEffect(() => {
+    if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+    if (!hasEnded && hasStarted && isActive) {
+      syncTimerRef.current = setInterval(() => {
+        const audio = audioRef.current;
+        if (audio && navigator.onLine) {
+          syncServer(audio.currentTime, false);
+        }
+      }, 10000);
+    }
+    return () => {
+      if (syncTimerRef.current) clearInterval(syncTimerRef.current);
+    };
+  }, [hasStarted, hasEnded, isActive, syncServer]);
 
   if (!audioFile) {
     return null;
@@ -201,7 +312,9 @@ const ListeningAudioPlayer = ({
     try {
       setAutoplayBlocked(false);
       setAudioError("");
-      audio.currentTime = 0;
+      const initPos = getInitialPosition();
+      audio.currentTime = initPos;
+      maxTimeRef.current = initPos;
       await audio.play();
       setHasStarted(true);
     } catch {
@@ -236,7 +349,7 @@ const ListeningAudioPlayer = ({
       {autoplayBlocked && isActive && !hasStarted && !hasEnded && (
         <div className="mt-3">
           <Button type="button" onClick={startExamAudio}>
-            Nhấn để bắt đầu phát
+            Nhấn để tiếp tục nghe
           </Button>
         </div>
       )}
@@ -246,10 +359,11 @@ const ListeningAudioPlayer = ({
         preload="auto"
         src={audioFile.url}
         onTimeUpdate={(event) => {
-          maxTimeRef.current = Math.max(
-            maxTimeRef.current,
-            event.currentTarget.currentTime,
-          );
+          const audio = event.currentTarget;
+          maxTimeRef.current = Math.max(maxTimeRef.current, audio.currentTime);
+          if (Math.floor(audio.currentTime) % 3 === 0) {
+            persistLocal(maxTimeRef.current, hasEnded);
+          }
         }}
         onSeeking={(event) => {
           const audio = event.currentTarget;
@@ -268,14 +382,123 @@ const ListeningAudioPlayer = ({
           ) {
             return;
           }
-          void event.currentTarget.play().catch(() => setAutoplayBlocked(true));
+          const audio = event.currentTarget;
+          persistLocal(maxTimeRef.current, false);
+          void audio.play().catch(() => setAutoplayBlocked(true));
         }}
         onEnded={() => {
           setHasEnded(true);
           setAutoplayBlocked(false);
+          persistLocal(maxTimeRef.current, true);
+          syncServer(maxTimeRef.current, true);
         }}
-        onError={() => setAudioError("Không thể phát audio.")}
+        onError={() => setAudioError("Không thể phát audio. Đang ngoại tuyến hoặc lỗi mạng.")}
       />
+    </div>
+  );
+};
+
+const CountdownTimer = ({
+  expiresAt,
+  onExpire,
+}: {
+  expiresAt: string;
+  onExpire: () => void;
+}) => {
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    const diff = new Date(expiresAt).getTime() - Date.now();
+    return Math.max(0, Math.floor(diff / 1000));
+  });
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
+  const hasExpiredRef = useRef(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now();
+      return Math.max(0, Math.floor(diff / 1000));
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      const left = calculateTimeLeft();
+      setTimeLeft(left);
+      if (left === 0 && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        clearInterval(timer);
+        onExpireRef.current();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  const hours = Math.floor(timeLeft / 3600);
+  const minutes = Math.floor((timeLeft % 3600) / 60);
+  const seconds = timeLeft % 60;
+
+  const isUrgent = timeLeft > 0 && timeLeft <= 300; // 5 minutes
+  const isExpired = timeLeft === 0;
+
+  return (
+    <div
+      className={`sticky top-0 z-40 border-b px-4 py-2 text-center transition-colors sm:px-6 ${
+        isExpired
+          ? "border-red-300 bg-red-100"
+          : isUrgent
+            ? "border-red-200 bg-red-50"
+            : "border-blue-200 bg-blue-50"
+      }`}
+      role="timer"
+      aria-live="assertive"
+      aria-label="Thời gian làm bài còn lại"
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
+        <svg
+          className={`h-5 w-5 shrink-0 ${
+            isExpired
+              ? "text-red-600"
+              : isUrgent
+                ? "animate-pulse text-red-500"
+                : "text-blue-600"
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        {isExpired ? (
+          <span className="text-sm font-bold text-red-600">
+            Đã hết giờ làm bài
+          </span>
+        ) : (
+          <>
+            <span
+              className={`text-xs font-medium ${
+                isUrgent ? "text-red-600" : "text-blue-700"
+              }`}
+            >
+              Thời gian còn lại:
+            </span>
+            <span
+              className={`font-mono text-lg font-bold tabular-nums ${
+                isUrgent ? "animate-pulse text-red-600" : "text-blue-700"
+              }`}
+            >
+              {hours > 0 && `${hours.toString().padStart(2, "0")}:`}
+              {minutes.toString().padStart(2, "0")}:
+              {seconds.toString().padStart(2, "0")}
+            </span>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -529,8 +752,11 @@ const StudentSubmissionAttemptPage = () => {
         setAttempt(updated);
         setEditableAnswers(toEditableAnswers(updated));
         setLastSavedAt(new Date());
-      } catch {
-        // silent fail for auto-save
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 400) {
+          loadAttempt();
+        }
       } finally {
         autoSaveInFlightRef.current = false;
       }
@@ -685,6 +911,32 @@ const StudentSubmissionAttemptPage = () => {
     }
   };
 
+  const doSubmit = async () => {
+    setIsSubmitting(true);
+    setError("");
+    const savedAttempt = await persistAnswers();
+    if (!savedAttempt) return;
+    const submittedAttempt = await submissionApi.submitAttempt(
+      savedAttempt.id,
+    );
+    try {
+      localStorage.removeItem(`owlexa:attempt:${savedAttempt.id}:audio-progress`);
+    } catch {
+      // ignore
+    }
+    if (submittedAttempt.allowReview === false) {
+      toast.success("Đã nộp bài thành công.");
+      navigate("/student/assignments");
+      return;
+    }
+    setAttempt(submittedAttempt);
+    setEditableAnswers(toEditableAnswers(submittedAttempt));
+    setShowAiCelebration(
+      submittedAttempt.showScore !== false && submittedAttempt.aiResult != null,
+    );
+    toast.success("Đã nộp bài thành công.");
+  };
+
   const submitAttempt = async () => {
     if (
       !attempt ||
@@ -724,24 +976,7 @@ const StudentSubmissionAttemptPage = () => {
 
       if (!confirmed) return;
 
-      setIsSubmitting(true);
-      setError("");
-      const savedAttempt = await persistAnswers();
-      if (!savedAttempt) return;
-      const submittedAttempt = await submissionApi.submitAttempt(
-        savedAttempt.id,
-      );
-      if (submittedAttempt.allowReview === false) {
-        toast.success("Đã nộp bài thành công.");
-        navigate("/student/assignments");
-        return;
-      }
-      setAttempt(submittedAttempt);
-      setEditableAnswers(toEditableAnswers(submittedAttempt));
-      setShowAiCelebration(
-        submittedAttempt.showScore !== false && submittedAttempt.aiResult != null,
-      );
-      toast.success("Đã nộp bài thành công.");
+      await doSubmit();
     } catch (err: any) {
       const message = err?.response?.data?.message ?? "Không thể nộp bài.";
       setError(message);
@@ -749,6 +984,22 @@ const StudentSubmissionAttemptPage = () => {
     } finally {
       setIsSubmitting(false);
       setIsSubmitConfirming(false);
+      submitFlowRef.current = false;
+    }
+  };
+
+  const forceSubmitOnExpire = async () => {
+    if (!attempt || !isEditable || submitFlowRef.current) return;
+    submitFlowRef.current = true;
+    try {
+      toast.error("Đã hết thời gian làm bài, hệ thống đang nộp bài tự động...");
+      await doSubmit();
+    } catch (err: any) {
+      const message = err?.response?.data?.message ?? "Không thể nộp bài tự động.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
       submitFlowRef.current = false;
     }
   };
@@ -772,6 +1023,8 @@ const StudentSubmissionAttemptPage = () => {
     const answer = answersByItemId.get(item.assignmentItemId);
 
     if (item.questionType === "MULTIPLE_CHOICE") {
+      const isReviewing = !isEditable;
+
       return (
         <fieldset
           className="mt-5 space-y-3 border-0 p-0"
@@ -784,14 +1037,68 @@ const StudentSubmissionAttemptPage = () => {
             const label = String.fromCharCode(65 + index);
             const checked =
               answer?.selectedOptionIds[0] === option.assignmentItemOptionId;
+            const optionIsCorrect = option.isCorrect === true;
+            const showCorrectness = isReviewing && option.isCorrect != null;
+
+            // Determine styling based on review state
+            let borderClass: string;
+            let bgClass: string;
+            let textClass: string;
+            let badgeClass: string;
+            let badgeContent: React.ReactNode = null;
+
+            if (showCorrectness) {
+              if (optionIsCorrect) {
+                // Correct answer - always highlight green
+                borderClass = "border-emerald-400";
+                bgClass = checked ? "bg-emerald-50" : "bg-emerald-50/50";
+                textClass = "text-emerald-800";
+                badgeClass = "border-emerald-500 bg-emerald-500 text-white";
+                badgeContent = (
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                );
+              } else if (checked) {
+                // Student selected this but it's wrong
+                borderClass = "border-red-300";
+                bgClass = "bg-red-50";
+                textClass = "text-red-800";
+                badgeClass = "border-red-500 bg-red-500 text-white";
+                badgeContent = (
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                );
+              } else {
+                // Not selected, not correct - muted
+                borderClass = "border-surface-border";
+                bgClass = "bg-white";
+                textClass = "text-gray-500";
+                badgeClass = "border-surface-border bg-surface-page text-gray-400";
+              }
+            } else {
+              // During exam or no correctness info
+              borderClass = checked
+                ? "border-primary ring-1 ring-primary/20"
+                : "border-surface-border hover:border-primary/70 hover:bg-primary-light/40";
+              bgClass = checked ? "bg-primary-light" : "bg-white";
+              textClass = checked ? "text-primary-active" : "text-gray-700";
+              badgeClass = checked
+                ? "border-primary bg-primary text-white"
+                : "border-surface-border bg-surface-page text-gray-500 group-hover:border-primary/60";
+            }
+
             return (
               <label
                 key={option.assignmentItemOptionId}
-                className={`group flex cursor-pointer items-start gap-4 rounded-input border px-4 py-3 text-sm transition-all ${
-                  checked
-                    ? "border-primary bg-primary-light text-primary-active shadow-sm ring-1 ring-primary/20"
-                    : "border-surface-border bg-white text-gray-700 hover:border-primary/70 hover:bg-primary-light/40"
-                } ${!isEditable || isSaving || isSubmitting ? "cursor-not-allowed opacity-70" : ""}`}
+                className={`group flex items-start gap-4 rounded-input border px-4 py-3 text-sm transition-all ${borderClass} ${bgClass} ${textClass} ${
+                  showCorrectness
+                    ? "cursor-default"
+                    : !isEditable || isSaving || isSubmitting
+                      ? "cursor-not-allowed opacity-70"
+                      : "cursor-pointer"
+                }`}
               >
                 <input
                   type="radio"
@@ -807,17 +1114,23 @@ const StudentSubmissionAttemptPage = () => {
                   }
                 />
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-                    checked
-                      ? "border-primary bg-primary text-white"
-                      : "border-surface-border bg-surface-page text-gray-500 group-hover:border-primary/60"
-                  }`}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${badgeClass}`}
                 >
-                  {label}
+                  {badgeContent ?? label}
                 </span>
                 <span className="min-w-0 flex-1 break-words pt-1 leading-6">
-                  {htmlToText(option.content) || "-"}
+                  {htmlToText(option.content)}
                 </span>
+                {showCorrectness && optionIsCorrect && (
+                  <span className="shrink-0 self-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    Đáp án đúng
+                  </span>
+                )}
+                {showCorrectness && checked && !optionIsCorrect && (
+                  <span className="shrink-0 self-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                    Đã chọn
+                  </span>
+                )}
               </label>
             );
           })}
@@ -841,38 +1154,91 @@ const StudentSubmissionAttemptPage = () => {
     );
   };
 
-  const getQuestionContextDoc = (
-    item: StudentAttemptItemResponse,
-    index: number,
-  ): EditorDocument | null => {
-    if (attempt?.blocks && attempt.blocks.length > 0) {
-      for (const block of attempt.blocks) {
-        if (!block.content) continue;
-        const qIds = extractQuestionIdsFromDoc(block.content);
-        if (qIds.includes(item.assignmentItemId)) {
-          return stripQuestionNodes(block.content);
-        }
-      }
-      if (attempt.blocks[index]?.content) {
-        return stripQuestionNodes(attempt.blocks[index].content);
-      }
+  const renderCurrentPageContent = () => {
+    if (!attempt?.blocks || attempt.blocks.length === 0) {
+      return currentPageQuestions.map(({ item, questionNumber }) =>
+        renderQuestionCard(item, questionNumber, true, false),
+      );
     }
-    return null;
+
+    const renderedElements: React.ReactNode[] = [];
+
+    attempt.blocks.forEach((block) => {
+      let buffer: any[] = [];
+      const contentNodes = Array.isArray(block.content?.content)
+        ? block.content.content
+        : [];
+      let lastSeenQuestionOnCurrentPage = false;
+
+      contentNodes.forEach((node: any, nodeIndex: number) => {
+        if (node.type !== "assessmentQuestion") {
+          buffer.push(node);
+        } else {
+          const qId = Number(node.attrs?.questionId);
+          const itemIdx = navigableQuestions.findIndex(
+            (q) => q.item.questionId === qId,
+          );
+
+          if (itemIdx === -1) {
+            buffer = [];
+            lastSeenQuestionOnCurrentPage = false;
+            return;
+          }
+
+          const isOnCurrentPage =
+            itemIdx >= currentPage * ITEMS_PER_PAGE &&
+            itemIdx < (currentPage + 1) * ITEMS_PER_PAGE;
+
+          if (isOnCurrentPage) {
+            if (buffer.length > 0) {
+              renderedElements.push(
+                <div
+                  key={`context-${block.id}-${nodeIndex}`}
+                  className="mb-4 w-full text-base leading-8 text-gray-900"
+                >
+                  <RichTextRenderer value={{ type: "doc", content: buffer }} />
+                </div>,
+              );
+            }
+            buffer = [];
+
+            const questionData = navigableQuestions[itemIdx];
+            renderedElements.push(
+              renderQuestionCard(
+                questionData.item,
+                questionData.questionNumber,
+                true,
+                false,
+              ),
+            );
+            lastSeenQuestionOnCurrentPage = true;
+          } else {
+            buffer = [];
+            lastSeenQuestionOnCurrentPage = false;
+          }
+        }
+      });
+
+      if (buffer.length > 0 && lastSeenQuestionOnCurrentPage) {
+        renderedElements.push(
+          <div
+            key={`context-${block.id}-end`}
+            className="mb-4 w-full text-base leading-8 text-gray-900"
+          >
+            <RichTextRenderer value={{ type: "doc", content: buffer }} />
+          </div>,
+        );
+      }
+    });
+
+    return renderedElements;
   };
 
   const renderQuestionContent = (
     item: StudentAttemptItemResponse,
-    index: number,
   ) => {
-    const contextDoc = getQuestionContextDoc(item, index);
-    const hasContext = contextDoc != null && !isEmptyEditorDocument(contextDoc);
     return (
       <div className="space-y-3">
-        {hasContext && (
-          <div className="rounded-input border border-surface-border bg-surface-page px-3 py-2 text-xs text-gray-500">
-            <RichTextRenderer value={contextDoc!} />
-          </div>
-        )}
         <RichTextRenderer value={stripQuestionAudio(item.content)} />
       </div>
     );
@@ -911,7 +1277,7 @@ const StudentSubmissionAttemptPage = () => {
               id={`question-content-${item.assignmentItemId}`}
               className="mt-4 min-w-0 overflow-x-auto break-words text-base leading-8 text-gray-900"
             >
-              {renderQuestionContent(item, questionNumber - 1)}
+              {renderQuestionContent(item)}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1127,15 +1493,17 @@ const StudentSubmissionAttemptPage = () => {
                   : "Chỉ đọc"}
               </span>
             )}
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={navigateBackToAssignments}
-              className="min-h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            >
-              Quay lại
-            </Button>
+            {!isEditable && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={navigateBackToAssignments}
+                className="min-h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                Quay lại
+              </Button>
+            )}
             {isEditable && (
               <>
                 <Button
@@ -1166,6 +1534,13 @@ const StudentSubmissionAttemptPage = () => {
           </div>
         </div>
       </header>
+
+      {attempt?.expiresAt && isEditable && (
+        <CountdownTimer
+          expiresAt={attempt.expiresAt}
+          onExpire={forceSubmitOnExpire}
+        />
+      )}
 
       <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:py-8">
         {error && (
@@ -1276,6 +1651,9 @@ const StudentSubmissionAttemptPage = () => {
               audioFile={attempt.audioFile}
               playbackMode={attempt.playbackMode ?? "PRACTICE"}
               isActive={isEditable}
+              attemptId={attempt.id}
+              serverAudioPositionSeconds={attempt.audioPositionSeconds}
+              serverAudioCompleted={attempt.audioCompleted}
             />
 
             {(!attempt.blocks || attempt.blocks.length === 0) &&
@@ -1377,10 +1755,8 @@ const StudentSubmissionAttemptPage = () => {
               </section>
             )}
 
-            <div className="mt-6 space-y-4">
-              {currentPageQuestions.map(({ item, questionNumber }) =>
-                renderQuestionCard(item, questionNumber, true),
-              )}
+            <div className="mt-6 flex flex-col gap-4">
+              {renderCurrentPageContent()}
             </div>
 
             {totalPages > 1 && (
