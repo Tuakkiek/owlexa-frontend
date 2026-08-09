@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { teacherApi } from "../../api/teacherApi";
 import { teacherAttendanceApi } from "../../api/teacherAttendanceApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -11,18 +10,25 @@ import {
   LoadingSkeleton,
   EmptyState,
 } from "../../components/ui/SharedComponents";
-import type { TeacherResponse } from "../../types/teacher";
 import type {
   TeacherAttendanceResponse,
   TeacherAttendanceStatus,
 } from "../../types/teacherAttendance";
 import { TEACHER_STATUS_META } from "../../types/teacherAttendance";
 
-interface TeacherRow {
+interface SessionRow {
+  key: string;
+  scheduleEventId: number;
+  classId: number;
+  className: string;
+  roomId: number | null;
+  roomName: string;
+  startTime: string;
+  endTime: string;
   teacherUserId: number;
   teacherFullName: string;
   teacherPhoneNumber: string;
-  status: TeacherAttendanceStatus;
+  status: TeacherAttendanceStatus | null;
   note: string;
   attendanceId: number | null;
 }
@@ -34,58 +40,49 @@ const ALL_STATUSES: TeacherAttendanceStatus[] = [
   "LEAVE",
 ];
 
+function formatTime(value?: string | null) {
+  return value ? value.slice(0, 5) : "--:--";
+}
+
+function formatDateDisplay(value: string) {
+  if (!value) return "";
+  const parts = value.split("-");
+  if (parts.length !== 3) return value;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
 export default function OwnerTeacherAttendancePage() {
-  const [teachers, setTeachers] = useState<TeacherResponse[]>([]);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [rows, setRows] = useState<TeacherRow[]>([]);
-  const [isLoadingTeachers, setIsLoadingTeachers] = useState(true);
-  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [rows, setRows] = useState<SessionRow[]>([]);
+  const [isLoadingAttendance, setIsLoadingAttendance] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Load all teachers
-  const loadTeachers = useCallback(async () => {
-    try {
-      setIsLoadingTeachers(true);
-      setError("");
-      const data = await teacherApi.findAll();
-      setTeachers(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Không thể tải danh sách giáo viên.",
-      );
-    } finally {
-      setIsLoadingTeachers(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTeachers();
-  }, [loadTeachers]);
-
-  // Load existing attendance for the selected date
+  // Load schedule-driven attendance for the selected date
   const loadAttendance = useCallback(async () => {
-    if (teachers.length === 0) return;
     try {
       setIsLoadingAttendance(true);
       setError("");
       const records = await teacherAttendanceApi.findAll({ date });
-      const recordMap = new Map<number, TeacherAttendanceResponse>();
-      records.forEach((r) => recordMap.set(r.teacherUserId, r));
 
       setRows(
-        teachers.map((t) => {
-          const record = recordMap.get(t.userId);
-          return {
-            teacherUserId: t.userId,
-            teacherFullName: t.fullName ?? t.phoneNumber ?? "",
-            teacherPhoneNumber: t.phoneNumber ?? "",
-            status: record?.status ?? ("PRESENT" as TeacherAttendanceStatus),
-            note: record?.note ?? "",
-            attendanceId: record?.id ?? null,
-          };
-        }),
+        records.map((r: TeacherAttendanceResponse) => ({
+          key: `${r.scheduleEventId ?? r.id ?? Math.random()}-${r.teacherUserId}`,
+          scheduleEventId: r.scheduleEventId ?? 0,
+          classId: r.classId ?? 0,
+          className: r.className ?? "Lớp học",
+          roomId: r.roomId ?? null,
+          roomName: r.roomName ?? "Chưa gán",
+          startTime: r.startTime ?? "",
+          endTime: r.endTime ?? "",
+          teacherUserId: r.teacherUserId,
+          teacherFullName: r.teacherFullName ?? r.teacherPhoneNumber ?? "",
+          teacherPhoneNumber: r.teacherPhoneNumber ?? "",
+          status: r.status,
+          note: r.note ?? "",
+          attendanceId: r.id ?? null,
+        })),
       );
       setSuccess("");
     } catch (err: any) {
@@ -95,26 +92,30 @@ export default function OwnerTeacherAttendancePage() {
     } finally {
       setIsLoadingAttendance(false);
     }
-  }, [teachers, date]);
+  }, [date]);
 
   useEffect(() => {
-    if (teachers.length > 0) loadAttendance();
-  }, [loadAttendance, teachers.length]);
+    loadAttendance();
+  }, [loadAttendance]);
 
   // Update a row locally
   const updateRow = (
-    teacherUserId: number,
-    patch: Partial<Pick<TeacherRow, "status" | "note">>,
+    key: string,
+    patch: Partial<Pick<SessionRow, "status" | "note">>,
   ) => {
     setRows((current) =>
-      current.map((r) =>
-        r.teacherUserId === teacherUserId ? { ...r, ...patch } : r,
-      ),
+      current.map((r) => (r.key === key ? { ...r, ...patch } : r)),
     );
   };
 
-  // Save all
+  // Save all marked sessions
   const handleSave = async () => {
+    const markedRows = rows.filter((r) => r.status !== null);
+    if (markedRows.length === 0) {
+      setError("Vui lòng điểm danh ít nhất một ca dạy trước khi lưu.");
+      return;
+    }
+
     try {
       setIsSaving(true);
       setError("");
@@ -122,9 +123,10 @@ export default function OwnerTeacherAttendancePage() {
 
       await teacherAttendanceApi.mark({
         date,
-        records: rows.map((r) => ({
+        records: markedRows.map((r) => ({
+          scheduleEventId: r.scheduleEventId > 0 ? r.scheduleEventId : undefined,
           teacherUserId: r.teacherUserId,
-          status: r.status,
+          status: r.status!,
           note: r.note.trim() || undefined,
         })),
       });
@@ -151,33 +153,32 @@ export default function OwnerTeacherAttendancePage() {
     }
   };
 
-  // Summary stats
+  // Summary stats based on total teaching assignments on this date
   const summary = useMemo(() => {
-    const counts: Record<TeacherAttendanceStatus, number> = {
+    const counts = {
+      TOTAL: rows.length,
       PRESENT: 0,
       LATE: 0,
       ABSENT: 0,
       LEAVE: 0,
+      UNMARKED: 0,
     };
     rows.forEach((r) => {
-      counts[r.status] += 1;
+      if (r.status === "PRESENT") counts.PRESENT += 1;
+      else if (r.status === "LATE") counts.LATE += 1;
+      else if (r.status === "ABSENT") counts.ABSENT += 1;
+      else if (r.status === "LEAVE") counts.LEAVE += 1;
+      else counts.UNMARKED += 1;
     });
     return counts;
   }, [rows]);
-
-  const isLoading = isLoadingTeachers || isLoadingAttendance;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Điểm danh giáo viên"
-        description="Quản lý chấm công giáo viên theo ngày"
+        description="Quản lý chấm công giáo viên theo ca dạy"
       >
-        {rows.length > 0 && (
-          <Button onClick={handleSave} isLoading={isSaving}>
-            💾 Lưu điểm danh
-          </Button>
-        )}
       </PageHeader>
 
       {error && <ErrorBanner message={error} />}
@@ -188,7 +189,7 @@ export default function OwnerTeacherAttendancePage() {
         </div>
       )}
 
-      {/* Date Picker */}
+      {/* Date Picker Toolbar */}
       <Card>
         <div className="flex flex-wrap items-end gap-4">
           <Input
@@ -199,39 +200,41 @@ export default function OwnerTeacherAttendancePage() {
           />
           <div className="rounded-input border border-surface-border bg-surface-page px-4 py-3">
             <p className="text-xs text-gray-500">
-              {rows.length} giáo viên · {date}
+              {rows.length} ca dạy · {formatDateDisplay(date)}
             </p>
           </div>
         </div>
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        {ALL_STATUSES.map((status) => (
-          <StatCard
-            key={status}
-            label={TEACHER_STATUS_META[status].label}
-            value={summary[status]}
-          />
-        ))}
+      <div className="grid gap-4 sm:grid-cols-5">
+        <StatCard label="Tổng ca dạy" value={summary.TOTAL} />
+        <StatCard label="Có mặt" value={summary.PRESENT} />
+        <StatCard label="Muộn" value={summary.LATE} />
+        <StatCard label="Vắng" value={summary.ABSENT} />
+        <StatCard label="Xin phép" value={summary.LEAVE} />
       </div>
 
-      {/* Teacher Attendance Table */}
-      {isLoading ? (
+      {/* Teaching Session List */}
+      {isLoadingAttendance ? (
         <LoadingSkeleton count={5} />
       ) : rows.length === 0 ? (
         <EmptyState
-          message="Chưa có giáo viên nào trong trung tâm."
-          icon="👨‍🏫"
-        />
+          message="Không có ca dạy"
+          icon="📅"
+        >
+          <p className="mt-1 text-xs text-gray-400">
+            Không có giáo viên nào được xếp lịch dạy trong ngày này.
+          </p>
+        </EmptyState>
       ) : (
         <Card className="p-0 overflow-hidden">
           <div className="border-b border-surface-border px-6 py-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              Danh sách giáo viên
+              Danh sách ca dạy ngày {formatDateDisplay(date)}
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              {rows.length} giáo viên
+              {rows.length} ca dạy cần điểm danh
             </p>
           </div>
 
@@ -240,33 +243,42 @@ export default function OwnerTeacherAttendancePage() {
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page">
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                    Giáo viên
+                    Buổi học & Phòng
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                    Trạng thái
+                    Giáo viên phân công
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
+                    Trạng thái điểm danh
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
                     Ghi chú
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-gray-500">
-                    Thao tác
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {rows.map((row) => (
-                  <tr
-                    key={row.teacherUserId}
-                    className="hover:bg-surface-hover"
-                  >
+                  <tr key={row.key} className="hover:bg-surface-hover">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-gray-900">
+                        {row.className}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatTime(row.startTime)} – {formatTime(row.endTime)}
+                        {" · "}
+                        Phòng {row.roomName}
+                      </p>
+                    </td>
+
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-900">
                         {row.teacherFullName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         {row.teacherPhoneNumber}
                       </p>
                     </td>
+
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
                         {ALL_STATUSES.map((status) => {
@@ -276,9 +288,7 @@ export default function OwnerTeacherAttendancePage() {
                             <button
                               key={status}
                               type="button"
-                              onClick={() =>
-                                updateRow(row.teacherUserId, { status })
-                              }
+                              onClick={() => updateRow(row.key, { status })}
                               className={`rounded-btn border px-3 py-1 text-xs font-medium transition ${
                                 active
                                   ? meta.className
@@ -291,12 +301,13 @@ export default function OwnerTeacherAttendancePage() {
                         })}
                       </div>
                     </td>
+
                     <td className="px-6 py-4">
                       <input
                         type="text"
                         value={row.note}
                         onChange={(e) =>
-                          updateRow(row.teacherUserId, {
+                          updateRow(row.key, {
                             note: e.target.value,
                           })
                         }
@@ -304,6 +315,7 @@ export default function OwnerTeacherAttendancePage() {
                         className="w-full min-w-[120px] rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
                       />
                     </td>
+
                     <td className="px-6 py-4 text-right">
                       {row.attendanceId && (
                         <Button
@@ -324,7 +336,7 @@ export default function OwnerTeacherAttendancePage() {
           {/* Bottom save bar */}
           <div className="flex items-center justify-end border-t border-surface-border bg-surface-page px-6 py-4">
             <Button onClick={handleSave} isLoading={isSaving}>
-              💾 Lưu điểm danh
+              Lưu điểm danh
             </Button>
           </div>
         </Card>

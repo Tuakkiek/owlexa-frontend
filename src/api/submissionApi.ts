@@ -60,6 +60,17 @@ export const submissionApi = {
     return response.data;
   },
 
+  saveAudioProgress: async (
+    attemptId: number,
+    request: { positionSeconds: number; completed?: boolean },
+  ): Promise<StudentAttemptDetailResponse> => {
+    const response = await axiosClient.put(
+      `${STUDENT_BASE_URL}/submission-attempts/${attemptId}/audio-progress`,
+      request,
+    );
+    return response.data;
+  },
+
   submitAttempt: async (
     attemptId: number,
   ): Promise<StudentAttemptDetailResponse> => {

@@ -41,11 +41,11 @@ export const BulkAddStudentForm = ({
     });
 
     const invalid = students.find(
-      (t) => !t.phoneNumber || !t.fullName || !t.email,
+      (t) => !t.phoneNumber || !t.fullName,
     );
     if (invalid) {
       setError(
-        "Each line must contain Phone, Name, and Email separated by commas.",
+        "Mỗi dòng phải có dạng: Số điện thoại, Họ và tên (hoặc: Số điện thoại, Họ và tên, Email)",
       );
       return;
     }
@@ -55,7 +55,7 @@ export const BulkAddStudentForm = ({
       const res = await onSubmit({ students });
       setResults(res);
     } catch {
-      setError("Failed to bulk add students. Please try again.");
+      setError("Không thể nhập danh sách học sinh. Vui lòng kiểm tra lại dữ liệu.");
     } finally {
       setIsLoading(false);
     }
@@ -65,9 +65,11 @@ export const BulkAddStudentForm = ({
     const statusLabel: Record<string, string> = {
       CREATED: "Đã tạo",
       ALREADY_IN_CENTER: "Đã có trong trung tâm",
+      ADDED_TO_CENTER: "Đã thêm vào trung tâm",
       INVALID_INPUT: "Dữ liệu không hợp lệ",
+      ROLE_CONFLICT: "Trùng SĐT người dùng khác vai trò",
     };
-    const isError = (s: string) => s !== "CREATED";
+    const isError = (s: string) => s !== "CREATED" && s !== "ADDED_TO_CENTER";
 
     return (
       <div className="space-y-4">
@@ -109,17 +111,17 @@ export const BulkAddStudentForm = ({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Paste Student Data
+          Dán danh sách học sinh
         </label>
         <p className="text-xs text-gray-500 mb-2">
-          Format each line as: <code>Phone, Full Name, Email</code>
+          Mỗi dòng định dạng: <code>Số điện thoại, Họ tên, Email (tùy chọn)</code>
         </p>
         <textarea
           rows={6}
           className="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
           value={textData}
           onChange={(e) => setTextData(e.target.value)}
-          placeholder="0912345678, Nguyen Van A, a@example.com&#10;0987654321, Tran Thi B, b@example.com"
+          placeholder="0912345678, Nguyễn Văn A, a@example.com&#10;0987654321, Trần Thị B"
         />
         {error && (
           <span className="text-xs text-red-500 mt-1 block">{error}</span>
@@ -128,10 +130,10 @@ export const BulkAddStudentForm = ({
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cancel
+          Hủy
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          Import Students
+          Nhập danh sách
         </Button>
       </div>
     </form>

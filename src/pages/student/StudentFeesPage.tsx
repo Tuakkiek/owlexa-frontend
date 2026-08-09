@@ -8,9 +8,19 @@ import type {
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
-  PAYMENT_STATUS_COLORS,
 } from "../../types/fee";
 import { formatMoney, remainingBalance } from "../../utils/money";
+import {
+  PageHeader,
+  StatCard,
+  Card,
+  Badge,
+  EmptyState,
+  LoadingSkeleton,
+  ErrorBanner,
+} from "../../components/ui/SharedComponents";
+import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -50,6 +60,22 @@ const getRemainingSeconds = (expiresAt: string): number => {
   );
 };
 
+const mapStatusBadgeVariant = (
+  status: string,
+): "default" | "success" | "warning" | "error" | "info" => {
+  switch (status) {
+    case "ACTIVE":
+      return "success";
+    case "PENDING":
+      return "warning";
+    case "EXPIRED":
+    case "VOIDED":
+      return "error";
+    default:
+      return "default";
+  }
+};
+
 // ── Constants ──────────────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 5000;
@@ -61,6 +87,8 @@ const StudentFeesPage = () => {
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
   const [payments, setPayments] = useState<PaymentResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const PAYMENT_PAGE_SIZE = 5;
 
   // Payment flow state
   const [activeFeeId, setActiveFeeId] = useState<number | null>(null);
@@ -367,17 +395,14 @@ const StudentFeesPage = () => {
 
   // ── Generate new QR after expiration ─────────────────────────────────
 
-  const handleNewQr = useCallback(
-    () => {
-      setError("");
-      setDialogStep("confirm");
-      setPendingState(null);
-      setIsCreatingPayment(false);
-      idempotencyKeyRef.current = "";
-      stopAll();
-    },
-    [stopAll],
-  );
+  const handleNewQr = useCallback(() => {
+    setError("");
+    setDialogStep("confirm");
+    setPendingState(null);
+    setIsCreatingPayment(false);
+    idempotencyKeyRef.current = "";
+    stopAll();
+  }, [stopAll]);
 
   // ── Resume existing payment from banner ──────────────────────────────
 
@@ -398,6 +423,13 @@ const StudentFeesPage = () => {
     () => fees.filter((f) => f.status === "PAID"),
     [fees],
   );
+
+  const totalUnpaidBalance = useMemo(() => {
+    return unpaidFees.reduce(
+      (sum, record) => sum + remainingBalance(record),
+      0,
+    );
+  }, [unpaidFees]);
 
   // Find pending payment for each unpaid fee (for banners)
   const pendingPaymentMap = useMemo(() => {
@@ -421,36 +453,111 @@ const StudentFeesPage = () => {
     return map;
   }, [payments]);
 
+  const totalPaymentPages = useMemo(
+    () => Math.max(1, Math.ceil(payments.length / PAYMENT_PAGE_SIZE)),
+    [payments.length],
+  );
+
+  const paginatedPayments = useMemo(() => {
+    const start = (paymentPage - 1) * PAYMENT_PAGE_SIZE;
+    return payments.slice(start, start + PAYMENT_PAGE_SIZE);
+  }, [payments, paymentPage]);
+
+  const activeFeeRecord = useMemo(
+    () => fees.find((f) => f.id === activeFeeId) ?? null,
+    [fees, activeFeeId],
+  );
+
+  const modalTitle = useMemo(() => {
+    if (!activeFeeRecord) return "Thanh toán học phí";
+    switch (dialogStep) {
+      case "confirm":
+        return `Xác nhận thanh toán ${activeFeeRecord.month}`;
+      case "qr":
+        return `Thanh toán VietQR - ${activeFeeRecord.className}`;
+      case "expired":
+        return "Mã QR đã hết hạn";
+      case "success":
+        return "Thanh toán thành công!";
+      case "cancelled":
+        return "Đã hủy thanh toán";
+      default:
+        return "Thanh toán học phí";
+    }
+  }, [activeFeeRecord, dialogStep]);
+
   // ── Render ───────────────────────────────────────────────────────────
 
+  if (isLoading && fees.length === 0 && payments.length === 0) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Học phí & Thanh toán"
+          description="Quản lý và thanh toán các khoản học phí trực tuyến"
+        />
+        <LoadingSkeleton count={3} height="h-28" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 space-y-6 text-sm">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center border-b pb-2">
-        <div>
-          <h1 className="text-xl font-bold">Học phí & Thanh toán</h1>
-        </div>
-        <button
+      <PageHeader
+        title="Học phí & Thanh toán"
+        description="Quản lý hóa đơn và thực hiện thanh toán học phí trực tuyến"
+      >
+        <Button
+          variant="outline"
+          size="sm"
           onClick={loadData}
           disabled={isLoading}
-          className="rounded-lg border border-gray-300 px-3 py-1 text-xs disabled:opacity-50 hover:bg-gray-50"
+          isLoading={isLoading}
         >
-          {isLoading ? "Đang tải..." : "Làm mới"}
-        </button>
+          Làm mới
+        </Button>
+      </PageHeader>
+
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Tổng dư nợ cần trả"
+          value={formatMoney(String(totalUnpaidBalance))}
+          helper={
+            unpaidFees.length > 0
+              ? "Bao gồm chưa trả & đóng một phần"
+              : "Không có dư nợ cần thanh toán"
+          }
+        />
+        <StatCard
+          label="Hóa đơn chưa hoàn tất"
+          value={unpaidFees.length}
+          helper="Cần hoàn tất thanh toán đúng hạn"
+        />
+        <StatCard
+          label="Hóa đơn đã gạch nợ"
+          value={paidFees.length}
+          helper="Đã được xác nhận hệ thống"
+        />
       </div>
 
       {/* SUSPENDED enrollment warning */}
       {fees.some((f) => f.enrollmentStatus === "SUSPENDED") && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm">
-          <p className="font-bold text-red-700">
-            Tài khoản của bạn đang bị tạm dừng
-          </p>
-          <p className="mt-1 text-red-600">
-            Bạn có hóa đơn chưa thanh toán quá hạn. Vui lòng thanh toán để tiếp
-            tục tham gia lớp học. Lịch sử học tập, điểm danh và bài tập của bạn
-            vẫn được giữ nguyên.
-          </p>
-        </div>
+        <Card className="border-red-200 bg-red-50/70">
+          <div className="flex gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="font-semibold text-red-900">
+                Tài khoản của bạn đang bị tạm dừng
+              </p>
+              <p className="mt-1 text-sm text-red-700">
+                Bạn có hóa đơn chưa thanh toán quá hạn. Vui lòng thanh toán để tiếp
+                tục tham gia lớp học. Lịch sử học tập, điểm danh và bài tập của bạn
+                vẫn được giữ nguyên.
+              </p>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* ── Pending payment banners ─────────────────────────────────── */}
@@ -465,19 +572,19 @@ const StudentFeesPage = () => {
             pending.expiresAt && getRemainingSeconds(pending.expiresAt) <= 0;
 
           return (
-            <div
+            <Card
               key={`banner-${record.id}`}
-              className="rounded-lg border border-amber-300 bg-amber-50 p-4"
+              className="border-amber-200 bg-amber-50/60"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                  <p className="font-bold text-amber-800">
+                  <p className="font-semibold text-amber-900">
                     Bạn có một giao dịch chưa hoàn tất
                   </p>
-                  <div className="text-xs text-amber-700 space-y-0.5">
+                  <div className="text-xs text-amber-800 space-y-1">
                     <p>
                       <span className="font-medium">Mã giao dịch:</span>{" "}
-                      <span className="font-mono">
+                      <span className="font-mono bg-white/80 px-1.5 py-0.5 rounded border border-amber-200">
                         {pending.sepayRef || pending.receiptNumber}
                       </span>
                     </p>
@@ -488,482 +595,190 @@ const StudentFeesPage = () => {
                     {!isExpired && bannerRemaining && (
                       <p>
                         <span className="font-medium">Hết hạn sau:</span>{" "}
-                        <span className="font-mono text-amber-600 font-bold">
+                        <span className="font-mono text-amber-700 font-semibold">
                           {bannerRemaining}
                         </span>
                       </p>
                     )}
                     {isExpired && (
-                      <p className="text-red-600 font-medium">Đã hết hạn</p>
+                      <p className="text-red-700 font-medium">Mã QR đã hết hạn</p>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div className="flex gap-2">
                   {!isExpired && (
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => handleResumePayment(record)}
-                      className="rounded-lg bg-amber-600 text-white px-4 py-1.5 text-xs font-medium hover:bg-amber-700"
                     >
                       Tiếp tục thanh toán
-                    </button>
+                    </Button>
                   )}
                   {isExpired && (
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleOpenPayment(record)}
-                      className="rounded-lg border border-amber-600 text-amber-700 px-4 py-1.5 text-xs font-medium hover:bg-amber-100"
                     >
                       Tạo QR mới
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           );
         })}
 
       {/* Hóa đơn chưa thanh toán */}
       {unpaidFees.length > 0 && (
-        <section className="rounded-lg border p-4">
-          <h2 className="font-bold mb-3 border-b pb-1">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-900">
             Hóa đơn chưa thanh toán ({unpaidFees.length})
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {unpaidFees.map((record) => {
               const remaining = remainingBalance(record);
 
               return (
-                <div key={record.id} className="rounded-lg border p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="text-xs uppercase text-gray-500">
-                        {record.className}
-                      </p>
-                      <h3 className="font-bold">{record.month}</h3>
+                <Card
+                  key={record.id}
+                  className="flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          {record.className}
+                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900 mt-0.5">
+                          {record.month}
+                        </h3>
+                      </div>
+                      <Badge
+                        variant={record.status === "PARTIAL" ? "info" : "warning"}
+                      >
+                        {record.status === "PARTIAL"
+                          ? "Đã trả một phần"
+                          : "Chưa trả"}
+                      </Badge>
                     </div>
-                    <span className="rounded-lg text-xs border px-1.5 py-0.5">
-                      {record.status === "PARTIAL"
-                        ? "Đã trả một phần"
-                        : "Chưa trả"}
-                    </span>
+
+                    <div className="space-y-2 border-t border-surface-border pt-4 text-sm">
+                      <div className="flex justify-between text-gray-500">
+                        <span>Tổng học phí:</span>
+                        <span className="font-medium text-gray-900">
+                          {formatMoney(record.amount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-gray-500">
+                        <span>Đã thanh toán:</span>
+                        <span className="font-medium text-gray-900">
+                          {formatMoney(record.paidAmount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-t border-surface-border pt-2 font-semibold">
+                        <span className="text-gray-900">Còn nợ:</span>
+                        <span className="text-primary">
+                          {formatMoney(String(remaining))}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400">
+                      Hạn chót thanh toán: {record.dueDate}
+                    </p>
+
+                    <Button
+                      variant="primary"
+                      className="w-full"
+                      onClick={() => handleOpenPayment(record)}
+                    >
+                      Thanh toán QR
+                    </Button>
                   </div>
-
-                  <div className="space-y-1 border-t border-dashed pt-2 mb-3">
-                    <div className="flex justify-between">
-                      <span>Tổng học phí:</span>
-                      <span>{formatMoney(record.amount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Đã thanh toán:</span>
-                      <span>{formatMoney(record.paidAmount)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold border-t pt-1">
-                      <span>Còn nợ:</span>
-                      <span>{formatMoney(String(remaining))}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-gray-500 mb-2">
-                    Hạn: {record.dueDate}
-                  </div>
-
-                  <button
-                    onClick={() => handleOpenPayment(record)}
-                    disabled={isCreatingPayment && activeFeeId === record.id}
-                    className={`rounded-lg w-full border border-gray-300 py-1 text-xs font-medium transition-colors
-                      ${activeFeeId === record.id ? "bg-gray-100" : "hover:bg-gray-50"}
-                      disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {isCreatingPayment && activeFeeId === record.id
-                      ? "Đang tạo thanh toán..."
-                      : activeFeeId === record.id
-                        ? "Đóng QR"
-                        : "Thanh toán QR"}
-                  </button>
-
-                  {/* ── Payment Flow Panel ────────────────────────── */}
-                  {activeFeeId === record.id && (
-                    <div className="mt-3 rounded-lg border bg-gray-50 p-3 space-y-3">
-                      {/* Error */}
-                      {error && (
-                        <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-                          {error}
-                        </div>
-                      )}
-
-                      {/* Step: Confirm */}
-                      {dialogStep === "confirm" && (
-                        <div className="space-y-3">
-                          <div className="text-center">
-                            <p className="text-xs text-gray-500">
-                              Bạn sắp thanh toán
-                            </p>
-                            <p className="text-lg font-bold text-gray-900">
-                              {formatMoney(String(remaining))}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Thanh toán toàn bộ số dư còn lại qua chuyển khoản
-                              ngân hàng
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleCreatePayment(record)}
-                              disabled={isCreatingPayment}
-                              className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isCreatingPayment
-                                ? "Đang tạo..."
-                                : "Xác nhận thanh toán"}
-                            </button>
-                            <button
-                              onClick={closePaymentFlow}
-                              disabled={isCreatingPayment}
-                              className="flex-1 rounded-lg border border-gray-300 py-2 text-xs font-medium hover:bg-gray-100 disabled:opacity-50"
-                            >
-                              Hủy
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Step: QR Display */}
-                      {dialogStep === "qr" && pendingState && (
-                        <div className="space-y-4 animate-scale-in">
-                          {/* Header Alert / Countdown banner */}
-                          <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
-                            <div className="flex items-center gap-2">
-                              <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                              </span>
-                              <span className="text-[11px] font-bold text-amber-900">
-                                Kiểm tra tự động
-                              </span>
-                            </div>
-                            {countdown && (
-                              <span className={`text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-full border ${
-                                getRemainingSeconds(pendingState.payment.expiresAt!) < 60
-                                  ? "bg-red-100 text-red-700 border-red-200 animate-pulse"
-                                  : "bg-white text-amber-800 border-amber-200"
-                              }`}>
-                                {countdown}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* QR Image Frame */}
-                          <div className="flex flex-col items-center justify-center bg-gradient-to-b from-orange-50/40 via-white to-amber-50/20 border border-orange-200/70 shadow-2xs p-4 rounded-2xl relative">
-                            {pendingState.qr?.qrImage ? (
-                              <div className="p-2 bg-white rounded-xl border border-gray-200 shadow-xs">
-                                <img
-                                  src={pendingState.qr.qrImage}
-                                  alt={`VietQR ${pendingState.qr.paymentCode}`}
-                                  className="block max-w-[190px] h-auto rounded-lg"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-[190px] h-[190px] flex flex-col items-center justify-center gap-2">
-                                <svg className="w-6 h-6 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                                <span className="text-xs text-gray-400">Đang tải QR...</span>
-                              </div>
-                            )}
-                            
-                            <div className="mt-3 text-center">
-                              
-                             
-                            </div>
-                          </div>
-
-                          {/* Detail Card with copy-to-clipboard */}
-                          <div className="bg-gray-50/90 p-3 rounded-xl space-y-2.5 text-xs border border-gray-200">
-                            {pendingState.qr && (
-                              <>
-                                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-                                  <span className="text-gray-500 font-medium">Ngân hàng</span>
-                                  <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200">
-                                    {pendingState.qr.bankName}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-                                  <span className="text-gray-500 font-medium">Số tài khoản</span>
-                                  <div className="flex items-center gap-1.5 font-mono font-bold text-gray-900">
-                                    <span>{pendingState.qr.accountNumber}</span>
-                                    <button
-                                      onClick={() => handleCopy(pendingState.qr!.accountNumber, "accountNumber")}
-                                      className="px-1.5 py-0.5 bg-white hover:bg-gray-100 border border-gray-200 rounded text-[10px] font-semibold text-gray-600 hover:text-primary transition-colors"
-                                      title="Sao chép số tài khoản"
-                                    >
-                                      {copiedField === "accountNumber" ? "✓ Đã chép" : "Chép"}
-                                    </button>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-
-                            {/* Transfer Amount */}
-                            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-                              <span className="text-gray-500 font-medium">Số tiền chuyển</span>
-                              <div className="flex items-center gap-1.5 font-black text-primary text-sm">
-                                <span>{formatMoney(pendingState.payment.amount)}</span>
-                                <button
-                                  onClick={() => handleCopy(String(pendingState.payment.amount), "amount")}
-                                  className="px-1.5 py-0.5 bg-white hover:bg-orange-50 border border-gray-200 rounded text-[10px] font-semibold text-gray-600 hover:text-primary transition-colors"
-                                  title="Sao chép số tiền chuyển"
-                                >
-                                  {copiedField === "amount" ? "✓ Đã chép" : "Chép"}
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Transfer Content */}
-                            {pendingState.qr && (
-                              <div className="pt-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-gray-600 font-bold text-[11px]">Nội dung ghi</span>
-                               </div>
-                                <div className="flex items-center justify-between gap-2 bg-white border border-primary/30 rounded-lg p-2 hover:border-primary transition-colors">
-                                  <span className="font-mono font-bold text-gray-900 text-xs tracking-wide select-all break-words leading-normal">
-                                    {pendingState.qr.transferContent}
-                                  </span>
-                                  <button
-                                    onClick={() => handleCopy(pendingState.qr!.transferContent, "transferContent")}
-                                    className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded text-[11px] font-bold shrink-0 transition-colors"
-                                    title="Sao chép nội dung chuyển khoản"
-                                  >
-                                    {copiedField === "transferContent" ? "✓ Đã sao chép" : "Sao chép"}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Bottom Status Info / Action buttons */}
-                          <div className="flex flex-col items-center justify-center text-center space-y-2 pt-1">
-                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
-                              <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                              </span>
-                              <span className="font-semibold text-emerald-800">Đang chờ chuyển khoản, vui lòng đợi trong giây lát...</span>
-                            </div>
-
-                            <div className="flex gap-2 w-full pt-2">
-                              <button
-                                onClick={handleCancelPayment}
-                                className="flex-1 py-1.5 text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors"
-                              >
-                                Hủy thanh toán
-                              </button>
-                              <button
-                                onClick={closePaymentFlow}
-                                className="flex-1 py-1.5 text-xs font-semibold bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 rounded-lg transition-colors"
-                              >
-                                Đóng
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Step: Expired */}
-                      {(dialogStep === "expired" ||
-                        (dialogStep === "qr" &&
-                          pendingState &&
-                          getRemainingSeconds(
-                            pendingState.payment.expiresAt!,
-                          ) <= 0)) && (
-                        <div className="space-y-3 text-center">
-                          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                            <svg
-                              className="h-5 w-5 text-amber-600"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          </div>
-                          <p className="font-bold text-amber-700">
-                            Mã QR đã hết hạn
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Mã QR có hiệu lực trong 30 phút. Vui lòng tạo mã mới
-                            để tiếp tục.
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={handleNewQr}
-                              className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-xs font-medium hover:bg-blue-700"
-                            >
-                              Tạo QR mới
-                            </button>
-                            <button
-                              onClick={closePaymentFlow}
-                              className="flex-1 rounded-lg border border-gray-300 py-2 text-xs font-medium hover:bg-gray-100"
-                            >
-                              Đóng
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Step: Success */}
-                      {dialogStep === "success" && (
-                        <div className="space-y-3 text-center">
-                          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
-                            <svg
-                              className="h-5 w-5 text-emerald-600"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                          <p className="font-bold text-emerald-700">
-                            Thanh toán thành công!
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Cảm ơn bạn đã thanh toán. Hóa đơn của bạn đã được
-                            cập nhật.
-                          </p>
-                          <button
-                            onClick={closePaymentFlow}
-                            className="rounded-lg bg-emerald-600 text-white px-6 py-2 text-xs font-medium hover:bg-emerald-700"
-                          >
-                            Đóng
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Step: Cancelled */}
-                      {dialogStep === "cancelled" && (
-                        <div className="space-y-3 text-center">
-                          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                            <svg
-                              className="h-5 w-5 text-gray-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </div>
-                          <p className="font-bold text-gray-700">
-                            Đã hủy thanh toán
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Bạn có thể tạo giao dịch mới bất cứ lúc nào.
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={handleNewQr}
-                              className="flex-1 rounded-lg bg-blue-600 text-white py-2 text-xs font-medium hover:bg-blue-700"
-                            >
-                              Tạo QR mới
-                            </button>
-                            <button
-                              onClick={closePaymentFlow}
-                              className="flex-1 rounded-lg border border-gray-300 py-2 text-xs font-medium hover:bg-gray-100"
-                            >
-                              Đóng
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                </Card>
               );
             })}
           </div>
-        </section>
+        </div>
       )}
 
       {/* Hóa đơn đã thanh toán */}
       {paidFees.length > 0 && (
-        <section className="rounded-lg border p-4">
-          <h2 className="font-bold mb-3 border-b pb-1">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-900">
             Hóa đơn đã thanh toán ({paidFees.length})
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {paidFees.map((record) => (
-              <div key={record.id} className="rounded-lg border p-3">
-                <div className="flex justify-between items-start mb-2">
+              <Card key={record.id} className="space-y-4">
+                <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-xs uppercase text-gray-500">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
                       {record.className}
                     </p>
-                    <h3 className="font-bold">{record.month}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mt-0.5">
+                      {record.month}
+                    </h3>
                   </div>
-                  <span className="rounded-lg text-xs border border-gray-200 px-1.5 py-0.5">
-                    Đã trả
-                  </span>
+                  <Badge variant="success">Đã trả</Badge>
                 </div>
 
-                <div className="space-y-1 border-t border-dashed pt-2">
-                  <div className="flex justify-between">
+                <div className="space-y-2 border-t border-surface-border pt-4 text-sm">
+                  <div className="flex justify-between text-gray-500">
                     <span>Tổng học phí:</span>
-                    <span>{formatMoney(record.amount)}</span>
+                    <span className="font-medium text-gray-900">
+                      {formatMoney(record.amount)}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-gray-500">
                     <span>Đã thanh toán:</span>
-                    <span>{formatMoney(record.paidAmount)}</span>
+                    <span className="font-medium text-gray-900">
+                      {formatMoney(record.paidAmount)}
+                    </span>
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-500 mt-2">
-                  Hạn: {record.dueDate}
-                </div>
-              </div>
+                <p className="text-xs text-gray-400 border-t border-surface-border pt-2">
+                  Hạn chót: {record.dueDate}
+                </p>
+              </Card>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {/* ── Payment History ──────────────────────────────────────────── */}
       {payments.length > 0 && (
-        <section className="rounded-lg border p-4">
-          <h2 className="font-bold mb-3 border-b pb-1">Lịch sử thanh toán</h2>
-          <div className="space-y-2">
-            {payments.map((payment) => (
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Lịch sử thanh toán
+            </h2>
+            <span className="text-xs text-gray-400 font-medium">
+              Tổng số {payments.length} giao dịch
+            </span>
+          </div>
+
+          <div className="divide-y divide-surface-border">
+            {paginatedPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="border-b pb-2 last:border-0 last:pb-0 flex justify-between items-center"
+                className="py-3 first:pt-0 last:pb-0 flex justify-between items-center"
               >
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-xs">
+                    <span className="text-xs text-gray-500 font-medium">
                       {new Date(payment.createdAt).toLocaleDateString("vi-VN")}{" "}
                       {new Date(payment.createdAt).toLocaleTimeString("vi-VN", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                    </p>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[payment.status]}`}
-                    >
-                      {PAYMENT_STATUS_LABELS[payment.status]}
                     </span>
+                    <Badge variant={mapStatusBadgeVariant(payment.status)}>
+                      {PAYMENT_STATUS_LABELS[payment.status]}
+                    </Badge>
                   </div>
                   <p className="text-xs text-gray-500">
                     {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
@@ -975,24 +790,365 @@ const StudentFeesPage = () => {
                     </p>
                   )}
                 </div>
-                <div className="font-bold text-sm">
+                <span className="font-semibold text-sm text-gray-900">
                   {formatMoney(payment.amount)}
-                </div>
+                </span>
               </div>
             ))}
           </div>
-        </section>
+
+          {/* Pagination Controls */}
+          {payments.length > PAYMENT_PAGE_SIZE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-border pt-4 text-xs text-gray-500">
+              <span>
+                Hiển thị {Math.min((paymentPage - 1) * PAYMENT_PAGE_SIZE + 1, payments.length)} -{" "}
+                {Math.min(paymentPage * PAYMENT_PAGE_SIZE, payments.length)} trên tổng {payments.length} giao dịch
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaymentPage((p) => Math.max(1, p - 1))}
+                  disabled={paymentPage === 1}
+                  className="px-3 py-1 text-xs"
+                >
+                  Trang trước
+                </Button>
+                <span className="px-2 font-medium text-gray-700">
+                  Trang {paymentPage} / {totalPaymentPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPaymentPage((p) => Math.min(totalPaymentPages, p + 1))}
+                  disabled={paymentPage === totalPaymentPages}
+                  className="px-3 py-1 text-xs"
+                >
+                  Trang sau
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
       )}
 
       {/* Trạng thái trống */}
       {!isLoading && fees.length === 0 && (
-        <div className="rounded-lg border border-dashed p-8 text-center text-gray-500">
-          <h3 className="font-bold">Không có hóa đơn</h3>
-          <p className="text-xs mt-1">
-            Bạn đã thanh toán hết học phí hoặc chưa có hóa đơn nào.
-          </p>
-        </div>
+        <EmptyState
+          message="Bạn đã thanh toán hết học phí hoặc chưa có hóa đơn nào."
+          icon="🎉"
+        />
       )}
+
+      {/* ── Center Popup Modal for Payment Flow ────────────────────────── */}
+      <Modal
+        isOpen={activeFeeId !== null && activeFeeRecord !== null}
+        onClose={closePaymentFlow}
+        title={modalTitle}
+        maxWidth="max-w-md"
+      >
+        {activeFeeRecord && (
+          <div className="space-y-4">
+            {/* Error Banner */}
+            {error && <ErrorBanner message={error} />}
+
+            {/* Step: Confirm */}
+            {dialogStep === "confirm" && (
+              <div className="space-y-4 text-center">
+                <div className="bg-surface-page p-4 rounded-card border border-surface-border space-y-1">
+                  <p className="text-xs text-gray-500 font-medium">Số tiền sẽ thanh toán</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatMoney(String(remainingBalance(activeFeeRecord)))}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Lớp: {activeFeeRecord.className} — Kỳ: {activeFeeRecord.month}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => handleCreatePayment(activeFeeRecord)}
+                    isLoading={isCreatingPayment}
+                  >
+                    Xác nhận tạo mã QR
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={closePaymentFlow}
+                    disabled={isCreatingPayment}
+                  >
+                    Hủy
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: QR Display */}
+            {dialogStep === "qr" && pendingState && (
+              <div className="space-y-4">
+                {/* Header Alert / Countdown banner */}
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200 px-3 py-2 rounded-full">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span className="text-xs font-medium text-amber-800">
+                      Tự động gạch nợ sau khi chuyển
+                    </span>
+                  </div>
+                  {countdown && (
+                    <span
+                      className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-full border ${
+                        getRemainingSeconds(pendingState.payment.expiresAt!) < 60
+                          ? "bg-red-50 text-red-700 border-red-200 animate-pulse"
+                          : "bg-white text-amber-800 border-amber-200"
+                      }`}
+                    >
+                      {countdown}
+                    </span>
+                  )}
+                </div>
+
+                {/* QR Image Frame */}
+                <div className="flex flex-col items-center justify-center bg-white border border-surface-border p-4 rounded-card">
+                  {pendingState.qr?.qrImage ? (
+                    <div className="p-2 bg-white rounded-card border border-surface-border shadow-xs">
+                      <img
+                        src={pendingState.qr.qrImage}
+                        alt={`VietQR ${pendingState.qr.paymentCode}`}
+                        className="block max-w-[200px] h-auto rounded-input"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-[200px] h-[200px] flex flex-col items-center justify-center gap-2">
+                      <svg
+                        className="w-6 h-6 animate-spin text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      <span className="text-xs text-gray-400">
+                        Đang tạo mã QR...
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Details List */}
+                <div className="bg-surface-page p-3.5 rounded-card space-y-2.5 text-xs border border-surface-border">
+                  {pendingState.qr && (
+                    <>
+                      <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                        <span className="text-gray-500 font-medium">Ngân hàng</span>
+                        <span className="font-semibold text-gray-900 bg-white px-2 py-0.5 rounded-input border border-surface-border">
+                          {pendingState.qr.bankName}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                        <span className="text-gray-500 font-medium">Số tài khoản</span>
+                        <div className="flex items-center gap-2 font-mono font-semibold text-gray-900">
+                          <span>{pendingState.qr.accountNumber}</span>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              handleCopy(
+                                pendingState.qr!.accountNumber,
+                                "accountNumber",
+                              )
+                            }
+                            className="h-6 px-2 text-[10px]"
+                          >
+                            {copiedField === "accountNumber" ? "✓ Đã chép" : "Chép"}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Transfer Amount */}
+                  <div className="flex justify-between items-center py-1 border-b border-surface-border">
+                    <span className="text-gray-500 font-medium">Số tiền chuyển</span>
+                    <div className="flex items-center gap-2 font-bold text-primary text-sm">
+                      <span>{formatMoney(pendingState.payment.amount)}</span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          handleCopy(
+                            String(pendingState.payment.amount),
+                            "amount",
+                          )
+                        }
+                        className="h-6 px-2 text-[10px]"
+                      >
+                        {copiedField === "amount" ? "✓ Đã chép" : "Chép"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Transfer Content */}
+                  {pendingState.qr && (
+                    <div className="pt-1">
+                      <span className="text-gray-500 font-medium block mb-1">
+                        Nội dung ghi (bắt buộc chính xác)
+                      </span>
+                      <div className="flex items-center justify-between gap-2 bg-white border border-surface-border rounded-input p-2">
+                        <span className="font-mono font-bold text-gray-900 text-xs tracking-wide select-all break-all">
+                          {pendingState.qr.transferContent}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleCopy(
+                              pendingState.qr!.transferContent,
+                              "transferContent",
+                            )
+                          }
+                          className="h-6 px-2 text-[10px]"
+                        >
+                          {copiedField === "transferContent"
+                            ? "✓ Đã chép"
+                            : "Sao chép"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Action buttons */}
+                <div className="space-y-2 pt-1 text-center">
+                  <Badge variant="warning">
+                    Đang chờ chuyển khoản, vui lòng đợi trong giây lát...
+                  </Badge>
+
+                  <div className="flex gap-2 w-full pt-2">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleCancelPayment}
+                    >
+                      Hủy thanh toán
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={closePaymentFlow}
+                    >
+                      Đóng
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Expired */}
+            {(dialogStep === "expired" ||
+              (dialogStep === "qr" &&
+                pendingState &&
+                getRemainingSeconds(
+                  pendingState.payment.expiresAt!,
+                ) <= 0)) && (
+              <div className="space-y-4 text-center py-2">
+                <p className="font-semibold text-amber-800">
+                  Mã QR đã hết hạn
+                </p>
+                <p className="text-xs text-gray-500">
+                  Mã QR có hiệu lực trong 30 phút. Vui lòng tạo mã mới
+                  để tiếp tục.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleNewQr}
+                  >
+                    Tạo QR mới
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={closePaymentFlow}
+                  >
+                    Đóng
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: Success */}
+            {dialogStep === "success" && (
+              <div className="space-y-4 text-center py-2">
+                <p className="text-lg font-bold text-emerald-700">
+                  Thanh toán thành công!
+                </p>
+                <p className="text-xs text-gray-500">
+                  Cảm ơn bạn đã thanh toán. Hóa đơn của bạn đã được gạch nợ tự động trên hệ thống.
+                </p>
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={closePaymentFlow}
+                >
+                  Hoàn tất
+                </Button>
+              </div>
+            )}
+
+            {/* Step: Cancelled */}
+            {dialogStep === "cancelled" && (
+              <div className="space-y-4 text-center py-2">
+                <p className="font-semibold text-gray-700">
+                  Đã hủy thanh toán
+                </p>
+                <p className="text-xs text-gray-500">
+                  Bạn có thể tạo giao dịch mới bất cứ lúc nào.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleNewQr}
+                  >
+                    Tạo QR mới
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={closePaymentFlow}
+                  >
+                    Đóng
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

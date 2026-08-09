@@ -18,6 +18,7 @@ import type {
 } from "../../types/attendance";
 import type { ScheduleResponse } from "../../types/schedule";
 import type { TeacherClassStudents } from "../../types/teacherClassStudents";
+import { SessionCombobox } from "./components/SessionCombobox";
 
 interface AttendanceRow {
   studentUserId: number;
@@ -43,19 +44,19 @@ const STATUS_META: Record<
 > = {
   PRESENT: {
     label: "Có mặt",
-    className: "border-emerald-300 bg-emerald-50 text-emerald-700",
+    className: "border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold",
   },
   ABSENT: {
     label: "Vắng",
-    className: "border-rose-300 bg-rose-50 text-rose-700",
+    className: "border-rose-300 bg-rose-50 text-rose-700 font-semibold",
   },
   LATE: {
     label: "Muộn",
-    className: "border-amber-300 bg-amber-50 text-amber-700",
+    className: "border-amber-300 bg-amber-50 text-amber-700 font-semibold",
   },
   EXCUSED: {
     label: "Xin phép",
-    className: "border-blue-300 bg-blue-50 text-blue-700",
+    className: "border-blue-300 bg-blue-50 text-blue-700 font-semibold",
   },
 };
 
@@ -297,72 +298,63 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      <Card className="grid gap-4 lg:grid-cols-[minmax(280px,1.4fr)_220px_minmax(260px,0.8fr)_auto] lg:items-end">
-        <div className="min-w-0">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Buổi học
-          </label>
-          <select
-            value={selectedScheduleId ?? ""}
-            onChange={(event) => handleScheduleChange(Number(event.target.value))}
-            className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
-          >
-            <option value="" disabled>
-              Chọn buổi học
-            </option>
-            {visibleSchedules.map((schedule) => (
-              <option key={schedule.id} value={schedule.id}>
-                {formatDate(schedule.eventDate)} · {schedule.className} ·{" "}
-                {formatTime(schedule.startTime)}-{formatTime(schedule.endTime)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="min-w-0">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Ngày điểm danh
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
+      {/* Attendance Session Toolbar / Card */}
+      <Card className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-[1fr_220px]">
+          <SessionCombobox
+            sessions={visibleSchedules}
+            value={selectedScheduleId}
+            onChange={handleScheduleChange}
+            isLoading={isLoading}
           />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Ngày điểm danh
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              className="h-[52px] w-full rounded-input border border-surface-border bg-white px-3.5 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
+            />
+          </div>
         </div>
 
-        <div className="min-w-0 rounded-input border border-surface-border bg-surface-hover px-4 py-3">
-          <div className="text-sm font-medium text-gray-700">
-            Thông tin buổi học
-          </div>
-          <div className="mt-1 text-sm text-gray-500">
+        <div className="flex flex-col gap-3 rounded-input border border-surface-border bg-surface-hover p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             {selectedSchedule ? (
               <>
-                {currentDayName} · {formatDate(selectedSchedule.eventDate)}
-                <br />
-                {selectedSchedule.className}
-                <br />
-                Phòng {selectedSchedule.roomName || "Chưa gán"} ·{" "}
-                {formatTime(selectedSchedule.startTime)}-
-                {formatTime(selectedSchedule.endTime)}
+                <h3 className="text-base font-semibold text-gray-900">
+                  {selectedSchedule.className}
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {currentDayName} · {formatDate(selectedSchedule.eventDate)} ·{" "}
+                  {formatTime(selectedSchedule.startTime)} –{" "}
+                  {formatTime(selectedSchedule.endTime)}
+                  {selectedSchedule.roomName
+                    ? ` · Phòng ${selectedSchedule.roomName}`
+                    : ""}
+                </p>
               </>
             ) : (
-              "Chưa chọn buổi học"
+              <p className="text-sm text-gray-500">Chưa chọn buổi học</p>
             )}
           </div>
-        </div>
 
-        <Button
-          onClick={loadAttendance}
-          isLoading={isLoadingAttendance}
-          variant="secondary"
-          className="self-end"
-          disabled={!selectedScheduleId}
-        >
-          Tải danh sách
-        </Button>
+          <Button
+            onClick={loadAttendance}
+            isLoading={isLoadingAttendance}
+            variant="secondary"
+            disabled={!selectedScheduleId}
+            className="shrink-0"
+          >
+            Tải danh sách
+          </Button>
+        </div>
       </Card>
 
+      {/* Summary Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-4">
         {ATTENDANCE_STATUSES.map((status) => (
           <StatCard
@@ -373,6 +365,7 @@ export default function TeacherAttendancePage() {
         ))}
       </div>
 
+      {/* Student List Section */}
       {isLoading || isLoadingAttendance ? (
         <LoadingSkeleton count={4} height="h-20" />
       ) : !selectedSchedule ? (
@@ -382,7 +375,7 @@ export default function TeacherAttendancePage() {
       ) : rows.length === 0 ? (
         <EmptyState message="Chưa có học sinh nào trong lớp này." />
       ) : (
-        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
+        <div className="overflow-hidden rounded-card border border-surface-border bg-white shadow-sm">
           <div className="border-b border-surface-border px-6 py-4">
             <h2 className="text-lg font-semibold text-gray-900">
               Học sinh trong lớp {selectedClass.className}

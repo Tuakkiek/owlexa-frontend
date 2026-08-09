@@ -6,15 +6,19 @@ import { applyAuthFromResponse } from "../../auth/authService";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 
-interface RegisterPageProps {
-  mode: "student" | "owner";
-}
+const normalizeSubdomain = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
 
-const RegisterPage = ({ mode }: RegisterPageProps) => {
+const RegisterPage = () => {
   const navigate = useNavigate();
-  const isOwner = mode === "owner";
 
   const [fullName, setFullName] = useState("");
+  const [centerName, setCenterName] = useState("");
+  const [subdomain, setSubdomain] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +32,11 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
     setError("");
 
     if (!fullName.trim()) {
-      setError("Vui lòng nhập họ tên.");
+      setError("Vui lòng nhập họ tên chủ trung tâm.");
+      return;
+    }
+    if (!centerName.trim()) {
+      setError("Vui lòng nhập tên trung tâm.");
       return;
     }
     if (!phoneNumber.trim()) {
@@ -54,22 +62,17 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
 
     try {
       setIsLoading(true);
-      const response = isOwner
-        ? await authApi.registerOwner({
-            fullName: fullName.trim(),
-            email: email.trim() || undefined,
-            phoneNumber: phoneNumber.trim(),
-            password,
-          })
-        : await authApi.registerStudent({
-            fullName: fullName.trim(),
-            email: email.trim() || undefined,
-            phoneNumber: phoneNumber.trim(),
-            password,
-          });
+      const response = await authApi.registerOwner({
+        fullName: fullName.trim(),
+        centerName: centerName.trim(),
+        subdomain: normalizeSubdomain(subdomain) || undefined,
+        email: email.trim() || undefined,
+        phoneNumber: phoneNumber.trim(),
+        password,
+      });
 
       applyAuthFromResponse(response);
-      navigate(isOwner ? "/owner/dashboard" : "/student/dashboard");
+      navigate("/owner/dashboard");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ?? "Đăng ký thất bại. Vui lòng thử lại.";
@@ -80,14 +83,14 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-page px-4">
-      <div className="w-full max-w-sm rounded-card border border-surface-border bg-white p-8">
-        <div className="mb-8 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-surface-page px-4 py-8">
+      <div className="w-full max-w-md rounded-card border border-surface-border bg-white p-8 shadow-sm">
+        <div className="mb-6 text-center">
           <img src="/logo1.png" alt="Owlexa Logo" className="mx-auto mb-4 h-14 w-14 object-contain" />
           <h1 className="text-2xl font-semibold text-gray-900">
-            {isOwner ? "Đăng ký trung tâm" : "Đăng ký học viên"}
+            Đăng ký trung tâm
           </h1>
-          <p className="mt-1 text-sm text-gray-500">Owlexa Management System</p>
+          <p className="mt-1 text-sm text-gray-500">Khởi tạo trung tâm & tài khoản Quản trị viên Owlexa</p>
         </div>
 
         {error && (
@@ -98,27 +101,51 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Họ tên"
+            label="Họ tên chủ trung tâm"
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Nguyễn Văn A"
+            required
           />
 
           <Input
-            label="Email (tùy chọn)"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@email.com"
+            label="Tên trung tâm"
+            type="text"
+            value={centerName}
+            onChange={(e) => setCenterName(e.target.value)}
+            placeholder="Trung tâm Anh ngữ Owlexa"
+            required
           />
 
+          <div>
+            <Input
+              label="Subdomain (tùy chọn)"
+              type="text"
+              value={subdomain}
+              onChange={(e) => setSubdomain(normalizeSubdomain(e.target.value))}
+              placeholder="owlexa-english"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Đường dẫn: {subdomain ? normalizeSubdomain(subdomain) : "subdomain"}.owlexa.vn
+            </p>
+          </div>
+
           <Input
-            label="Số điện thoại"
+            label="Số điện thoại Quản trị"
             type="tel"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="0901234567"
+            required
+          />
+
+          <Input
+            label="Email liên hệ (tùy chọn)"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@email.com"
           />
 
           <div>
@@ -132,6 +159,7 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ít nhất 8 ký tự"
                 className="w-full rounded-input border border-surface-border px-3 py-2 pr-12 text-sm text-gray-900 outline-none transition-colors focus:border-primary"
+                required
               />
               <button
                 type="button"
@@ -149,10 +177,11 @@ const RegisterPage = ({ mode }: RegisterPageProps) => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Nhập lại mật khẩu"
+            required
           />
 
           <Button type="submit" isLoading={isLoading} className="w-full">
-            Đăng ký
+            Đăng ký trung tâm
           </Button>
         </form>
 

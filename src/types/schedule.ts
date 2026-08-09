@@ -43,8 +43,7 @@ export interface ScheduleRuleRequest {
   roomId: number;
   daysOfWeek: number[];
   startDate: string;
-  startTime: string;
-  endTime: string;
+  timeSlotId: number;
   type?: Exclude<ScheduleType, "CANCELLED">;
 }
 
@@ -55,6 +54,9 @@ export interface ScheduleRuleResponse {
   teacherUserFullName: string;
   roomId: number;
   roomName: string;
+  timeSlotId?: number;
+  timeSlotName?: string;
+  timeSlotPeriod?: "MORNING" | "AFTERNOON" | "EVENING";
   repeatType: "WEEKLY";
   daysOfWeek: number[];
   startDate: string;

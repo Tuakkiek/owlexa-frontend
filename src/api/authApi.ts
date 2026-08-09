@@ -34,20 +34,12 @@ export const authApi = {
     await axiosClient.delete("/auth/sessions");
   },
 
-  registerStudent: async (request: {
-    phoneNumber: string;
-    password: string;
-    fullName: string;
-    email?: string;
-  }): Promise<AuthResponse> => {
-    const response = await axiosClient.post("/auth/register/student", request);
-    return response.data;
-  },
-
   registerOwner: async (request: {
     phoneNumber: string;
     password: string;
     fullName: string;
+    centerName: string;
+    subdomain?: string;
     email?: string;
   }): Promise<AuthResponse> => {
     const response = await axiosClient.post("/auth/register/owner", request);

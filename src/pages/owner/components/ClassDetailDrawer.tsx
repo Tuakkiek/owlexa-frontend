@@ -706,6 +706,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                               <div>
                                 <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
                                   <span>{rule.daysOfWeek.map((day) => DAY_LABELS[day]).join(", ")}</span>
+                                  {rule.timeSlotName && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{rule.timeSlotName}</span>}
                                   <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs text-primary">{rule.type === "ONLINE_CLASS" ? "Online" : "Học"}</span>
                                 </div>
                                 <p className="mt-1 text-xs text-gray-500">
@@ -1112,6 +1113,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
         isOpen={isRuleModalOpen}
         onClose={() => setIsRuleModalOpen(false)}
         title="Tạo lịch học lặp"
+        maxWidth="max-w-xl"
       >
         <ScheduleRuleForm
           teachers={teachers}
