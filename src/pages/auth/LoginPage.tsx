@@ -126,12 +126,12 @@ const LoginPage = () => {
         </form>
 
         <div className="mt-6 border-t border-surface-border pt-4 text-center text-sm text-gray-500">
-          Chưa có tài khoản?{" "}
+          Chưa có tài khoản trung tâm?{" "}
           <Link
-            to="/register/student"
-            className="font-medium text-gray-900 hover:text-primary transition-colors"
+            to="/register/owner"
+            className="font-medium text-primary hover:text-primary-hover transition-colors"
           >
-            Đăng ký
+            Đăng ký trung tâm
           </Link>
         </div>
 

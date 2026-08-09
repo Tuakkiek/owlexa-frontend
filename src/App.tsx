@@ -9,6 +9,7 @@ import StudentsPage from "./pages/owner/StudentsPage";
 import ClassesPage from "./pages/owner/ClassesPage";
 import CoursesPage from "./pages/owner/CoursesPage";
 import RoomsPage from "./pages/owner/RoomsPage";
+import { OwnerTimeSlotsPage } from "./pages/owner/OwnerTimeSlotsPage";
 import FeesPage from "./pages/owner/FeesPage";
 import CentersPage from "./pages/owner/CentersPage";
 import CashiersPage from "./pages/owner/CashiersPage";
@@ -61,12 +62,8 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route
-              path="/register/student"
-              element={<RegisterPage mode="student" />}
-            />
-            <Route
               path="/register/owner"
-              element={<RegisterPage mode="owner" />}
+              element={<RegisterPage />}
             />
 
             {/* Redirect root to login */}
@@ -92,6 +89,10 @@ function App() {
                 <Route path="/owner/classes" element={<ClassesPage />} />
                 <Route path="/owner/courses" element={<CoursesPage />} />
                 <Route path="/owner/rooms" element={<RoomsPage />} />
+                <Route
+                  path="/owner/settings/time-slots"
+                  element={<OwnerTimeSlotsPage />}
+                />
                 <Route path="/owner/fees" element={<FeesPage />} />
                 <Route
                   path="/owner/fee-records/overdue"
@@ -308,6 +309,10 @@ function App() {
                 <Route path="/owner/classes" element={<ClassesPage />} />
                 <Route path="/owner/courses" element={<CoursesPage />} />
                 <Route path="/owner/rooms" element={<RoomsPage />} />
+                <Route
+                  path="/owner/settings/time-slots"
+                  element={<OwnerTimeSlotsPage />}
+                />
                 <Route
                   path="/owner/attendance"
                   element={<OwnerAttendancePage />}

@@ -34,6 +34,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Thu ngân", path: "/owner/cashiers", permission: "USER_VIEW" },
     { name: "Khóa học", path: "/owner/courses", permission: "COURSE_VIEW" },
     { name: "Phòng học", path: "/owner/rooms", permission: "ROOM_VIEW" },
+    { name: "Ca học", path: "/owner/settings/time-slots", permission: "ROOM_VIEW" },
     { name: "Lớp học", path: "/owner/classes", permission: "CLASS_VIEW" },
     {
       name: "Điểm danh HS",
@@ -64,6 +65,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
     { name: "Học sinh", path: "/owner/students", permission: "STUDENT_VIEW" },
     { name: "Khóa học", path: "/owner/courses", permission: "COURSE_VIEW" },
     { name: "Phòng học", path: "/owner/rooms", permission: "ROOM_VIEW" },
+    { name: "Ca học", path: "/owner/settings/time-slots", permission: "ROOM_VIEW" },
     { name: "Lớp học", path: "/owner/classes", permission: "CLASS_VIEW" },
   ],
   ACADEMIC_STAFF: [
