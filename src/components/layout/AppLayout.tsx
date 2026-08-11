@@ -155,7 +155,12 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
       permission: "PAYMENT_VIEW",
     },
   ],
-  ADMIN: [{ name: "Bảng điều khiển", path: "/admin/dashboard" }],
+  ADMIN: [
+    { name: "Bảng điều khiển", path: "/admin/dashboard" },
+    { name: "Người dùng", path: "/admin/users" },
+    { name: "Trung tâm", path: "/admin/centers" },
+    { name: "Nhật ký quản trị", path: "/admin/audit-logs" },
+  ],
 };
 
 const roleLabels: Record<RoleName, string> = {

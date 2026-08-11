@@ -49,6 +49,9 @@ import CashierDashboardPage from "./pages/cashier/CashierDashboardPage";
 import SessionManagementPage from "./pages/owner/SessionManagementPage";
 import AccountPage from "./pages/account/AccountPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminCentersPage from "./pages/admin/AdminCentersPage";
+import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage";
 
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { ConfirmProvider } from "./components/ui/ConfirmProvider";
@@ -341,6 +344,9 @@ function App() {
                   path="/admin/dashboard"
                   element={<AdminDashboardPage />}
                 />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/centers" element={<AdminCentersPage />} />
+                <Route path="/admin/audit-logs" element={<AdminAuditLogPage />} />
               </Route>
 
               {/* Unauthorized page */}
