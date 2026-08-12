@@ -1,13 +1,13 @@
 import type { Money } from "../types/fee";
 
-export const parseMoney = (value: Money | null | undefined): number => {
+export const parseMoney = (value: Money | number | null | undefined): number => {
   if (value === null || value === undefined || value === "") return 0;
   const numeric = Number(value);
   return Number.isNaN(numeric) ? 0 : numeric;
 };
 
 export const formatMoney = (
-  value: Money | null | undefined,
+  value: Money | number | null | undefined,
   currency: string = "VND",
   locale: string = "vi-VN",
 ): string => {

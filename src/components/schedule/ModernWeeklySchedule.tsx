@@ -262,7 +262,7 @@ export const ModernWeeklySchedule = ({
                 key={item.key}
                 type="button"
                 onClick={() => setFilter(item.key)}
-                className={`h-10 rounded-[10px] px-5 text-sm font-medium transition-all ${
+                className={`h-10 rounded-btn px-5 text-sm font-medium transition-all ${
                   filter === item.key
                     ? "bg-white text-primary shadow-sm"
                     : "text-gray-600 hover:text-gray-900"

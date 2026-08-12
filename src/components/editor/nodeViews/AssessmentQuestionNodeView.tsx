@@ -54,7 +54,7 @@ export const AssessmentQuestionNodeView = (props: NodeViewProps) => {
     <NodeViewWrapper className="owlexa-question-node-wrapper my-4">
       <div
         contentEditable={false}
-        className="rounded-card border-2 border-primary/20 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+        className="rounded-card border border-surface-border bg-white p-4 shadow-sm transition-all hover:shadow-md"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-primary/10 pb-2 mb-3">
           <div className="flex items-center gap-2">
