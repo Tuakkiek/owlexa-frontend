@@ -1609,7 +1609,7 @@ const StudentSubmissionAttemptPage = () => {
             </div>
 
             {legacyAiOverviewEnabled && attempt?.aiResult && attempt?.showScore !== false && (
-              <div className="mt-6 rounded-card border border-primary/20 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 p-4">
+              <div className="mt-6 rounded-card border border-surface-border bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900">

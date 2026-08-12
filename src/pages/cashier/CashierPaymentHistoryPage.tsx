@@ -1,36 +1,53 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  SearchInput,
-  PageHeader,
-  ErrorBanner,
-  Badge,
-  EmptyState,
-} from "../../components/ui/SharedComponents";
-import { Button } from "../../components/ui/Button";
+import { PaymentHistoryView } from "../../components/payment/PaymentHistoryView";
 import { feeApi, type PaymentFilterParams } from "../../api/feeApi";
-import type { PaymentPage } from "../../types/fee";
-import { formatMoney } from "../../utils/money";
-import {
-  FEE_STATUS_COLORS,
-  FEE_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
-  PAYMENT_STATUS_LABELS,
-  PAYMENT_STATUS_COLORS,
-} from "../../types/fee";
-import { Link } from "react-router-dom";
+import { refundApi } from "../../api/refundApi";
+import { usePermissions } from "../../hooks/usePermissions";
+import type { PaymentMethod, PaymentPage, PaymentResponse } from "../../types/fee";
 
 const PAGE_SIZE = 15;
+
+interface AppliedPaymentFilters {
+  query: string;
+  method: string;
+  startDate: string;
+  endDate: string;
+}
+
+const refundMethods: PaymentMethod[] = ["CASH", "BANK_TRANSFER"];
 
 const CashierPaymentHistoryPage = () => {
   const [page, setPage] = useState<PaymentPage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [appliedQuery, setAppliedQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
+  const [filterMethod, setFilterMethod] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<AppliedPaymentFilters>({
+    query: "",
+    method: "",
+    startDate: "",
+    endDate: "",
+  });
+
+  const [refundPayment, setRefundPayment] = useState<PaymentResponse | null>(
+    null,
+  );
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<PaymentMethod>("CASH");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
+
+  const { hasPermission, hasAllPermissions } = usePermissions();
+  const canProcessRefund =
+    hasPermission("PAYMENT_REFUND") ||
+    hasAllPermissions(["REFUND_REQUEST", "REFUND_APPROVE", "REFUND_PAY"]);
 
   const loadPayments = useCallback(
-    async (pageNum: number, searchQuery: string) => {
+    async (pageNum: number, filters: AppliedPaymentFilters) => {
       try {
         setIsLoading(true);
         setError("");
@@ -39,12 +56,21 @@ const CashierPaymentHistoryPage = () => {
           size: PAGE_SIZE,
           sort: "createdAt,desc",
         };
-        if (searchQuery) params.student = searchQuery;
+        if (filters.query) params.student = filters.query;
+        if (filters.method) params.method = filters.method;
+        if (filters.startDate) {
+          params.startDate = new Date(filters.startDate).toISOString();
+        }
+        if (filters.endDate) {
+          params.endDate = new Date(filters.endDate).toISOString();
+        }
+
         const result = await feeApi.getPaymentsPaginated("cashier", params);
         setPage(result);
       } catch (err: any) {
         setError(
-          err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.",
+          err?.response?.data?.message ??
+            "Không thể tải lịch sử thanh toán.",
         );
       } finally {
         setIsLoading(false);
@@ -54,155 +80,119 @@ const CashierPaymentHistoryPage = () => {
   );
 
   useEffect(() => {
-    loadPayments(currentPage, appliedQuery);
-  }, [appliedQuery, currentPage, loadPayments]);
+    loadPayments(currentPage, appliedFilters);
+  }, [appliedFilters, currentPage, loadPayments]);
 
   const handleSearch = () => {
     setCurrentPage(0);
-    setAppliedQuery(query);
+    setAppliedFilters({
+      query,
+      method: filterMethod,
+      startDate: filterStartDate,
+      endDate: filterEndDate,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setQuery("");
+    setFilterMethod("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setCurrentPage(0);
+    setAppliedFilters({
+      query: "",
+      method: "",
+      startDate: "",
+      endDate: "",
+    });
+  };
+
+  const openRefundModal = (payment: PaymentResponse) => {
+    setRefundPayment(payment);
+    setActionError("");
+    setRefundAmount("");
+    setRefundReason("");
+    setRefundMethod("CASH");
+  };
+
+  const closeRefundModal = () => {
+    if (actionLoading) return;
+    setRefundPayment(null);
+    setActionError("");
+  };
+
+  const handleRefund = async () => {
+    if (!refundPayment || !refundAmount || !refundReason.trim()) return;
+
+    try {
+      setActionLoading(true);
+      setActionError("");
+      const refund = await refundApi.requestRefund(
+        {
+          paymentId: refundPayment.id,
+          amount: refundAmount,
+          reason: refundReason.trim(),
+        },
+        "cashier",
+      );
+      const approvedRefund = await refundApi.decideRefund(
+        refund.id,
+        { approve: true },
+        "cashier",
+      );
+      await refundApi.payoutRefund(
+        approvedRefund.id,
+        { refundMethod },
+        "cashier",
+      );
+      setRefundPayment(null);
+      setRefundAmount("");
+      setRefundReason("");
+      loadPayments(currentPage, appliedFilters);
+    } catch (err: any) {
+      setActionError(
+        err?.response?.data?.message ?? "Không thể hoàn tiền giao dịch.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <PageHeader title="Lịch sử thanh toán" />
-
-      {error && <ErrorBanner message={error} />}
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <SearchInput
-          value={query}
-          onChange={setQuery}
-          placeholder="Tên hoặc SĐT học sinh..."
-        />
-        <Button onClick={handleSearch} variant="secondary" size="sm">
-          Tìm
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-16 animate-pulse rounded-card bg-surface-hover"
-            />
-          ))}
-        </div>
-      ) : !page || page.content.length === 0 ? (
-        <EmptyState message="Chưa có thanh toán nào." icon="📋" />
-      ) : (
-        <>
-          <div className="overflow-hidden rounded-card border border-surface-border bg-white">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-border bg-surface-hover text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  <th className="px-4 py-3">Mã biên lai</th>
-                  <th className="px-4 py-3">Học sinh</th>
-                  <th className="px-4 py-3">Lớp / Khóa</th>
-                  <th className="px-4 py-3">Phương thức</th>
-                  <th className="px-4 py-3 text-right">Số tiền</th>
-                  <th className="px-4 py-3">Trạng thái</th>
-                  <th className="px-4 py-3 text-center">TT</th>
-                  <th className="px-4 py-3 text-right">Ngày</th>
-                  <th className="px-4 py-3 text-right">BL</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {page.content.map((payment) => (
-                  <tr
-                    key={payment.id}
-                    className="transition-colors hover:bg-surface-hover"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                      {payment.receiptNumber}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
-                        {payment.studentFullName}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {payment.studentPhoneNumber}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-gray-700">{payment.className}</div>
-                      {payment.courseName && (
-                        <div className="text-xs text-gray-400">
-                          {payment.courseName}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="default">
-                        {PAYMENT_METHOD_LABELS[payment.method] ??
-                          payment.method}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {formatMoney(payment.amount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${FEE_STATUS_COLORS[payment.feeRecordStatus]}`}
-                      >
-                        {FEE_STATUS_LABELS[payment.feeRecordStatus]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[payment.status]}`}
-                      >
-                        {PAYMENT_STATUS_LABELS[payment.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-500 text-xs">
-                      {new Date(payment.createdAt).toLocaleDateString("vi-VN")}
-                      <br />
-                      {new Date(payment.createdAt).toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        to={`/cashier/payments/${payment.id}/receipt`}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Xem
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">
-              Tổng: {page.totalElements} giao dịch | Trang {page.number + 1}/
-              {page.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={currentPage === 0}
-                onClick={() => setCurrentPage((p) => p - 1)}
-              >
-                Trước
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={currentPage >= page.totalPages - 1}
-                onClick={() => setCurrentPage((p) => p + 1)}
-              >
-                Sau
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    <PaymentHistoryView
+      title="Lịch sử thanh toán"
+      description="Tra cứu giao dịch đã thu, xem biên lai và xử lý hoàn tiền khi được cấp quyền."
+      page={page}
+      isLoading={isLoading}
+      error={error}
+      query={query}
+      filterMethod={filterMethod}
+      filterStartDate={filterStartDate}
+      filterEndDate={filterEndDate}
+      currentPage={currentPage}
+      refundPayment={refundPayment}
+      refundAmount={refundAmount}
+      refundReason={refundReason}
+      actionLoading={actionLoading}
+      actionError={actionError}
+      receiptPath={(paymentId) => `/cashier/payments/${paymentId}/receipt`}
+      canRefundPayment={(payment) => canProcessRefund && payment.status === "ACTIVE"}
+      onQueryChange={setQuery}
+      onFilterMethodChange={setFilterMethod}
+      onFilterStartDateChange={setFilterStartDate}
+      onFilterEndDateChange={setFilterEndDate}
+      onSearch={handleSearch}
+      onClearFilters={handleClearFilters}
+      onPageChange={setCurrentPage}
+      onOpenRefund={openRefundModal}
+      onCloseRefund={closeRefundModal}
+      onRefundAmountChange={setRefundAmount}
+      onRefundReasonChange={setRefundReason}
+      onConfirmRefund={handleRefund}
+      refundMethod={refundMethod}
+      refundMethods={refundMethods}
+      onRefundMethodChange={setRefundMethod}
+    />
   );
 };
 

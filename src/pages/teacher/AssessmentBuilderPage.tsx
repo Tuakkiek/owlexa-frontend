@@ -305,7 +305,7 @@ const AssessmentBuilderPage = () => {
         </div>
       ) : (
         <div
-          className="overflow-hidden rounded-card border border-surface-border glass-panel hover-lift animate-fade-in"
+          className="overflow-hidden rounded-card border border-surface-border bg-white hover-lift animate-fade-in"
           style={{ animationDelay: "200ms" }}
         >
           <div className="overflow-x-auto">

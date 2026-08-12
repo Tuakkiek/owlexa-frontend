@@ -357,7 +357,7 @@ export const AssessmentForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 relative">
       {/* Header Panel */}
-      <div className="glass-panel overflow-visible rounded-card p-6 shadow-sm ring-1 ring-black/5 space-y-6">
+      <div className="bg-white overflow-visible rounded-card p-6 shadow-sm border border-surface-border space-y-6">
         <div className="border-b border-surface-border pb-3">
           <h3 className="text-lg font-semibold text-gray-900">Thông tin đề thi</h3>
           <p className="text-sm text-gray-500">
@@ -530,7 +530,7 @@ export const AssessmentForm = ({
       )}
 
       {/* Submit Actions Footer */}
-      <div className="flex items-center justify-end gap-3 sticky bottom-4 glass-panel p-4 rounded-card border border-surface-border shadow-lg">
+      <div className="flex items-center justify-end gap-3 sticky bottom-4 bg-white p-4 rounded-card border border-surface-border shadow-sm">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={isSaving}>
           Hủy
         </Button>

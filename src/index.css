@@ -48,20 +48,7 @@
     border-radius: 16px;
   }
 
-  /* Glassmorphism */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  }
 
-  .glass-header {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.9) 0%, rgba(234, 88, 12, 0.95) 100%);
-    backdrop-filter: blur(10px);
-    color: white;
-  }
 
   /* Micro-animations */
   .animate-fade-in {
@@ -82,7 +69,7 @@
   
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    @apply shadow-md;
   }
 }
 

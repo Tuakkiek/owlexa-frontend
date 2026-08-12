@@ -52,6 +52,7 @@ const sidebarLinks: Record<RoleName, NavItem[]> = {
       permission: "FEE_VIEW",
     },
     { name: "Thanh toán", path: "/owner/payments", permission: "PAYMENT_VIEW" },
+    { name: "Hoàn tiền", path: "/owner/refunds", permission: "PAYMENT_VIEW" },
     { name: "Phiên đăng nhập", path: "/owner/sessions" },
   ],
   MANAGER: [
