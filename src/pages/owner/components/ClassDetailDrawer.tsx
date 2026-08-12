@@ -32,7 +32,9 @@ import { feeApi } from "../../../api/feeApi";
 import type { FeeRecordResponse, CashPaymentRequest } from "../../../types/fee";
 import { FEE_STATUS_LABELS } from "../../../types/fee";
 import { CollectFeeModal } from "./CollectFeeModal";
-
+import { DropEnrollmentModal } from "./DropEnrollmentModal";
+import { TransferEnrollmentModal } from "./TransferEnrollmentModal";
+import type { DropReason } from "../../../types/enrollment";
 
 type Tab = "schedule" | "students" | "fees";
 const CLASS_STATUS_OPTIONS: ClassStatus[] = ["PLANNED", "ACTIVE", "FINISHED"];
@@ -62,11 +64,14 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const [allStudents, setAllStudents] = useState<StudentResponse[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<ClassStatus>(cls.status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  // Dropped (withdrawn) enrollment section
   const [showDropped, setShowDropped] = useState(false);
   const [droppedEnrollments, setDroppedEnrollments] = useState<EnrollmentResponse[]>([]);
   const [isLoadingDropped, setIsLoadingDropped] = useState(false);
   const [isRestoringId, setIsRestoringId] = useState<number | null>(null);
+  
+  // Modals for Drop & Transfer
+  const [droppingEnrollment, setDroppingEnrollment] = useState<EnrollmentResponse | null>(null);
+  const [transferringEnrollment, setTransferringEnrollment] = useState<EnrollmentResponse | null>(null);
 
   // Fees state
   const [classFees, setClassFees] = useState<FeeRecordResponse[]>([]);
@@ -83,10 +88,12 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const [editCourseId, setEditCourseId] = useState<number | undefined>(cls.courseId || undefined);
   const [editStatus, setEditStatus] = useState<ClassStatus>(cls.status);
   const [courses, setCourses] = useState<CourseResponse[]>([]);
+  const [allClasses, setAllClasses] = useState<ClassResponse[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     courseApi.findAll().then(setCourses).catch(() => {});
+    classApi.findAll().then(setAllClasses).catch(() => {});
   }, []);
 
   const resetEditState = useCallback(() => {
@@ -403,6 +410,22 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     } finally {
       setIsRestoringId(null);
     }
+  };
+
+  const handleDropWithReasonConfirm = async (reason: DropReason, note: string) => {
+    if (!droppingEnrollment) return;
+    await enrollmentApi.dropWithReason(cls.id, droppingEnrollment.studentUserId, { reason, note });
+    toast.success(`Đã xử lý nghỉ ngang cho học sinh ${droppingEnrollment.studentFullName}.`);
+    loadEnrollments();
+    onRefresh();
+  };
+
+  const handleTransferConfirm = async (targetClassId: number, note: string) => {
+    if (!transferringEnrollment) return;
+    const res = await enrollmentApi.transferEnrollment(cls.id, transferringEnrollment.studentUserId, { targetClassId, note });
+    toast.success(`Đã chuyển học sinh ${transferringEnrollment.studentFullName} sang lớp mới. Cần đóng thêm: ${formatMoney(res.feeDifference)}`);
+    loadEnrollments();
+    onRefresh();
   };
 
   const handleApprove = async (enrollment: EnrollmentResponse) => {
@@ -849,7 +872,8 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                             {e.status === "ACTIVE" && (
                               <>
                                 <button className="text-xs text-amber-600 underline" onClick={() => handleSuspend(e)}>Tạm dừng</button>
-                                <button className="text-xs text-red-600 underline" onClick={() => handleDrop(e)}>Xóa khỏi lớp</button>
+                                <button className="text-xs text-blue-600 underline" onClick={() => setTransferringEnrollment(e)}>Chuyển lớp</button>
+                                <button className="text-xs text-red-600 underline" onClick={() => setDroppingEnrollment(e)}>Nghỉ ngang</button>
                               </>
                             )}
                             {e.status === "SUSPENDED" && (
@@ -1149,6 +1173,20 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
         }}
         feeRecord={selectedFeeRecord}
         onSubmit={handleCollectCash}
+      />
+      <DropEnrollmentModal
+        isOpen={!!droppingEnrollment}
+        onClose={() => setDroppingEnrollment(null)}
+        onConfirm={handleDropWithReasonConfirm}
+        studentName={droppingEnrollment?.studentFullName || ""}
+      />
+      <TransferEnrollmentModal
+        isOpen={!!transferringEnrollment}
+        onClose={() => setTransferringEnrollment(null)}
+        onConfirm={handleTransferConfirm}
+        studentName={transferringEnrollment?.studentFullName || ""}
+        currentClass={cls}
+        availableClasses={allClasses}
       />
 
     </div>

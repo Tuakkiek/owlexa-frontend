@@ -18,6 +18,7 @@ import ReceiptPage from "./pages/owner/ReceiptPage";
 import DiscountManagementPage from "./pages/owner/DiscountManagementPage";
 import AuditLogPage from "./pages/owner/AuditLogPage";
 import FinancialTimelinePage from "./pages/owner/FinancialTimelinePage";
+import RefundsPage from "./pages/owner/RefundsPage";
 import StudentFeesPage from "./pages/student/StudentFeesPage";
 import StudentAttendancePage from "./pages/student/StudentAttendancePage";
 import StudentDashboardPage from "./pages/student/StudentDashboardPage";
@@ -114,6 +115,10 @@ function App() {
                 <Route
                   path="/owner/finance/timeline"
                   element={<FinancialTimelinePage />}
+                />
+                <Route
+                  path="/owner/refunds"
+                  element={<RefundsPage />}
                 />
 
                 <Route
@@ -281,15 +286,40 @@ function App() {
               </Route>
 
               {/* CASHIER Routes */}
-              <Route element={<ProtectedRoute allowedRoles={["CASHIER"]} />}>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["CASHIER"]}
+                    permission="DASHBOARD_FINANCE"
+                  />
+                }
+              >
                 <Route
                   path="/cashier/dashboard"
                   element={<CashierDashboardPage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["CASHIER"]}
+                    permission="PAYMENT_COLLECT"
+                  />
+                }
+              >
                 <Route
                   path="/cashier/payments"
                   element={<CashierPaymentsPage />}
                 />
+              </Route>
+              <Route
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["CASHIER"]}
+                    permission="PAYMENT_VIEW"
+                  />
+                }
+              >
                 <Route
                   path="/cashier/payment-history"
                   element={<CashierPaymentHistoryPage />}

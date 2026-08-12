@@ -131,7 +131,7 @@ export const StudentAIResultOverview = ({
     <>
       {isCelebrationOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-8 shadow-2xl">
+          <div className="relative w-full max-w-md overflow-hidden rounded-card border border-surface-border bg-white p-8 shadow-sm">
             <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-emerald-100/60" />
             <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-sky-100/70" />
             <div className="relative text-center">
@@ -163,7 +163,7 @@ export const StudentAIResultOverview = ({
       )}
 
       <section
-        className={`mt-6 overflow-hidden rounded-[2rem] border border-sky-100 bg-gradient-to-br ${tone.heroClass} p-6 shadow-[0_18px_50px_-30px_rgba(37,99,235,0.45)]`}
+        className="mt-6 overflow-hidden rounded-card border border-surface-border bg-white p-6 shadow-sm"
       >
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
@@ -177,7 +177,7 @@ export const StudentAIResultOverview = ({
               {tone.note}
             </div>
           </div>
-          <div className="rounded-[1.75rem] bg-white/80 px-8 py-6 text-center shadow-sm backdrop-blur">
+          <div className="rounded-card border border-surface-border bg-white px-8 py-6 text-center shadow-sm">
             <div className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-400">
               Điểm hiển thị
             </div>
@@ -199,7 +199,7 @@ export const StudentAIResultOverview = ({
         )}
       </section>
 
-      <section className="mt-6 rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-lime-50 to-emerald-50 p-6">
+      <section className="mt-6 rounded-card border border-surface-border bg-white p-6 shadow-sm">
         <div className="text-sm font-extrabold uppercase tracking-[0.18em] text-lime-700">
           Trọng tâm cải thiện
         </div>
@@ -213,7 +213,7 @@ export const StudentAIResultOverview = ({
         </div>
       </section>
 
-      <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mt-6 rounded-card border border-surface-border bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-3xl font-bold text-slate-900">Nhận xét từ AI</h3>
           <Badge variant="info">Theo tiêu chí của giáo viên</Badge>
@@ -224,7 +224,7 @@ export const StudentAIResultOverview = ({
       </section>
 
       {criteria.length > 0 && (
-        <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-card border border-surface-border bg-white p-6 shadow-sm">
           <h3 className="text-3xl font-bold text-slate-900">Phân tích điểm số</h3>
           <div className="mt-8 space-y-6">
             {criteria.map((criterion, index) => {
@@ -273,10 +273,10 @@ export const StudentAIResultOverview = ({
               return (
                 <article
                   key={`${improvement.category}-${index}`}
-                  className="rounded-[1.75rem] border border-rose-100 bg-white p-6 shadow-sm"
+                  className="rounded-card border border-surface-border bg-white p-6 shadow-sm"
                 >
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-2xl text-rose-500">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-card bg-rose-50 text-2xl text-rose-500">
                       !
                     </div>
                     <div className="text-2xl font-extrabold uppercase tracking-wide text-rose-400">
