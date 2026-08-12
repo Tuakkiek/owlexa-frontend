@@ -5,7 +5,6 @@ import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import {
   PageHeader,
-  SearchInput,
   ErrorBanner,
 } from "../../components/ui/SharedComponents";
 import { centerApi } from "../../api/centerApi";
