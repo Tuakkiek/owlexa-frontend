@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CircleCheck, Star } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { Badge } from "../../../components/ui/SharedComponents";
 import type {
@@ -135,8 +136,8 @@ export const StudentAIResultOverview = ({
             <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-emerald-100/60" />
             <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-sky-100/70" />
             <div className="relative text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-sky-200 bg-sky-100 text-4xl text-sky-600">
-                ✓
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-sky-200 bg-sky-100 text-sky-600">
+                <CircleCheck className="h-10 w-10" />
               </div>
               <h3 className="mt-5 text-4xl font-extrabold text-slate-900">
                 Đã chấm xong
@@ -167,8 +168,8 @@ export const StudentAIResultOverview = ({
       >
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/70 text-4xl shadow-sm">
-              ⭐
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-500 shadow-sm border border-amber-200">
+              <Star className="h-8 w-8 fill-amber-400 text-amber-500" />
             </div>
             <div className="mt-4 text-3xl font-extrabold text-blue-600">
               {tone.headline}

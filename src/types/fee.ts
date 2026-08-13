@@ -56,13 +56,17 @@ export interface FeeRecordResponse {
   classId: number;
   className: string;
   amount: Money;
-  discountAmount: Money;
   paidAmount: Money;
   remainingAmount: Money;
   month: string;
   dueDate: string;
   status: FeeStatus;
-  enrollmentStatus?: "PENDING" | "ACTIVE" | "DROPPED" | "SUSPENDED";
+  enrollmentStatus?:
+    | "PENDING"
+    | "ACTIVE"
+    | "DROPPED"
+    | "SUSPENDED"
+    | "TRANSFERRED";
   createdAt: string;
 }
 
@@ -127,7 +131,6 @@ export interface RevenueSummary {
   thisWeekRevenue: number;
   thisMonthRevenue: number;
   grossRevenue: number;
-  discountTotal: number;
   refundTotal: number;
   netRevenue: number;
   outstandingTuition: number;

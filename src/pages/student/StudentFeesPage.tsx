@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { TriangleAlert, PartyPopper, Check } from "lucide-react";
 import { feeApi } from "../../api/feeApi";
 import type {
   FeeRecordResponse,
@@ -545,7 +546,7 @@ const StudentFeesPage = () => {
       {fees.some((f) => f.enrollmentStatus === "SUSPENDED") && (
         <Card className="border-red-200 bg-red-50/70">
           <div className="flex gap-3">
-            <span className="text-xl">⚠️</span>
+            <TriangleAlert className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-red-900">
                 Tài khoản của bạn đang bị tạm dừng
@@ -836,7 +837,7 @@ const StudentFeesPage = () => {
       {!isLoading && fees.length === 0 && (
         <EmptyState
           message="Bạn đã thanh toán hết học phí hoặc chưa có hóa đơn nào."
-          icon="🎉"
+          icon={PartyPopper}
         />
       )}
 
@@ -976,7 +977,14 @@ const StudentFeesPage = () => {
                             }
                             className="h-6 px-2 text-[10px]"
                           >
-                            {copiedField === "accountNumber" ? "✓ Đã chép" : "Chép"}
+                            {copiedField === "accountNumber" ? (
+                              <span className="flex items-center gap-1">
+                                <Check className="h-3 w-3 text-emerald-600" />
+                                Đã chép
+                              </span>
+                            ) : (
+                              "Chép"
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -999,7 +1007,14 @@ const StudentFeesPage = () => {
                         }
                         className="h-6 px-2 text-[10px]"
                       >
-                        {copiedField === "amount" ? "✓ Đã chép" : "Chép"}
+                        {copiedField === "amount" ? (
+                          <span className="flex items-center gap-1">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            Đã chép
+                          </span>
+                        ) : (
+                          "Chép"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1025,9 +1040,14 @@ const StudentFeesPage = () => {
                           }
                           className="h-6 px-2 text-[10px]"
                         >
-                          {copiedField === "transferContent"
-                            ? "✓ Đã chép"
-                            : "Sao chép"}
+                          {copiedField === "transferContent" ? (
+                            <span className="flex items-center gap-1">
+                              <Check className="h-3 w-3 text-emerald-600" />
+                              Đã chép
+                            </span>
+                          ) : (
+                            "Sao chép"
+                          )}
                         </Button>
                       </div>
                     </div>

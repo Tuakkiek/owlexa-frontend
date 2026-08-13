@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import dashboardApi, { type DashboardStats } from "../../api/dashboardApi";
 import { feeApi } from "../../api/feeApi";
 import type { RevenueSummary } from "../../types/fee";
@@ -156,9 +157,10 @@ export const OwnerDashboardPage = () => {
               <div className="mt-4 flex justify-end">
                 <Link
                   to="/owner/fee-records/overdue"
-                  className="text-sm font-medium text-primary hover:text-primary-hover transition-colors"
+                  className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
                 >
-                  Xem các khoản chưa thu →
+                  <span>Xem các khoản chưa thu</span>
+                  <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
             )}
@@ -190,11 +192,6 @@ export const OwnerDashboardPage = () => {
                 <StatCard
                   label="Tổng thu (gross)"
                   value={formatCurrency(revenue.grossRevenue)}
-                />
-                <StatCard
-                  label="Giảm giá"
-                  value={formatCurrency(revenue.discountTotal)}
-                  helper="Tổng chiết khấu"
                 />
                 <StatCard
                   label="Hoàn tiền"

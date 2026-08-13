@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { adminApi } from "../../api/adminApi";
 import {
   Badge,
@@ -162,10 +163,10 @@ export default function AdminAuditLogPage() {
                         {log.targetType === "USER" ? "Người dùng" : "Trung tâm"} #{log.targetId}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-600">
-                      {log.previousStatus === "ACTIVE" ? "Hoạt động" : "Đã khóa"}
-                      <span className="mx-2 text-gray-300">→</span>
-                      {log.newStatus === "ACTIVE" ? "Hoạt động" : "Đã khóa"}
+                    <td className="whitespace-nowrap px-5 py-4 text-xs text-gray-600 flex items-center">
+                      <span>{log.previousStatus === "ACTIVE" ? "Hoạt động" : "Đã khóa"}</span>
+                      <ArrowRight className="mx-2 h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span>{log.newStatus === "ACTIVE" ? "Hoạt động" : "Đã khóa"}</span>
                     </td>
                     <td className="max-w-sm px-5 py-4 text-gray-600">
                       {log.reason}

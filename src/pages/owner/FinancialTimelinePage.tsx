@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { BarChart3 } from "lucide-react";
 import { PageHeader, Badge, EmptyState, ErrorBanner } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import axiosClient from "../../api/axiosClient";
@@ -50,7 +51,7 @@ const FinancialTimelinePage = () => {
           {[1,2,3,4].map(i => <div key={i} className="h-20 animate-pulse rounded-card bg-surface-hover" />)}
         </div>
       ) : entries.length === 0 ? (
-        <EmptyState message={studentId ? "Không có sự kiện tài chính nào." : "Nhập mã học viên để xem."} icon="📊" />
+        <EmptyState message={studentId ? "Không có sự kiện tài chính nào." : "Nhập mã học viên để xem."} icon={BarChart3} />
       ) : (
         <div className="space-y-3">
           {entries.map((entry, i) => {

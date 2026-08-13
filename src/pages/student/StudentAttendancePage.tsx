@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { BookOpen, Inbox } from "lucide-react";
 import { scheduleApi } from "../../api/scheduleApi";
 import { attendanceApi } from "../../api/attendanceApi";
 import { Input } from "../../components/ui/Input";
@@ -182,11 +183,11 @@ export default function StudentAttendancePage() {
       {isLoading ? (
         <LoadingSkeleton count={3} />
       ) : classOptions.length === 0 ? (
-        <EmptyState message="Bạn chưa được đăng ký vào lớp nào." icon="📚" />
+        <EmptyState message="Bạn chưa được đăng ký vào lớp nào." icon={BookOpen} />
       ) : attendanceRecords.length === 0 ? (
         <EmptyState
           message={`Chưa có dữ liệu điểm danh cho ${selectedClassName} vào ngày ${date}.`}
-          icon="📭"
+          icon={Inbox}
         />
       ) : (
         <Card className="p-0 overflow-hidden">

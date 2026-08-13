@@ -5,6 +5,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { CircleCheck, CircleX, TriangleAlert, Info, X } from "lucide-react";
 import {
   ToastContext,
   type ToastItem,
@@ -67,38 +68,22 @@ const ToastCard = ({ toast, onClose }: { toast: ToastItem; onClose: () => void }
     success: {
       borderColor: "border-emerald-200 bg-emerald-50/90 text-emerald-950",
       iconBg: "bg-emerald-100 text-emerald-600",
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      ),
+      icon: <CircleCheck className="h-5 w-5" />,
     },
     error: {
       borderColor: "border-red-200 bg-red-50/90 text-red-950",
       iconBg: "bg-red-100 text-red-600",
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ),
+      icon: <CircleX className="h-5 w-5" />,
     },
     warning: {
       borderColor: "border-amber-200 bg-amber-50/90 text-amber-950",
       iconBg: "bg-amber-100 text-amber-600",
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
+      icon: <TriangleAlert className="h-5 w-5" />,
     },
     info: {
       borderColor: "border-blue-200 bg-blue-50/90 text-blue-950",
       iconBg: "bg-blue-100 text-blue-600",
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <Info className="h-5 w-5" />,
     },
   };
 
@@ -119,11 +104,9 @@ const ToastCard = ({ toast, onClose }: { toast: ToastItem; onClose: () => void }
       <button
         onClick={onClose}
         className="shrink-0 rounded-lg p-1 text-gray-400 hover:bg-black/5 hover:text-gray-600 transition-colors"
-        aria-label="Close"
+        aria-label="Đóng thông báo"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

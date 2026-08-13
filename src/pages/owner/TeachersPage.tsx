@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Plus, Upload } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { SearchInput } from "../../components/ui/SharedComponents";
@@ -222,10 +223,12 @@ export const TeachersPage = () => {
               variant="secondary"
               onClick={() => setIsBulkAddModalOpen(true)}
             >
+              <Upload className="h-4 w-4 mr-1.5" />
               Nhập nhiều
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)}>
-              + Thêm giáo viên
+              <Plus className="h-4 w-4 mr-1.5" />
+              Thêm giáo viên
             </Button>
           </div>
         )}

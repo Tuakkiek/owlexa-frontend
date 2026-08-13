@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { assessmentBuilderApi } from "../../api/assessmentBuilderApi";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
@@ -254,20 +255,8 @@ const AssessmentBuilderPage = () => {
         </div>
 
         <Button type="button" onClick={openCreate}>
-          <svg
-            className="-ml-1 mr-2 h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Tạo mới đề thi
+          <Plus className="-ml-1 mr-2 h-5 w-5" />
+          Tạo bài kiểm tra
         </Button>
       </div>
 

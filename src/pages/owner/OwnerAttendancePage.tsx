@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, Inbox } from "lucide-react";
 import { scheduleApi } from "../../api/scheduleApi";
 import { classApi } from "../../api/classApi";
 import { attendanceApi } from "../../api/attendanceApi";
@@ -296,11 +297,11 @@ export default function OwnerAttendancePage() {
       {isLoading || isLoadingAttendance ? (
         <LoadingSkeleton count={4} />
       ) : !selectedSchedule ? (
-        <EmptyState message="Chọn một buổi học để xem điểm danh." icon="📅" />
+        <EmptyState message="Chọn một buổi học để xem điểm danh." icon={CalendarDays} />
       ) : !selectedClass || studentRows.length === 0 ? (
         <EmptyState
           message="Chưa có học sinh nào trong lớp hoặc chưa có dữ liệu điểm danh."
-          icon="📭"
+          icon={Inbox}
         />
       ) : (
         <Card className="p-0 overflow-hidden">

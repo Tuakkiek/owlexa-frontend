@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Clock, Check, X } from "lucide-react";
 import { submissionApi } from "../../api/submissionApi";
 import { Button } from "../../components/ui/Button";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
@@ -401,9 +402,11 @@ const ListeningAudioPlayer = ({
 const CountdownTimer = ({
   expiresAt,
   onExpire,
+  paused = false,
 }: {
   expiresAt: string;
   onExpire: () => void;
+  paused?: boolean;
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(() => {
     const diff = new Date(expiresAt).getTime() - Date.now();
@@ -414,6 +417,10 @@ const CountdownTimer = ({
   const hasExpiredRef = useRef(false);
 
   useEffect(() => {
+    if (paused) {
+      return;
+    }
+
     const calculateTimeLeft = () => {
       const diff = new Date(expiresAt).getTime() - Date.now();
       return Math.max(0, Math.floor(diff / 1000));
@@ -432,19 +439,21 @@ const CountdownTimer = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [expiresAt]);
+  }, [expiresAt, paused]);
 
   const hours = Math.floor(timeLeft / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
   const isUrgent = timeLeft > 0 && timeLeft <= 300; // 5 minutes
-  const isExpired = timeLeft === 0;
+  const isExpired = !paused && timeLeft === 0;
 
   return (
     <div
       className={`sticky top-0 z-40 border-b px-4 py-2 text-center transition-colors sm:px-6 ${
-        isExpired
+        paused
+          ? "border-amber-300 bg-amber-50"
+          : isExpired
           ? "border-red-300 bg-red-100"
           : isUrgent
             ? "border-red-200 bg-red-50"
@@ -455,7 +464,7 @@ const CountdownTimer = ({
       aria-label="Thời gian làm bài còn lại"
     >
       <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
-        <svg
+        <Clock
           className={`h-5 w-5 shrink-0 ${
             isExpired
               ? "text-red-600"
@@ -463,18 +472,12 @@ const CountdownTimer = ({
                 ? "animate-pulse text-red-500"
                 : "text-blue-600"
           }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        {isExpired ? (
+        />
+        {paused ? (
+          <span className="text-sm font-bold text-amber-700">
+            Đang nộp bài và chờ AI chấm...
+          </span>
+        ) : isExpired ? (
           <span className="text-sm font-bold text-red-600">
             Đã hết giờ làm bài
           </span>
@@ -614,15 +617,36 @@ const StudentSubmissionAttemptPage = () => {
   }, [attempt]);
 
   const isEditable = attempt?.status === "IN_PROGRESS";
+  const hasEssayItems =
+    attempt?.items.some((item) => item.questionType === "ESSAY") ?? false;
+  const isAwaitingAiResult =
+    attempt != null &&
+    attempt.status !== "IN_PROGRESS" &&
+    attempt.showScore !== false &&
+    hasEssayItems &&
+    attempt.aiResult == null;
+  const scoreDisplayText =
+    attempt == null || attempt.status === "IN_PROGRESS"
+      ? "-"
+      : isAwaitingAiResult
+        ? "Đang chấm"
+        : null;
 
   // Overall score shown to the student once submitted: auto-scored (multiple
   // choice) plus the AI-graded essay score when an AI result is available.
   const displayedFinalScore =
     attempt && attempt.status !== "IN_PROGRESS"
-      ? attempt.aiResult?.aiScore != null
+      ? isAwaitingAiResult
+        ? null
+        : attempt.aiResult?.aiScore != null
         ? (attempt.autoScore ?? 0) + attempt.aiResult.aiScore
         : attempt.autoScore
       : null;
+  const displayedScoreText =
+    scoreDisplayText ??
+    (displayedFinalScore == null
+      ? "-"
+      : `${displayedFinalScore} / ${attempt?.maxScore ?? "-"}`);
 
   const navigableQuestions = useMemo(
     () => (attempt ? getNavigableQuestions(attempt) : []),
@@ -1054,22 +1078,14 @@ const StudentSubmissionAttemptPage = () => {
                 bgClass = checked ? "bg-emerald-50" : "bg-emerald-50/50";
                 textClass = "text-emerald-800";
                 badgeClass = "border-emerald-500 bg-emerald-500 text-white";
-                badgeContent = (
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                );
+                badgeContent = <Check className="h-3.5 w-3.5" />;
               } else if (checked) {
                 // Student selected this but it's wrong
                 borderClass = "border-red-300";
                 bgClass = "bg-red-50";
                 textClass = "text-red-800";
                 badgeClass = "border-red-500 bg-red-500 text-white";
-                badgeContent = (
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                );
+                badgeContent = <X className="h-3.5 w-3.5" />;
               } else {
                 // Not selected, not correct - muted
                 borderClass = "border-surface-border";
@@ -1539,6 +1555,7 @@ const StudentSubmissionAttemptPage = () => {
         <CountdownTimer
           expiresAt={attempt.expiresAt}
           onExpire={forceSubmitOnExpire}
+          paused={isSubmitting || isSubmitConfirming}
         />
       )}
 
@@ -1600,13 +1617,18 @@ const StudentSubmissionAttemptPage = () => {
                     Điểm số
                   </div>
                   <div className="mt-1 text-gray-900">
-                    {attempt.status === "IN_PROGRESS" || displayedFinalScore == null
-                      ? "-"
-                      : `${displayedFinalScore} / ${attempt.maxScore ?? "-"}`}
+                    {displayedScoreText}
                   </div>
                 </div>
               )}
             </div>
+
+            {isAwaitingAiResult && (
+              <div className="mt-6 rounded-card border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {attempt.aiGradingMessage ??
+                  "Bài tự luận đang chờ chấm. Kết quả sẽ hiển thị khi có điểm AI hoặc giáo viên hoàn tất chấm."}
+              </div>
+            )}
 
             {legacyAiOverviewEnabled && attempt?.aiResult && attempt?.showScore !== false && (
               <div className="mt-6 rounded-card border border-surface-border bg-white p-4">

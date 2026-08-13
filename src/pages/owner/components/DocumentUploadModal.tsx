@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { FormEvent, DragEvent } from "react";
+import { UploadCloud, Link as LinkIcon, Check, FileText, X } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
@@ -185,19 +186,7 @@ export const DocumentUploadModal = ({
       {success ? (
         <div className="py-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <svg
-              className="h-6 w-6 text-emerald-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <Check className="h-6 w-6 text-emerald-600" />
           </div>
           <p className="text-lg font-semibold text-emerald-700">
             Tải lên thành công!
@@ -220,19 +209,7 @@ export const DocumentUploadModal = ({
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
+              <UploadCloud className="w-4 h-4" />
               Tải tệp từ máy tính
             </button>
             <button
@@ -247,19 +224,7 @@ export const DocumentUploadModal = ({
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
-              </svg>
+              <LinkIcon className="w-4 h-4" />
               Liên kết URL (Google Drive...)
             </button>
           </div>
@@ -295,19 +260,7 @@ export const DocumentUploadModal = ({
                   }`}
                 >
                   <div className="mb-3 rounded-full bg-primary/10 p-3 text-primary">
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
+                    <UploadCloud className="w-6 h-6" />
                   </div>
                   <p className="text-sm font-semibold text-gray-800">
                     Kéo thả tệp vào đây, hoặc{" "}
@@ -323,19 +276,7 @@ export const DocumentUploadModal = ({
                 <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50/80 p-3.5 shadow-2xs">
                   <div className="flex items-center gap-3 overflow-hidden">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                      <FileText className="w-5 h-5" />
                     </div>
                     <div className="truncate">
                       <p
@@ -359,19 +300,7 @@ export const DocumentUploadModal = ({
                     className="ml-2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700 disabled:opacity-50"
                     title="Đổi tệp khác"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               )}
