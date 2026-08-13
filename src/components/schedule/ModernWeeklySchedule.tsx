@@ -1,4 +1,14 @@
 import { useMemo, useState } from "react";
+import {
+  Calendar as CalendarIcon,
+  Printer,
+  Search as SearchIcon,
+  ChevronLeft,
+  ChevronRight,
+  Clock as ClockIcon,
+  MapPin,
+  User as UserIcon,
+} from "lucide-react";
 import type { ScheduleResponse, ScheduleType } from "../../types/schedule";
 import { SCHEDULE_TYPE_LABELS } from "../../types/schedule";
 
@@ -121,59 +131,14 @@ const matchesWeek = (schedule: ScheduleResponse, weekStart: Date) => {
 
 const Icon = ({ type }: { type: "calendar" | "print" | "search" | "chevronLeft" | "chevronRight" | "clock" | "pin" | "teacher" }) => {
   const common = "h-4 w-4";
-  if (type === "calendar") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M8 2v4M16 2v4M3 10h18" />
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-      </svg>
-    );
-  }
-  if (type === "print") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-        <rect x="6" y="14" width="12" height="8" rx="1" />
-      </svg>
-    );
-  }
-  if (type === "search") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-    );
-  }
-  if (type === "chevronLeft" || type === "chevronRight") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d={type === "chevronLeft" ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"} />
-      </svg>
-    );
-  }
-  if (type === "clock") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 6v6l4 2" />
-      </svg>
-    );
-  }
-  if (type === "pin") {
-    return (
-      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
-        <circle cx="12" cy="10" r="3" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
+  if (type === "calendar") return <CalendarIcon className={common} />;
+  if (type === "print") return <Printer className={common} />;
+  if (type === "search") return <SearchIcon className={common} />;
+  if (type === "chevronLeft") return <ChevronLeft className={common} />;
+  if (type === "chevronRight") return <ChevronRight className={common} />;
+  if (type === "clock") return <ClockIcon className={common} />;
+  if (type === "pin") return <MapPin className={common} />;
+  return <UserIcon className={common} />;
 };
 
 export const ModernWeeklySchedule = ({

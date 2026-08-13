@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { X } from "lucide-react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -27,21 +28,9 @@ export const Modal = ({
           <button
             onClick={onClose}
             className="rounded-btn p-1.5 text-gray-400 hover:bg-surface-hover hover:text-gray-700 transition-colors"
-            aria-label="Close"
+            aria-label="Đóng"
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="h-5 w-5" />
           </button>
         </div>
         <div className="max-h-[calc(100vh-6rem)] overflow-y-auto p-6">{children}</div>

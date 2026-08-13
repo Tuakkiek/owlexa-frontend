@@ -16,7 +16,7 @@ Owlexa sử dụng phong cách:
 
 Tham khảo:
 
-- DeepSeek Platform
+- Gemini
 - Linear
 - Stripe Dashboard
 - GitHub

@@ -1,6 +1,18 @@
 import type { ChangeEvent, ReactNode } from "react";
 import { useRef } from "react";
 import type { Editor } from "@tiptap/react";
+import {
+  List,
+  ListOrdered,
+  ListTodo,
+  Quote,
+  Code,
+  Minus,
+  Link as LinkIcon,
+  Table,
+  Plus,
+  Trash2,
+} from "lucide-react";
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -10,7 +22,7 @@ interface EditorToolbarProps {
 }
 
 interface ToolbarButtonProps {
-  label: string;
+  label: ReactNode;
   title: string;
   onClick: () => void;
   active?: boolean;
@@ -170,24 +182,24 @@ export const EditorToolbar = ({
       </ToolbarGroup>
 
       <ToolbarGroup>
-        <ToolbarButton label="• List" title="Danh sách dấu đầu dòng" active={editor.isActive("bulletList")} disabled={disabled} onClick={() => editor.chain().focus().toggleBulletList().run()} />
-        <ToolbarButton label="1. List" title="Danh sách đánh số" active={editor.isActive("orderedList")} disabled={disabled} onClick={() => editor.chain().focus().toggleOrderedList().run()} />
-        <ToolbarButton label="☑" title="Danh sách công việc" active={editor.isActive("taskList")} disabled={disabled} onClick={() => editor.chain().focus().toggleTaskList().run()} />
-        <ToolbarButton label="❝" title="Trích dẫn" active={editor.isActive("blockquote")} disabled={disabled} onClick={() => editor.chain().focus().toggleBlockquote().run()} />
-        <ToolbarButton label="</>" title="Khối mã" active={editor.isActive("codeBlock")} disabled={disabled} onClick={() => editor.chain().focus().toggleCodeBlock().run()} />
-        <ToolbarButton label="―" title="Đường phân cách" disabled={disabled} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
-        <ToolbarButton label="🔗" title="Chèn hoặc sửa liên kết" active={editor.isActive("link")} disabled={disabled} onClick={setLink} />
+        <ToolbarButton label={<List className="h-4 w-4" />} title="Danh sách dấu đầu dòng" active={editor.isActive("bulletList")} disabled={disabled} onClick={() => editor.chain().focus().toggleBulletList().run()} />
+        <ToolbarButton label={<ListOrdered className="h-4 w-4" />} title="Danh sách đánh số" active={editor.isActive("orderedList")} disabled={disabled} onClick={() => editor.chain().focus().toggleOrderedList().run()} />
+        <ToolbarButton label={<ListTodo className="h-4 w-4" />} title="Danh sách công việc" active={editor.isActive("taskList")} disabled={disabled} onClick={() => editor.chain().focus().toggleTaskList().run()} />
+        <ToolbarButton label={<Quote className="h-4 w-4" />} title="Trích dẫn" active={editor.isActive("blockquote")} disabled={disabled} onClick={() => editor.chain().focus().toggleBlockquote().run()} />
+        <ToolbarButton label={<Code className="h-4 w-4" />} title="Khối mã" active={editor.isActive("codeBlock")} disabled={disabled} onClick={() => editor.chain().focus().toggleCodeBlock().run()} />
+        <ToolbarButton label={<Minus className="h-4 w-4" />} title="Đường phân cách" disabled={disabled} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+        <ToolbarButton label={<LinkIcon className="h-4 w-4" />} title="Chèn hoặc sửa liên kết" active={editor.isActive("link")} disabled={disabled} onClick={setLink} />
       </ToolbarGroup>
 
       <ToolbarGroup>
-        <ToolbarButton label="⊞ Bảng" title="Chèn bảng 3 × 3" disabled={disabled} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+        <ToolbarButton label={<Table className="h-4 w-4" />} title="Chèn bảng 3 × 3" disabled={disabled} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
         {editor.isActive("table") && (
           <>
-            <ToolbarButton label="+ Hàng" title="Thêm hàng" disabled={disabled} onClick={() => editor.chain().focus().addRowAfter().run()} />
-            <ToolbarButton label="+ Cột" title="Thêm cột" disabled={disabled} onClick={() => editor.chain().focus().addColumnAfter().run()} />
-            <ToolbarButton label="− Hàng" title="Xóa hàng" disabled={disabled} onClick={() => editor.chain().focus().deleteRow().run()} />
-            <ToolbarButton label="− Cột" title="Xóa cột" disabled={disabled} onClick={() => editor.chain().focus().deleteColumn().run()} />
-            <ToolbarButton label="X Bảng" title="Xóa bảng" disabled={disabled} onClick={() => editor.chain().focus().deleteTable().run()} />
+            <ToolbarButton label={<span className="flex items-center gap-0.5"><Plus className="h-3 w-3" /> Hàng</span>} title="Thêm hàng" disabled={disabled} onClick={() => editor.chain().focus().addRowAfter().run()} />
+            <ToolbarButton label={<span className="flex items-center gap-0.5"><Plus className="h-3 w-3" /> Cột</span>} title="Thêm cột" disabled={disabled} onClick={() => editor.chain().focus().addColumnAfter().run()} />
+            <ToolbarButton label={<span className="flex items-center gap-0.5"><Minus className="h-3 w-3" /> Hàng</span>} title="Xóa hàng" disabled={disabled} onClick={() => editor.chain().focus().deleteRow().run()} />
+            <ToolbarButton label={<span className="flex items-center gap-0.5"><Minus className="h-3 w-3" /> Cột</span>} title="Xóa cột" disabled={disabled} onClick={() => editor.chain().focus().deleteColumn().run()} />
+            <ToolbarButton label={<span className="flex items-center gap-0.5"><Trash2 className="h-3 w-3" /> Bảng</span>} title="Xóa bảng" disabled={disabled} onClick={() => editor.chain().focus().deleteTable().run()} />
           </>
         )}
       </ToolbarGroup>

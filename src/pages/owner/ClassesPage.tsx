@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import {
@@ -122,7 +123,10 @@ export const ClassesPage = () => {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader title="Lớp học">
-        <Button onClick={() => setIsAddModalOpen(true)}>+ Tạo lớp mới</Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Tạo lớp mới
+        </Button>
       </PageHeader>
 
       <SearchInput

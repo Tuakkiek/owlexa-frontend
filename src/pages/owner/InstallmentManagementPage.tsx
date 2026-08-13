@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { CalendarDays } from "lucide-react";
 import { PageHeader, Badge, EmptyState, ErrorBanner } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import axiosClient from "../../api/axiosClient";
@@ -163,7 +164,7 @@ const InstallmentManagementPage = () => {
           {[1,2,3].map(i => <div key={i} className="h-16 animate-pulse rounded-card bg-surface-hover" />)}
         </div>
       ) : installments.length === 0 ? (
-        <EmptyState message={feeRecordId ? "Chưa có kỳ hạn nào." : "Nhập mã khoản học phí để xem."} icon="📅" />
+        <EmptyState message={feeRecordId ? "Chưa có kỳ hạn nào." : "Nhập mã khoản học phí để xem."} icon={CalendarDays} />
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
           <table className="min-w-full text-sm">

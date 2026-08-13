@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import type { FormEvent } from "react";
 import { questionBankApi } from "../../../api/questionBankApi";
 import { questionCollectionApi } from "../../../api/questionCollectionApi";
@@ -551,8 +552,9 @@ export const AssessmentForm = ({
                 type="button"
                 onClick={() => setActiveBlockIndexForPicker(null)}
                 className="text-gray-400 hover:text-gray-600"
+                aria-label="Đóng"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 

@@ -39,6 +39,11 @@ import type { DropReason } from "../../../types/enrollment";
 type Tab = "schedule" | "students" | "fees";
 const CLASS_STATUS_OPTIONS: ClassStatus[] = ["PLANNED", "ACTIVE", "FINISHED"];
 
+const isCurrentEnrollment = (
+  status: FeeRecordResponse["enrollmentStatus"],
+): boolean =>
+  status === "PENDING" || status === "ACTIVE" || status === "SUSPENDED";
+
 interface ClassDetailDrawerProps {
   cls: ClassResponse;
   onClose: () => void;
@@ -187,8 +192,11 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     setIsLoadingFees(true);
     try {
       const fees = await feeApi.getClassFees(cls.id);
-      setClassFees(fees);
-      const existingDueDate = fees.find((f) => f.dueDate)?.dueDate;
+      const currentFees = fees.filter((fee) =>
+        isCurrentEnrollment(fee.enrollmentStatus),
+      );
+      setClassFees(currentFees);
+      const existingDueDate = currentFees.find((f) => f.dueDate)?.dueDate;
       if (existingDueDate) {
         setDueDateInput(existingDueDate);
       }
@@ -222,7 +230,9 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     try {
       setIsSavingDueDate(true);
       const updatedFees = await feeApi.updateClassFeeDueDate(cls.id, dueDateInput);
-      setClassFees(updatedFees);
+      setClassFees(
+        updatedFees.filter((fee) => isCurrentEnrollment(fee.enrollmentStatus)),
+      );
       setIsEditingDueDate(false);
       toast.success("Cập nhật hạn chót đóng học phí thành công.");
     } catch (err: any) {
@@ -819,7 +829,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
               </div>
               <div className="text-sm text-gray-600">
                 <span className="font-medium text-gray-900">{enrollments.length}</span>
-                học sinh đang ghi danh
+                    học sinh đang ghi danh
               </div>
               {isLoadingEnrollments ? (
                 <div className="py-8 text-center text-sm text-gray-500">Đang tải...</div>
@@ -873,7 +883,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                               <>
                                 <button className="text-xs text-amber-600 underline" onClick={() => handleSuspend(e)}>Tạm dừng</button>
                                 <button className="text-xs text-blue-600 underline" onClick={() => setTransferringEnrollment(e)}>Chuyển lớp</button>
-                                <button className="text-xs text-red-600 underline" onClick={() => setDroppingEnrollment(e)}>Nghỉ ngang</button>
+                                <button className="text-xs text-red-600 underline" onClick={() => setDroppingEnrollment(e)}>Nghỉ</button>
                               </>
                             )}
                             {e.status === "SUSPENDED" && (

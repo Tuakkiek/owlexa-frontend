@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { gradingCriteriaApi } from "../../api/gradingCriteriaApi";
 import { questionBankApi } from "../../api/questionBankApi";
@@ -80,9 +81,10 @@ const QuestionEditorPage = () => {
       <button
         type="button"
         onClick={handleBack}
-        className="text-sm font-medium text-gray-600 hover:text-gray-900 cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 cursor-pointer"
       >
-        ← Quay lại trang trước
+        <ArrowLeft className="h-4 w-4" />
+        <span>Quay lại trang trước</span>
       </button>
       <PageHeader
         title={isEdit ? "Chỉnh sửa câu hỏi" : "Tạo câu hỏi"}

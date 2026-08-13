@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, Trash2 } from "lucide-react";
 import { teacherAttendanceApi } from "../../api/teacherAttendanceApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -221,7 +222,7 @@ export default function OwnerTeacherAttendancePage() {
       ) : rows.length === 0 ? (
         <EmptyState
           message="Không có ca dạy"
-          icon="📅"
+          icon={CalendarDays}
         >
           <p className="mt-1 text-xs text-gray-400">
             Không có giáo viên nào được xếp lịch dạy trong ngày này.
@@ -322,8 +323,9 @@ export default function OwnerTeacherAttendancePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(row.attendanceId!)}
+                          aria-label="Xóa điểm danh"
                         >
-                          🗑️
+                          <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       )}
                     </td>

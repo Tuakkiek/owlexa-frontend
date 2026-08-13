@@ -18,6 +18,12 @@ export type SubmissionAttemptStatus =
   | "SUBMITTED"
   | "AUTO_SUBMITTED";
 
+export type AIGradingJobStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED";
+
 export interface SubmissionAnswerRequest {
   assignmentItemId: number;
   answerText?: string | null;
@@ -84,6 +90,8 @@ export interface StudentAttemptSummaryResponse {
   aiScore?: number | null;
   displayedScore?: number | null;
   maxScore: number | null;
+  aiGradingStatus?: AIGradingJobStatus | null;
+  aiGradingMessage?: string | null;
 }
 
 export interface StudentAIGradingItemResultResponse {
@@ -152,6 +160,8 @@ export interface StudentAttemptDetailResponse {
   allowReview?: boolean;
   hasPassword?: boolean;
   aiResult?: StudentAIGradingResultResponse | null;
+  aiGradingStatus?: AIGradingJobStatus | null;
+  aiGradingMessage?: string | null;
 }
 
 export interface TeacherSubmissionSummaryResponse {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Lock } from "lucide-react";
 import { assignmentApi } from "../../api/assignmentApi";
 import { submissionApi } from "../../api/submissionApi";
 import { teacherReviewApi } from "../../api/teacherReviewApi";
@@ -17,6 +18,7 @@ import type {
   StudentAssignmentListResponse,
 } from "../../types/assignment";
 import type {
+  AIGradingJobStatus,
   StudentAttemptSummaryResponse,
   SubmissionAttemptStatus,
 } from "../../types/submission";
@@ -42,6 +44,26 @@ const attemptStatusLabel: Record<SubmissionAttemptStatus, string> = {
   IN_PROGRESS: "Đang làm bài",
   SUBMITTED: "Đã nộp",
   AUTO_SUBMITTED: "Tự động nộp",
+};
+
+const aiGradingScoreLabel: Partial<Record<AIGradingJobStatus, string>> = {
+  PENDING: "Đang chấm",
+  RUNNING: "Đang chấm",
+  FAILED: "Chưa chấm được",
+};
+
+const formatAttemptScore = (
+  attempt: StudentAttemptSummaryResponse,
+  showScore: boolean,
+) => {
+  if (!showScore) return "Không hiển thị";
+  if (attempt.status === "IN_PROGRESS") return "-";
+  if (attempt.displayedScore == null) {
+    return attempt.aiGradingStatus
+      ? (aiGradingScoreLabel[attempt.aiGradingStatus] ?? "-")
+      : "-";
+  }
+  return `${attempt.displayedScore} / ${attempt.maxScore ?? "-"}`;
 };
 
 const StudentAssignmentsPage = () => {
@@ -231,8 +253,8 @@ const StudentAssignmentsPage = () => {
                         </span>
                       </div>
                       {assignment.hasPassword && (
-                        <span className="mt-1 inline-block text-xs text-amber-600">
-                          🔒 Yêu cầu mật khẩu
+                        <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-600">
+                          <Lock className="h-3 w-3" /> Yêu cầu mật khẩu
                         </span>
                       )}
                     </td>
@@ -340,9 +362,10 @@ const StudentAssignmentsPage = () => {
                             {formatDateTime(attempt.submittedAt)}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                            {attemptsAssignment.showScore
-                              ? `${attempt.displayedScore ?? attempt.autoScore ?? "-"} / ${attempt.maxScore ?? "-"}`
-                              : "Không hiển thị"}
+                            {formatAttemptScore(
+                              attempt,
+                              attemptsAssignment.showScore,
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
