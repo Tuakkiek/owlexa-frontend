@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Monitor, Smartphone, Tablet, HelpCircle, RefreshCw, LogOut } from "lucide-react";
 import { authApi, type SessionResponse } from "../../api/authApi";
 import {
   PageHeader,
@@ -90,11 +91,17 @@ const SessionManagementPage = () => {
       minute: "2-digit",
     });
 
-  const deviceLabels: Record<string, string> = {
-    DESKTOP: "Máy tính",
-    MOBILE: "Điện thoại",
-    TABLET: "Máy tính bảng",
-    UNKNOWN: "Không rõ",
+  const getDeviceIcon = (deviceType?: string) => {
+    switch (deviceType) {
+      case "DESKTOP":
+        return <Monitor className="h-5 w-5 text-gray-600" />;
+      case "MOBILE":
+        return <Smartphone className="h-5 w-5 text-gray-600" />;
+      case "TABLET":
+        return <Tablet className="h-5 w-5 text-gray-600" />;
+      default:
+        return <HelpCircle className="h-5 w-5 text-gray-400" />;
+    }
   };
 
   return (
@@ -103,35 +110,39 @@ const SessionManagementPage = () => {
         <button
           onClick={loadSessions}
           disabled={isLoading}
-          className="rounded-btn border border-surface-border bg-white px-4 py-2 text-sm text-gray-700 hover:bg-surface-hover disabled:opacity-60 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-btn border border-surface-border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-surface-hover disabled:opacity-60 transition-colors"
         >
-          {isLoading ? "Đang tải..." : "Làm mới"}
+          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          <span>{isLoading ? "Đang tải..." : "Làm mới"}</span>
         </button>
       </PageHeader>
 
       {error && <ErrorBanner message={error} />}
 
       {isLoading ? (
-        <LoadingSkeleton count={3} height="h-24" />
+        <LoadingSkeleton count={3} height="h-20" />
       ) : sessions.length === 0 ? (
         <EmptyState message="Không có phiên đăng nhập nào." />
       ) : (
-        <>
-          <div className="flex justify-end">
-            <button
-              onClick={handleRevokeAll}
-              disabled={isRevokingAll}
-              className="rounded-btn border border-red-300 bg-white px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors"
-            >
-              {isRevokingAll ? "Đang xử lý..." : "Đăng xuất tất cả phiên khác"}
-            </button>
-          </div>
+        <div className="space-y-4">
+          {sessions.length > 1 && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleRevokeAll}
+                disabled={isRevokingAll}
+                className="inline-flex items-center gap-1.5 rounded-btn border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{isRevokingAll ? "Đang xử lý..." : "Đăng xuất tất cả phiên khác"}</span>
+              </button>
+            </div>
+          )}
 
           <div className="space-y-3">
             {sessions.map((session) => (
               <div
                 key={session.sessionId}
-                className={`flex items-center justify-between rounded-card border p-6 ${
+                className={`flex items-center justify-between rounded-card border p-4 transition-colors ${
                   session.current
                     ? "border-blue-200 bg-blue-50"
                     : "border-surface-border bg-white"
@@ -139,9 +150,7 @@ const SessionManagementPage = () => {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {deviceLabels[session.deviceType] ?? "❓"}
-                    </span>
+                    {getDeviceIcon(session.deviceType)}
                     <span className="font-medium text-gray-900">
                       {session.deviceName || "Thiết bị không rõ"}
                     </span>
@@ -153,10 +162,16 @@ const SessionManagementPage = () => {
                   </div>
                   <div className="mt-1 ml-7 text-xs text-gray-500">
                     <span>IP: {session.ipAddress || "—"}</span>
-                    <span className="mx-2">·</span>
-                    <span>Đăng nhập: {formatDate(session.createdAt)}</span>
-                    <span className="mx-2">·</span>
-                    <span>Hoạt động: {formatDate(session.lastUsedAt)}</span>
+                    {session.createdAt && (
+                      <span className="ml-3">
+                        Tạo lúc: {formatDate(session.createdAt)}
+                      </span>
+                    )}
+                    {session.lastUsedAt && (
+                      <span className="ml-3">
+                        Truy cập cuối: {formatDate(session.lastUsedAt)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -164,17 +179,15 @@ const SessionManagementPage = () => {
                   <button
                     onClick={() => handleRevoke(session.sessionId)}
                     disabled={revokingId === session.sessionId}
-                    className="ml-4 rounded-btn border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors"
+                    className="ml-4 shrink-0 rounded-btn border border-surface-border bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 transition-colors"
                   >
-                    {revokingId === session.sessionId
-                      ? "Đang hủy..."
-                      : "Đăng xuất"}
+                    {revokingId === session.sessionId ? "Đang xử lý..." : "Đăng xuất"}
                   </button>
                 )}
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

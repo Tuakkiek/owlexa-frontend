@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
@@ -247,7 +248,10 @@ export const OwnerTimeSlotsPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Ca học</h1>
           
         </div>
-        <Button onClick={openCreateModal}>+ Thêm ca học</Button>
+        <Button onClick={openCreateModal}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Thêm ca học
+        </Button>
       </div>
 
       {/* Quick Setup Card */}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge } from "../../components/ui/SharedComponents";
-import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { useToast } from "../../components/ui/Toast";
 import { refundApi } from "../../api/refundApi";
 import type { RefundResponse } from "../../types/refund";
@@ -109,16 +109,26 @@ export default function RefundsPage() {
                       {new Date(r.createdAt).toLocaleDateString("vi-VN")}
                     </td>
                     <td className="px-6 py-4 text-right whitespace-nowrap">
-                      {r.status === "REQUESTED" && (
-                        <Button size="sm" onClick={() => setDecisionModalRefund(r)}>
-                          Duyệt / Từ chối
-                        </Button>
-                      )}
-                      {r.status === "APPROVED" && (
-                        <Button size="sm" onClick={() => setPayoutModalRefund(r)}>
-                          Hoàn tiền
-                        </Button>
-                      )}
+                      <div className="flex justify-end gap-1.5">
+                        {r.status === "REQUESTED" && (
+                          <TableActionButton
+                            variant="secondary"
+                            icon={tableActionIcons.review()}
+                            onClick={() => setDecisionModalRefund(r)}
+                          >
+                            Duyệt / Từ chối
+                          </TableActionButton>
+                        )}
+                        {r.status === "APPROVED" && (
+                          <TableActionButton
+                            variant="primary"
+                            icon={tableActionIcons.refund()}
+                            onClick={() => setPayoutModalRefund(r)}
+                          >
+                            Hoàn tiền
+                          </TableActionButton>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -15,7 +15,7 @@ export type AssignmentStatus =
 
 export type AssignmentTargetType = "CLASS" | "STUDENT";
 
-export type AssignmentRecipientStatus = "ASSIGNED";
+export type AssignmentRecipientStatus = "ASSIGNED" | "REVOKED";
 
 export interface AssignmentTargetRequest {
   targetType: AssignmentTargetType;

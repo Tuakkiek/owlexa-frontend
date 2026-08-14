@@ -1,4 +1,5 @@
 import { useState, useCallback, type ReactNode } from "react";
+import { TriangleAlert, AlertCircle, CircleCheck, Info } from "lucide-react";
 import {
   ConfirmContext,
   type ConfirmOptions,
@@ -54,38 +55,22 @@ export const ConfirmDialog = ({
     danger: {
       bgIcon: "bg-red-100 text-red-600",
       btnConfirm: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500",
-      icon: (
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      ),
+      icon: <TriangleAlert className="h-6 w-6" />,
     },
     warning: {
       bgIcon: "bg-amber-100 text-amber-600",
       btnConfirm: "bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500",
-      icon: (
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <AlertCircle className="h-6 w-6" />,
     },
     emerald: {
       bgIcon: "bg-emerald-100 text-emerald-600",
       btnConfirm: "bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500",
-      icon: (
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <CircleCheck className="h-6 w-6" />,
     },
     primary: {
       bgIcon: "bg-blue-100 text-blue-600",
       btnConfirm: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500",
-      icon: (
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      icon: <Info className="h-6 w-6" />,
     },
   };
 

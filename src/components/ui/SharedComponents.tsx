@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { isValidElement, type ComponentType, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import { Inbox, Search } from "lucide-react";
 
 /* ───────────────────────────────────────────
  *  PageHeader — unified page title + actions
@@ -65,21 +67,35 @@ export const Card = ({ children, className = "" }: CardProps) => (
  * ─────────────────────────────────────────── */
 interface EmptyStateProps {
   message: string;
-  icon?: string;
+  icon?: LucideIcon | ComponentType<{ className?: string }> | ReactNode;
   children?: ReactNode;
 }
 
 export const EmptyState = ({
   message,
-  icon = "📭",
+  icon: IconProp = Inbox,
   children,
-}: EmptyStateProps) => (
-  <div className="rounded-card border border-dashed border-surface-border bg-surface-page p-12 text-center">
-    <div className="mb-4 text-4xl">{icon}</div>
-    <p className="text-sm text-gray-500">{message}</p>
-    {children && <div className="mt-4">{children}</div>}
-  </div>
-);
+}: EmptyStateProps) => {
+  const renderIcon = () => {
+    if (!IconProp) return <Inbox className="h-10 w-10 text-gray-400" />;
+    if (isValidElement(IconProp)) {
+      return IconProp;
+    }
+    if (typeof IconProp === "function" || typeof IconProp === "object") {
+      const IconComp = IconProp as ComponentType<{ className?: string }>;
+      return <IconComp className="h-10 w-10 text-gray-400" />;
+    }
+    return <Inbox className="h-10 w-10 text-gray-400" />;
+  };
+
+  return (
+    <div className="rounded-card border border-dashed border-surface-border bg-surface-page p-12 text-center">
+      <div className="mb-4 flex justify-center">{renderIcon()}</div>
+      <p className="text-sm text-gray-500">{message}</p>
+      {children && <div className="mt-4">{children}</div>}
+    </div>
+  );
+};
 
 /* ───────────────────────────────────────────
  *  LoadingSkeleton
@@ -155,19 +171,7 @@ export const SearchInput = ({
   placeholder = "Tìm kiếm...",
 }: SearchInputProps) => (
   <div className="relative max-w-sm">
-    <svg
-      className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
+    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
     <input
       type="text"
       value={value}

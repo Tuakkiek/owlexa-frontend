@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Copy, TriangleAlert } from "lucide-react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 
@@ -102,7 +103,17 @@ export const TemporaryPasswordDialog = ({
                 size="sm"
                 onClick={handleCopy}
               >
-                {copied ? "✓ Đã sao chép" : "Sao chép mật khẩu"}
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1 text-emerald-600 inline" />
+                    <span>Đã sao chép</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-1 inline" />
+                    <span>Sao chép mật khẩu</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -111,19 +122,7 @@ export const TemporaryPasswordDialog = ({
         {/* Warning */}
         <div className="rounded-input border border-red-100 bg-red-50 px-4 py-3">
           <div className="flex items-start gap-2">
-            <svg
-              className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+            <TriangleAlert className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
             <div className="text-xs text-red-700">
               <p className="font-semibold">
                 Mật khẩu này chỉ hiển thị một lần duy nhất.

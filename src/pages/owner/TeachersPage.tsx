@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
+import { Plus, Upload } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import { SearchInput } from "../../components/ui/SharedComponents";
 import {
@@ -222,10 +224,12 @@ export const TeachersPage = () => {
               variant="secondary"
               onClick={() => setIsBulkAddModalOpen(true)}
             >
+              <Upload className="h-4 w-4 mr-1.5" />
               Nhập nhiều
             </Button>
             <Button onClick={() => setIsAddModalOpen(true)}>
-              + Thêm giáo viên
+              <Plus className="h-4 w-4 mr-1.5" />
+              Thêm giáo viên
             </Button>
           </div>
         )}
@@ -284,38 +288,42 @@ export const TeachersPage = () => {
                   )}
                   {(canManageTeachers || canManagePermissions || canViewSalary) && (
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-3 text-sm">
+                      <div className="flex justify-end gap-1.5 text-sm">
                         {canManagePermissions && (
-                          <button
-                            className="text-primary hover:text-primary-hover transition-colors"
+                          <TableActionButton
+                            variant="secondary"
+                            icon={tableActionIcons.permissions()}
                             onClick={() => setPermissionTeacher(teacher)}
                           >
                             Phân quyền
-                          </button>
+                          </TableActionButton>
                         )}
                         {canManageTeachers && (
-                          <button
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                          <TableActionButton
+                            variant="secondary"
+                            icon={tableActionIcons.edit()}
                             onClick={() => setEditingTeacher(teacher)}
                           >
                             Sửa
-                          </button>
+                          </TableActionButton>
                         )}
                         {canViewSalary && (
-                          <button
-                            className="text-gray-600 hover:text-gray-900 transition-colors"
+                          <TableActionButton
+                            variant="secondary"
+                            icon={tableActionIcons.salary()}
                             onClick={() => setSalaryTeacher(teacher)}
                           >
                             Lương
-                          </button>
+                          </TableActionButton>
                         )}
                         {canManageTeachers && (
-                          <button
-                            className="text-gray-400 hover:text-red-600 transition-colors"
+                          <TableActionButton
+                            variant="danger"
+                            icon={tableActionIcons.delete()}
                             onClick={() => handleDelete(teacher)}
                           >
                             Gỡ
-                          </button>
+                          </TableActionButton>
                         )}
                       </div>
                     </td>

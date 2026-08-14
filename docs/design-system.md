@@ -3,7 +3,7 @@
 ## Design Philosophy
 
 - Minimal, Enterprise, Professional, Clean, Spacious
-- Reference: DeepSeek Platform, Linear, Stripe, GitHub, Notion
+- Reference: Gemini, Linear, Stripe, GitHub, Notion
 - No: gradient, glassmorphism, neumorphism, large shadows, excessive colors
 
 ---

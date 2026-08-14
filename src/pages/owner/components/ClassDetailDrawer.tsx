@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "../../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../../components/ui/TableActionButton";
 import { Modal } from "../../../components/ui/Modal";
 import { Badge } from "../../../components/ui/SharedComponents";
 import { ScheduleRuleForm } from "./ScheduleRuleForm";
@@ -33,11 +34,15 @@ import type { FeeRecordResponse, CashPaymentRequest } from "../../../types/fee";
 import { FEE_STATUS_LABELS } from "../../../types/fee";
 import { CollectFeeModal } from "./CollectFeeModal";
 import { DropEnrollmentModal } from "./DropEnrollmentModal";
-import { TransferEnrollmentModal } from "./TransferEnrollmentModal";
 import type { DropReason } from "../../../types/enrollment";
 
 type Tab = "schedule" | "students" | "fees";
 const CLASS_STATUS_OPTIONS: ClassStatus[] = ["PLANNED", "ACTIVE", "FINISHED"];
+
+const isCurrentEnrollment = (
+  status: FeeRecordResponse["enrollmentStatus"],
+): boolean =>
+  status === "PENDING" || status === "ACTIVE" || status === "SUSPENDED";
 
 interface ClassDetailDrawerProps {
   cls: ClassResponse;
@@ -69,9 +74,8 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const [isLoadingDropped, setIsLoadingDropped] = useState(false);
   const [isRestoringId, setIsRestoringId] = useState<number | null>(null);
   
-  // Modals for Drop & Transfer
+  // Modals for enrollment actions
   const [droppingEnrollment, setDroppingEnrollment] = useState<EnrollmentResponse | null>(null);
-  const [transferringEnrollment, setTransferringEnrollment] = useState<EnrollmentResponse | null>(null);
 
   // Fees state
   const [classFees, setClassFees] = useState<FeeRecordResponse[]>([]);
@@ -88,12 +92,10 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
   const [editCourseId, setEditCourseId] = useState<number | undefined>(cls.courseId || undefined);
   const [editStatus, setEditStatus] = useState<ClassStatus>(cls.status);
   const [courses, setCourses] = useState<CourseResponse[]>([]);
-  const [allClasses, setAllClasses] = useState<ClassResponse[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     courseApi.findAll().then(setCourses).catch(() => {});
-    classApi.findAll().then(setAllClasses).catch(() => {});
   }, []);
 
   const resetEditState = useCallback(() => {
@@ -187,8 +189,11 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     setIsLoadingFees(true);
     try {
       const fees = await feeApi.getClassFees(cls.id);
-      setClassFees(fees);
-      const existingDueDate = fees.find((f) => f.dueDate)?.dueDate;
+      const currentFees = fees.filter((fee) =>
+        isCurrentEnrollment(fee.enrollmentStatus),
+      );
+      setClassFees(currentFees);
+      const existingDueDate = currentFees.find((f) => f.dueDate)?.dueDate;
       if (existingDueDate) {
         setDueDateInput(existingDueDate);
       }
@@ -222,7 +227,9 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     try {
       setIsSavingDueDate(true);
       const updatedFees = await feeApi.updateClassFeeDueDate(cls.id, dueDateInput);
-      setClassFees(updatedFees);
+      setClassFees(
+        updatedFees.filter((fee) => isCurrentEnrollment(fee.enrollmentStatus)),
+      );
       setIsEditingDueDate(false);
       toast.success("Cập nhật hạn chót đóng học phí thành công.");
     } catch (err: any) {
@@ -416,14 +423,6 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
     if (!droppingEnrollment) return;
     await enrollmentApi.dropWithReason(cls.id, droppingEnrollment.studentUserId, { reason, note });
     toast.success(`Đã xử lý nghỉ ngang cho học sinh ${droppingEnrollment.studentFullName}.`);
-    loadEnrollments();
-    onRefresh();
-  };
-
-  const handleTransferConfirm = async (targetClassId: number, note: string) => {
-    if (!transferringEnrollment) return;
-    const res = await enrollmentApi.transferEnrollment(cls.id, transferringEnrollment.studentUserId, { targetClassId, note });
-    toast.success(`Đã chuyển học sinh ${transferringEnrollment.studentFullName} sang lớp mới. Cần đóng thêm: ${formatMoney(res.feeDifference)}`);
     loadEnrollments();
     onRefresh();
   };
@@ -819,7 +818,7 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
               </div>
               <div className="text-sm text-gray-600">
                 <span className="font-medium text-gray-900">{enrollments.length}</span>
-                học sinh đang ghi danh
+                    học sinh đang ghi danh
               </div>
               {isLoadingEnrollments ? (
                 <div className="py-8 text-center text-sm text-gray-500">Đang tải...</div>
@@ -862,24 +861,23 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                           {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString("vi-VN") : "—"}
                         </td>
                         <td className="py-3 text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1.5">
                             {e.status === "PENDING" && (
                               <>
-                                <button className="text-xs text-emerald-600 underline" onClick={() => handleApprove(e)}>Duyệt</button>
-                                <button className="text-xs text-red-600 underline" onClick={() => handleReject(e)}>Từ chối</button>
+                                <TableActionButton variant="primary" icon={tableActionIcons.approve()} onClick={() => handleApprove(e)}>Duyệt</TableActionButton>
+                                <TableActionButton variant="danger" icon={tableActionIcons.reject()} onClick={() => handleReject(e)}>Từ chối</TableActionButton>
                               </>
                             )}
                             {e.status === "ACTIVE" && (
                               <>
-                                <button className="text-xs text-amber-600 underline" onClick={() => handleSuspend(e)}>Tạm dừng</button>
-                                <button className="text-xs text-blue-600 underline" onClick={() => setTransferringEnrollment(e)}>Chuyển lớp</button>
-                                <button className="text-xs text-red-600 underline" onClick={() => setDroppingEnrollment(e)}>Nghỉ ngang</button>
+                                <TableActionButton variant="secondary" icon={tableActionIcons.suspend()} onClick={() => handleSuspend(e)}>Tạm dừng</TableActionButton>
+                                <TableActionButton variant="danger" icon={tableActionIcons.drop()} onClick={() => setDroppingEnrollment(e)}>Nghỉ</TableActionButton>
                               </>
                             )}
                             {e.status === "SUSPENDED" && (
                               <>
-                                <button className="text-xs text-emerald-600 underline" onClick={() => handleReactivate(e)}>Kích hoạt lại</button>
-                                <button className="text-xs text-red-600 underline" onClick={() => handleDrop(e)}>Xóa khỏi lớp</button>
+                                <TableActionButton variant="primary" icon={tableActionIcons.reactivate()} onClick={() => handleReactivate(e)}>Kích hoạt lại</TableActionButton>
+                                <TableActionButton variant="danger" icon={tableActionIcons.delete()} onClick={() => handleDrop(e)}>Xóa khỏi lớp</TableActionButton>
                               </>
                             )}
                             {e.status === "DROPPED" && <span className="text-xs text-gray-400">—</span>}
@@ -943,13 +941,15 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
                                   {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString("vi-VN") : "—"}
                                 </td>
                                 <td className="px-3 py-2.5 text-right">
-                                  <button
+                                  <TableActionButton
+                                    variant="secondary"
+                                    icon={tableActionIcons.restore()}
                                     onClick={() => handleRestore(e)}
-                                    disabled={isRestoringId === e.id}
-                                    className="rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+                                    loading={isRestoringId === e.id}
+                                    loadingLabel="Đang khôi phục..."
                                   >
-                                    {isRestoringId === e.id ? "Đang khôi phục..." : "Khôi phục"}
-                                  </button>
+                                    Khôi phục
+                                  </TableActionButton>
                                 </td>
                               </tr>
                             ))}
@@ -1179,14 +1179,6 @@ export const ClassDetailDrawer = ({ cls, onClose, onRefresh }: ClassDetailDrawer
         onClose={() => setDroppingEnrollment(null)}
         onConfirm={handleDropWithReasonConfirm}
         studentName={droppingEnrollment?.studentFullName || ""}
-      />
-      <TransferEnrollmentModal
-        isOpen={!!transferringEnrollment}
-        onClose={() => setTransferringEnrollment(null)}
-        onConfirm={handleTransferConfirm}
-        studentName={transferringEnrollment?.studentFullName || ""}
-        currentClass={cls}
-        availableClasses={allClasses}
       />
 
     </div>

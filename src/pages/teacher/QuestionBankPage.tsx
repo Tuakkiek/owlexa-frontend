@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { questionBankApi } from "../../api/questionBankApi";
 import { questionCollectionApi } from "../../api/questionCollectionApi";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import { Input } from "../../components/ui/Input";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
@@ -253,7 +254,7 @@ const QuestionBankPage = () => {
   const deleteQuestion = async (question: QuestionResponse) => {
     const accepted = await confirm({
       title: "Xóa câu hỏi?",
-      message: `Xoa "${question.questionCode}" khoi Question Bank?`,
+      message: `Xóa "${question.questionCode}" khỏi Question Bank?`,
       confirmText: "Xóa",
       variant: "danger",
     });
@@ -360,21 +361,21 @@ const QuestionBankPage = () => {
                   <Badge>{collection.questionCount}</Badge>
                 </button>
                 {collectionId === collection.id && (
-                  <div className="flex gap-3 px-4 pb-3 text-xs">
-                    <button
-                      type="button"
-                      className="text-blue-600 underline"
+                  <div className="flex gap-1.5 px-4 pb-3 text-xs">
+                    <TableActionButton
+                      variant="secondary"
+                      icon={tableActionIcons.edit()}
                       onClick={() => openCollectionDialog("edit", collection)}
                     >
                       Chỉnh sửa
-                    </button>
-                    <button
-                      type="button"
-                      className="text-red-600 underline"
+                    </TableActionButton>
+                    <TableActionButton
+                      variant="danger"
+                      icon={tableActionIcons.delete()}
                       onClick={() => void deleteCollection(collection)}
                     >
                       Xóa
-                    </button>
+                    </TableActionButton>
                   </div>
                 )}
               </div>
@@ -523,21 +524,21 @@ const QuestionBankPage = () => {
                           {formatDateTime(question.updatedAt)}
                         </td>
                         <td className="px-4 py-4 text-right">
-                          <div className="flex justify-end gap-3 text-xs">
-                            <button
-                              type="button"
-                              className="text-blue-600 underline"
+                          <div className="flex justify-end gap-1.5 text-xs">
+                            <TableActionButton
+                              variant="secondary"
+                              icon={tableActionIcons.edit()}
                               onClick={() => navigate(`/teacher/questions/${question.id}/edit`)}
                             >
                               Chỉnh sửa
-                            </button>
-                            <button
-                              type="button"
-                              className="text-red-600 underline"
+                            </TableActionButton>
+                            <TableActionButton
+                              variant="danger"
+                              icon={tableActionIcons.delete()}
                               onClick={() => void deleteQuestion(question)}
                             >
                               Xóa
-                            </button>
+                            </TableActionButton>
                           </div>
                         </td>
                       </tr>

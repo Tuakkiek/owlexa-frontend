@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { ClipboardList } from "lucide-react";
 import { PageHeader, EmptyState } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import axiosClient from "../../api/axiosClient";
@@ -44,7 +45,7 @@ const AuditLogPage = () => {
       {loading ? (
         <p className="text-sm text-gray-400">Đang tải...</p>
       ) : logs.length === 0 ? (
-        <EmptyState message="Chưa có hoạt động nào." icon="📋" />
+        <EmptyState message="Chưa có hoạt động nào." icon={ClipboardList} />
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
           <table className="min-w-full text-sm">

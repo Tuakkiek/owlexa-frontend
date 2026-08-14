@@ -35,4 +35,9 @@ export const formatCurrency = (
 export const remainingBalance = (record: {
   amount: Money;
   paidAmount: Money;
-}): number => parseMoney(record.amount) - parseMoney(record.paidAmount);
+}): number =>
+  Math.max(
+    parseMoney(record.amount) -
+      parseMoney(record.paidAmount),
+    0,
+  );

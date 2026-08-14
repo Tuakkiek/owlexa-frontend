@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../../api/adminApi";
-import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import { useToast } from "../../components/ui/Toast";
 import {
@@ -161,22 +161,22 @@ export default function AdminCentersPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <Button
+                      <div className="flex justify-end gap-1.5">
+                        <TableActionButton
                           variant="ghost"
-                          size="sm"
+                          icon={tableActionIcons.preview()}
                           onClick={() => viewCenter(center.id)}
                         >
                           Chi tiết
-                        </Button>
-                        <Button
+                        </TableActionButton>
+                        <TableActionButton
                           variant={center.active ? "danger" : "secondary"}
-                          size="sm"
-                          isLoading={updatingCenterId === center.id}
+                          icon={center.active ? tableActionIcons.close() : tableActionIcons.restore()}
+                          loading={updatingCenterId === center.id}
                           onClick={() => setPendingCenter(center)}
                         >
                           {center.active ? "Tạm khóa" : "Mở lại"}
-                        </Button>
+                        </TableActionButton>
                       </div>
                     </td>
                   </tr>

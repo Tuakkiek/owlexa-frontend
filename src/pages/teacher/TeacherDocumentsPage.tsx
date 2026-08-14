@@ -1,4 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Upload,
+  Search,
+  Trash2,
+  ExternalLink,
+  FolderPlus,
+  FileText,
+  Video,
+} from "lucide-react";
 import { classApi } from "../../api/classApi";
 import { documentApi } from "../../api/documentApi";
 import type { ClassResponse } from "../../types/class";
@@ -103,27 +112,21 @@ export default function TeacherDocumentsPage() {
       case "PDF":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
+            <FileText className="w-3.5 h-3.5" />
             PDF
           </span>
         );
       case "VIDEO":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700 border border-purple-200">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
+            <Video className="w-3.5 h-3.5" />
             Video
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <FileText className="w-3.5 h-3.5" />
             Tài liệu
           </span>
         );
@@ -138,9 +141,7 @@ export default function TeacherDocumentsPage() {
             onClick={() => setIsUploadModalOpen(true)}
             className="flex items-center gap-1.5"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Upload className="w-4 h-4" />
             Tải tài liệu lên
           </Button>
         )}
@@ -184,14 +185,7 @@ export default function TeacherDocumentsPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 pl-9 pr-3 py-1.5 text-sm focus:border-primary focus:outline-none"
                 />
-                <svg
-                  className="absolute left-3 top-2.5 h-4 w-4 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
               <Button variant="secondary" size="sm" onClick={loadDocuments} isLoading={isLoadingDocs}>
                 Làm mới
@@ -208,9 +202,7 @@ export default function TeacherDocumentsPage() {
         <Card className="py-12 text-center text-gray-500">Vui lòng chọn lớp học để xem tài liệu.</Card>
       ) : filteredDocuments.length === 0 ? (
         <Card className="py-12 text-center text-gray-500">
-          <svg className="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-          </svg>
+          <FolderPlus className="mx-auto h-12 w-12 text-gray-300 mb-3" />
           <p className="text-base font-medium text-gray-700">Chưa có tài liệu nào cho lớp này</p>
           <p className="mt-1 text-sm text-gray-500">Nhấn nút "Tải tài liệu lên" để chia sẻ tài liệu với học sinh.</p>
         </Card>
@@ -234,9 +226,7 @@ export default function TeacherDocumentsPage() {
                       className="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                       title="Xóa tài liệu"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -261,9 +251,7 @@ export default function TeacherDocumentsPage() {
                   className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
                 >
                   <span>Mở tài liệu</span>
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>

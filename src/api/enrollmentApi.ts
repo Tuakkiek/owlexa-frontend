@@ -48,18 +48,6 @@ export const enrollmentApi = {
     return response.data;
   },
 
-  transferEnrollment: async (
-    classId: number,
-    studentUserId: number,
-    request: import("../types/enrollment").TransferEnrollmentRequest,
-  ): Promise<import("../types/enrollment").TransferResponse> => {
-    const response = await axiosClient.post(
-      `/owner/classes/${classId}/enrollments/${studentUserId}/transfer`,
-      request,
-    );
-    return response.data;
-  },
-
   approve: async (
     classId: number,
     studentUserId: number,

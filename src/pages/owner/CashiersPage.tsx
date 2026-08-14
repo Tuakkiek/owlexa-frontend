@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Input } from "../../components/ui/Input";
 import { Modal } from "../../components/ui/Modal";
 import {
@@ -208,25 +209,28 @@ export const CashiersPage = () => {
                     {cashier.centerId}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-3 text-sm">
-                      <button
-                        className="text-primary hover:text-primary-hover transition-colors"
+                    <div className="flex justify-end gap-1.5 text-sm">
+                      <TableActionButton
+                        variant="secondary"
+                        icon={tableActionIcons.permissions()}
                         onClick={() => setPermissionCashier(cashier)}
                       >
                         Phân quyền
-                      </button>
-                      <button
-                        className="text-primary hover:text-primary-hover transition-colors"
+                      </TableActionButton>
+                      <TableActionButton
+                        variant="secondary"
+                        icon={tableActionIcons.edit()}
                         onClick={() => openEdit(cashier)}
                       >
                         Sửa
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                      </TableActionButton>
+                      <TableActionButton
+                        variant="danger"
+                        icon={tableActionIcons.delete()}
                         onClick={() => handleDelete(cashier)}
                       >
                         Gỡ
-                      </button>
+                      </TableActionButton>
                     </div>
                   </td>
                 </tr>

@@ -15,7 +15,6 @@ import CentersPage from "./pages/owner/CentersPage";
 import CashiersPage from "./pages/owner/CashiersPage";
 import OwnerPaymentsPage from "./pages/owner/OwnerPaymentsPage";
 import ReceiptPage from "./pages/owner/ReceiptPage";
-import DiscountManagementPage from "./pages/owner/DiscountManagementPage";
 import AuditLogPage from "./pages/owner/AuditLogPage";
 import FinancialTimelinePage from "./pages/owner/FinancialTimelinePage";
 import RefundsPage from "./pages/owner/RefundsPage";
@@ -106,10 +105,6 @@ function App() {
                 <Route
                   path="/owner/payments/:paymentId/receipt"
                   element={<ReceiptPage />}
-                />
-                <Route
-                  path="/owner/discounts"
-                  element={<DiscountManagementPage />}
                 />
                 <Route path="/owner/audit-logs" element={<AuditLogPage />} />
                 <Route

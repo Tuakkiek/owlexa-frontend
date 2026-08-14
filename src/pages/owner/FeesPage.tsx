@@ -4,6 +4,7 @@ import {
   PageHeader,
   LoadingSkeleton,
 } from "../../components/ui/SharedComponents";
+import { TableActionButton } from "../../components/ui/TableActionButton";
 import { CollectFeeModal } from "./components/CollectFeeModal";
 import { useAuthStore } from "../../store/authStore";
 import { feeApi } from "../../api/feeApi";
@@ -122,15 +123,15 @@ export const FeesPage = () => {
                     </td>
                     {!isOwner && (
                       <td className="px-6 py-4 text-right">
-                        <button
+                        <TableActionButton
+                          variant="primary"
                           onClick={() => {
                             setSelectedFeeRecord(record);
                             setIsCollectModalOpen(true);
                           }}
-                          className="rounded-btn border border-gray-900 px-3 py-1 text-xs font-medium text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
                         >
                           Thu tiền mặt
-                        </button>
+                        </TableActionButton>
                       </td>
                     )}
                   </tr>
