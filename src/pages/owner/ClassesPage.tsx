@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import {
   SearchInput,
@@ -203,22 +204,24 @@ export const ClassesPage = () => {
                     className="px-6 py-4 text-right"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex justify-end gap-3 text-sm">
-                      <button
-                        className="text-gray-600 hover:text-gray-900 transition-colors"
+                    <div className="flex justify-end gap-1.5 text-sm">
+                      <TableActionButton
+                        variant="secondary"
+                        icon={tableActionIcons.edit()}
                         onClick={() => {
                           setEditingClass(cls);
                           setIsAddModalOpen(true);
                         }}
                       >
                         Sửa
-                      </button>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                      </TableActionButton>
+                      <TableActionButton
+                        variant="danger"
+                        icon={tableActionIcons.delete()}
                         onClick={() => handleDelete(cls)}
                       >
                         Xóa
-                      </button>
+                      </TableActionButton>
                     </div>
                   </td>
                 </tr>

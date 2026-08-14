@@ -65,8 +65,7 @@ export interface FeeRecordResponse {
     | "PENDING"
     | "ACTIVE"
     | "DROPPED"
-    | "SUSPENDED"
-    | "TRANSFERRED";
+    | "SUSPENDED";
   createdAt: string;
 }
 

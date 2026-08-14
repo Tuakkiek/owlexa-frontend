@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ClipboardList } from "lucide-react";
 import { Button } from "../ui/Button";
+import { TableActionButton, tableActionIcons } from "../ui/TableActionButton";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
 import {
@@ -175,21 +176,20 @@ const PaymentActions = ({
 > & {
   payment: PaymentResponse;
 }) => (
-  <div className="flex items-center justify-end gap-2">
-    <Link
-      to={receiptPath(payment.id)}
-      className="inline-flex h-8 items-center rounded-btn border border-surface-border bg-white px-3 text-xs font-medium text-gray-700 transition-colors hover:bg-surface-hover"
-    >
-      Biên lai
+  <div className="flex items-center justify-end gap-1.5">
+    <Link to={receiptPath(payment.id)}>
+      <TableActionButton variant="secondary" icon={tableActionIcons.receipt()}>
+        Biên lai
+      </TableActionButton>
     </Link>
     {canRefundPayment(payment) && (
-      <button
-        type="button"
+      <TableActionButton
+        variant="danger"
+        icon={tableActionIcons.refund()}
         onClick={() => onOpenRefund(payment)}
-        className="inline-flex h-8 items-center rounded-btn border border-amber-200 bg-white px-3 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50"
       >
         Hoàn
-      </button>
+      </TableActionButton>
     )}
   </div>
 );

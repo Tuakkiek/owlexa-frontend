@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import {
   PageHeader,
@@ -187,19 +188,21 @@ const CoursesPage = () => {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        className="text-xs text-blue-600 underline"
+                    <div className="flex justify-end gap-1.5">
+                      <TableActionButton
+                        variant="secondary"
+                        icon={tableActionIcons.edit()}
                         onClick={() => openEdit(course)}
                       >
                         Sửa
-                      </button>
-                      <button
-                        className="text-xs text-red-600 underline"
+                      </TableActionButton>
+                      <TableActionButton
+                        variant="danger"
+                        icon={tableActionIcons.delete()}
                         onClick={() => handleDelete(course)}
                       >
                         Xóa
-                      </button>
+                      </TableActionButton>
                     </div>
                   </td>
                 </tr>

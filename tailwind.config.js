@@ -49,6 +49,18 @@ export default {
       spacing: {
         18: "72px", // for edge cases only
       },
+      fontFamily: {
+        sans: [
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: ["Roboto Mono", "monospace"],
+      },
     },
   },
   plugins: [],

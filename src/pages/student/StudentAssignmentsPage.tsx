@@ -5,6 +5,7 @@ import { assignmentApi } from "../../api/assignmentApi";
 import { submissionApi } from "../../api/submissionApi";
 import { teacherReviewApi } from "../../api/teacherReviewApi";
 import { Modal } from "../../components/ui/Modal";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { useToast } from "../../components/ui/Toast";
 import {
   Badge,
@@ -274,27 +275,27 @@ const StudentAssignmentsPage = () => {
                       {formatDateTime(assignment.assignedAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
+                      <div className="flex justify-end gap-1.5">
+                        <TableActionButton
+                          variant="primary"
+                          icon={tableActionIcons.start()}
                           disabled={pendingStartId === assignment.id}
+                          loading={pendingStartId === assignment.id}
+                          loadingLabel="Đang mở..."
                           onClick={() => handleStartClick(assignment)}
                         >
-                          {pendingStartId === assignment.id
-                            ? "Đang mở..."
-                            : "Làm bài / Tiếp tục"}
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                          Làm bài / Tiếp tục
+                        </TableActionButton>
+                        <TableActionButton
+                          variant="secondary"
+                          icon={tableActionIcons.history()}
                           disabled={pendingHistoryId === assignment.id}
+                          loading={pendingHistoryId === assignment.id}
+                          loadingLabel="Đang tải..."
                           onClick={() => openAttemptHistory(assignment)}
                         >
-                          {pendingHistoryId === assignment.id
-                            ? "Đang tải..."
-                            : "Lịch sử làm bài"}
-                        </button>
+                          Lịch sử làm bài
+                        </TableActionButton>
                       </div>
                     </td>
                   </tr>
@@ -368,11 +369,11 @@ const StudentAssignmentsPage = () => {
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-1.5">
                               {attempt.status === "IN_PROGRESS" ? (
-                                <button
-                                  type="button"
-                                  className="text-xs font-medium text-primary underline"
+                                <TableActionButton
+                                  variant="primary"
+                                  icon={tableActionIcons.start()}
                                   onClick={() =>
                                     navigate(
                                       `/student/submission-attempts/${attempt.id}`,
@@ -380,12 +381,12 @@ const StudentAssignmentsPage = () => {
                                   }
                                 >
                                   Tiếp tục làm bài
-                                </button>
+                                </TableActionButton>
                               ) : attemptsAssignment.allowReview ? (
                                 <>
-                                  <button
-                                    type="button"
-                                    className="text-xs font-medium text-gray-900 underline"
+                                  <TableActionButton
+                                    variant="secondary"
+                                    icon={tableActionIcons.preview()}
                                     onClick={() =>
                                       navigate(
                                         `/student/submission-attempts/${attempt.id}`,
@@ -393,24 +394,24 @@ const StudentAssignmentsPage = () => {
                                     }
                                   >
                                     Xem lại bài làm
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="text-xs text-gray-600 underline disabled:cursor-not-allowed disabled:opacity-50"
+                                  </TableActionButton>
+                                  <TableActionButton
+                                    variant="outline"
+                                    icon={tableActionIcons.review()}
                                     disabled={pendingResultAttemptId != null}
+                                    loading={pendingResultAttemptId === attempt.id}
+                                    loadingLabel="Đang tải..."
                                     onClick={() =>
                                       openReleasedResult(attempt.id)
                                     }
                                   >
-                                    {pendingResultAttemptId === attempt.id
-                                      ? "Đang tải..."
-                                      : "Nhận xét GV"}
-                                  </button>
+                                    Nhận xét GV
+                                  </TableActionButton>
                                 </>
                               ) : (
-                                <button
-                                  type="button"
-                                  className="text-xs text-gray-400 underline"
+                                <TableActionButton
+                                  variant="ghost"
+                                  disabled
                                   onClick={() =>
                                     toast.info(
                                       "Giáo viên không cho phép xem lại bài làm.",
@@ -418,7 +419,7 @@ const StudentAssignmentsPage = () => {
                                   }
                                 >
                                   Không được xem lại
-                                </button>
+                                </TableActionButton>
                               )}
                             </div>
                           </td>
