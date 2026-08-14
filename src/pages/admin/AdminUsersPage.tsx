@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminApi } from "../../api/adminApi";
-import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import { useToast } from "../../components/ui/Toast";
 import {
@@ -200,27 +200,27 @@ export default function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <Button
+                      <div className="flex justify-end gap-1.5">
+                        <TableActionButton
                           variant="ghost"
-                          size="sm"
+                          icon={tableActionIcons.preview()}
                           onClick={() => viewUser(user.id)}
                         >
                           Chi tiết
-                        </Button>
+                        </TableActionButton>
                         {user.role === "ADMIN" ? (
-                          <span className="self-center text-xs text-gray-400">
+                          <span className="self-center px-2 text-xs text-gray-400">
                             Được bảo vệ
                           </span>
                         ) : (
-                          <Button
+                          <TableActionButton
                             variant={user.active ? "danger" : "secondary"}
-                            size="sm"
-                            isLoading={updatingUserId === user.id}
+                            icon={user.active ? tableActionIcons.close() : tableActionIcons.restore()}
+                            loading={updatingUserId === user.id}
                             onClick={() => setPendingUser(user)}
                           >
                             {user.active ? "Khóa" : "Mở khóa"}
-                          </Button>
+                          </TableActionButton>
                         )}
                       </div>
                     </td>

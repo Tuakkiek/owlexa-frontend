@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { submissionApi } from "../../../api/submissionApi";
 import { Button } from "../../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../../components/ui/TableActionButton";
 import { Modal } from "../../../components/ui/Modal";
 import { useToast } from "../../../components/ui/Toast";
 import {
@@ -184,23 +185,23 @@ export const TeacherSubmissionList = ({
                       {formatSummaryScore(submission)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        className="text-xs text-gray-900 underline disabled:cursor-not-allowed disabled:opacity-50"
+                      <TableActionButton
+                        variant="secondary"
+                        icon={tableActionIcons.preview()}
                         disabled={
                           submission.latestAttemptId == null ||
                           pendingAttemptId != null
                         }
+                        loading={pendingAttemptId === submission.latestAttemptId}
+                        loadingLabel="Đang tải..."
                         onClick={() => {
                           if (submission.latestAttemptId) {
                             openAttemptDetail(submission.latestAttemptId);
                           }
                         }}
                       >
-                        {pendingAttemptId === submission.latestAttemptId
-                          ? "Đang tải..."
-                          : "Xem"}
-                      </button>
+                        Xem
+                      </TableActionButton>
                     </td>
                   </tr>
                 ))}

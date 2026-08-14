@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gradingCriteriaApi } from "../../api/gradingCriteriaApi";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import { Modal } from "../../components/ui/Modal";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
 import { useToast } from "../../components/ui/Toast";
@@ -168,21 +169,21 @@ const GradingCriteriaPage = () => {
                       {formatDateTime(item.updatedAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          className="text-xs text-blue-600 underline"
+                      <div className="flex justify-end gap-1.5">
+                        <TableActionButton
+                          variant="secondary"
+                          icon={tableActionIcons.edit()}
                           onClick={() => openEdit(item)}
                         >
                           Chỉnh sửa
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-red-600 underline"
+                        </TableActionButton>
+                        <TableActionButton
+                          variant="danger"
+                          icon={tableActionIcons.delete()}
                           onClick={() => handleDelete(item)}
                         >
                           Xóa
-                        </button>
+                        </TableActionButton>
                       </div>
                     </td>
                   </tr>

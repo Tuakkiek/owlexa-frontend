@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { CalendarDays } from "lucide-react";
 import { PageHeader, Badge, EmptyState, ErrorBanner } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
+import { TableActionButton, tableActionIcons } from "../../components/ui/TableActionButton";
 import axiosClient from "../../api/axiosClient";
 import { formatMoney } from "../../utils/money";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
@@ -188,9 +189,11 @@ const InstallmentManagementPage = () => {
                       <td className="px-4 py-3 text-right">{formatMoney(String(inst.paidAmount))}</td>
                       <td className="px-4 py-3 text-right">{formatMoney(String(inst.remainingAmount))}</td>
                       <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[inst.status]}>{STATUS_LABELS[inst.status]}</Badge></td>
-                      <td className="px-4 py-3 text-right space-x-1">
-                        <button onClick={handleUpdate} className="text-xs text-primary hover:underline">Lưu</button>
-                        <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:underline">Hủy</button>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1">
+                          <TableActionButton variant="primary" icon={tableActionIcons.approve()} onClick={handleUpdate}>Lưu</TableActionButton>
+                          <TableActionButton variant="secondary" icon={tableActionIcons.reject()} onClick={() => setEditId(null)}>Hủy</TableActionButton>
+                        </div>
                       </td>
                     </>
                   ) : (
@@ -200,13 +203,12 @@ const InstallmentManagementPage = () => {
                       <td className="px-4 py-3 text-right text-emerald-600">{formatMoney(String(inst.paidAmount))}</td>
                       <td className="px-4 py-3 text-right text-red-600">{formatMoney(String(inst.remainingAmount))}</td>
                       <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[inst.status]}>{STATUS_LABELS[inst.status]}</Badge></td>
-                      <td className="px-4 py-3 text-right space-x-1">
+                      <td className="px-4 py-3 text-right">
                         {inst.status === "PENDING" && (
-                          <>
-                            <button onClick={() => { setEditId(inst.id); setEditDueDate(inst.dueDate); setEditAmount(String(inst.expectedAmount)); }}
-                              className="text-xs text-primary hover:underline">Sửa</button>
-                            <button onClick={() => handleDelete(inst.id)} className="text-xs text-red-600 hover:underline">Xóa</button>
-                          </>
+                          <div className="flex justify-end gap-1">
+                            <TableActionButton variant="secondary" icon={tableActionIcons.edit()} onClick={() => { setEditId(inst.id); setEditDueDate(inst.dueDate); setEditAmount(String(inst.expectedAmount)); }}>Sửa</TableActionButton>
+                            <TableActionButton variant="danger" icon={tableActionIcons.delete()} onClick={() => handleDelete(inst.id)}>Xóa</TableActionButton>
+                          </div>
                         )}
                       </td>
                     </>
