@@ -2,16 +2,39 @@ import axiosClient from "./axiosClient";
 import type {
   AttendanceResponse,
   AttendanceMarkRequest,
+  ClassSessionResponse,
 } from "../types/attendance";
 
 export const attendanceApi = {
-  // ── Teacher endpoints ──
+    // ── Teacher endpoints ──
+  findTeacherClassSessionsByDate: async (
+    date: string,
+  ): Promise<ClassSessionResponse[]> => {
+    const response = await axiosClient.get(`/teacher/attendance/class-sessions`, {
+      params: { date },
+    });
+    return response.data;
+  },
+
   findAllBySchedule: async (
     scheduleId: number,
     date: string,
   ): Promise<AttendanceResponse[]> => {
     const response = await axiosClient.get(
       `/teacher/attendance/schedules/${scheduleId}`,
+      {
+        params: { date },
+      },
+    );
+    return response.data;
+  },
+
+  findAllByScheduleEvent: async (
+    scheduleEventId: number,
+    date: string,
+  ): Promise<AttendanceResponse[]> => {
+    const response = await axiosClient.get(
+      `/teacher/attendance/schedule-events/${scheduleEventId}`,
       {
         params: { date },
       },
@@ -30,13 +53,46 @@ export const attendanceApi = {
     return response.data;
   },
 
+  markScheduleEventAttendance: async (
+    scheduleEventId: number,
+    request: AttendanceMarkRequest,
+  ): Promise<AttendanceResponse[]> => {
+    const response = await axiosClient.post(
+      `/teacher/attendance/schedule-events/${scheduleEventId}`,
+      request,
+    );
+    return response.data;
+  },
+
   // ── Owner view-only endpoints ──
+  findClassSessionsByDate: async (
+    date: string,
+  ): Promise<ClassSessionResponse[]> => {
+    const response = await axiosClient.get(`/owner/attendance/class-sessions`, {
+      params: { date },
+    });
+    return response.data;
+  },
+
   findByScheduleOwner: async (
     scheduleId: number,
     date: string,
   ): Promise<AttendanceResponse[]> => {
     const response = await axiosClient.get(
       `/owner/attendance/schedules/${scheduleId}`,
+      {
+        params: { date },
+      },
+    );
+    return response.data;
+  },
+
+  findByScheduleEventOwner: async (
+    scheduleEventId: number,
+    date: string,
+  ): Promise<AttendanceResponse[]> => {
+    const response = await axiosClient.get(
+      `/owner/attendance/schedule-events/${scheduleEventId}`,
       {
         params: { date },
       },

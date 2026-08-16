@@ -13,7 +13,7 @@ export interface AttendanceMarkRequest {
 
 export interface AttendanceResponse {
   id: number;
-  scheduleId: number;
+  scheduleId?: number | null;
   scheduleEventId?: number | null;
   classId: number;
   centerId: number;
@@ -48,3 +48,23 @@ export const STATUS_META: Record<
     className: "border-blue-300 bg-blue-50 text-blue-700",
   },
 };
+
+export interface ClassSessionResponse {
+  scheduleEventId: number;
+  classId: number;
+  className: string;
+  teacherUserId: number | null;
+  teacherUserFullName: string | null;
+  roomId: number | null;
+  roomName: string | null;
+  date: string;
+  startTime: string;
+  endTime: string;
+  
+  attendanceStatus: "COMPLETED" | "PENDING";
+  studentCount: number;
+  presentCount: number;
+  absentCount: number;
+  lateCount: number;
+  excusedCount: number;
+}

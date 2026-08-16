@@ -12,6 +12,7 @@ export interface PaymentFilterParams {
   student?: string;
   cashierId?: number;
   method?: string;
+  status?: string;
   startDate?: string;
   endDate?: string;
   page?: number;
@@ -142,6 +143,15 @@ export const feeApi = {
   ): Promise<PaymentPage> => {
     const prefix = role === "cashier" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/payments`, { params });
+    return response.data;
+  },
+
+  getPaymentSummary: async (
+    role: "owner" | "cashier",
+    params: PaymentFilterParams = {},
+  ): Promise<{ totalTransactions: number; totalRevenue: number; pendingCount: number }> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments/summary`, { params });
     return response.data;
   },
 

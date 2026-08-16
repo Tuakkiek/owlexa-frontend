@@ -34,6 +34,12 @@ export function applyAuthFromResponse(response: AuthResponse): void {
 export function clearAuthState(): void {
   useAuthStore.getState().clearAuth();
   removeLegacyAuthKeys();
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("owlexa-refresh-token");
+  }
+  if (typeof document !== "undefined") {
+    document.cookie = "refreshToken=; path=/; max-age=0; SameSite=Lax";
+  }
 }
 
 export function toUserInfoFromAccount(response: AccountResponse): Partial<UserInfo> {
