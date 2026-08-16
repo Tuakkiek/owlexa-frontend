@@ -1,252 +1,154 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Inbox } from "lucide-react";
-import { scheduleApi } from "../../api/scheduleApi";
+import { useCallback, useEffect, useState } from "react";
+import { BookOpen, CalendarDays, Clock, MapPin, User as UserIcon } from "lucide-react";
 import { attendanceApi } from "../../api/attendanceApi";
+import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import {
   PageHeader,
-  StatCard,
   Card,
   ErrorBanner,
   LoadingSkeleton,
   EmptyState,
 } from "../../components/ui/SharedComponents";
-import type { ScheduleResponse } from "../../types/schedule";
-import type {
-  AttendanceResponse,
-  AttendanceStatus,
-} from "../../types/attendance";
+import type { StudentClassSessionResponse } from "../../types/attendance";
 import { STATUS_META } from "../../types/attendance";
 
 export default function StudentAttendancePage() {
-  const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [attendanceRecords, setAttendanceRecords] = useState<
-    AttendanceResponse[]
-  >([]);
-  const [isLoadingSchedules, setIsLoadingSchedules] = useState(true);
-  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false);
+  const [sessions, setSessions] = useState<StudentClassSessionResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Load student's schedules to get class list
-  const loadSchedules = useCallback(async () => {
+  const loadSessions = useCallback(async () => {
     try {
-      setIsLoadingSchedules(true);
+      setIsLoading(true);
       setError("");
-      const data = await scheduleApi.findMySchedulesAsStudent();
-      setSchedules(data);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ?? "Không thể tải danh sách lớp học.",
-      );
-    } finally {
-      setIsLoadingSchedules(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadSchedules();
-  }, [loadSchedules]);
-
-  // Extract unique classes from schedules
-  const classOptions = useMemo(() => {
-    const map = new Map<number, { classId: number; className: string }>();
-    schedules.forEach((s) => {
-      if (!map.has(s.classId)) {
-        map.set(s.classId, { classId: s.classId, className: s.className });
-      }
-    });
-    return Array.from(map.values()).sort((a, b) =>
-      a.className.localeCompare(b.className),
-    );
-  }, [schedules]);
-
-  // Auto-select first class
-  useEffect(() => {
-    if (classOptions.length > 0 && selectedClassId === null) {
-      setSelectedClassId(classOptions[0].classId);
-    }
-  }, [classOptions, selectedClassId]);
-
-  // Load attendance
-  const loadAttendance = useCallback(async () => {
-    if (!selectedClassId) {
-      setAttendanceRecords([]);
-      return;
-    }
-    try {
-      setIsLoadingAttendance(true);
-      setError("");
-      const records = await attendanceApi.findMyAttendances(
-        selectedClassId,
-        date,
-      );
-      setAttendanceRecords(records);
+      const data = await attendanceApi.findStudentClassSessionsByDate(date);
+      setSessions(data);
     } catch (err: any) {
       setError(
         err?.response?.data?.message ?? "Không thể tải dữ liệu điểm danh.",
       );
-      setAttendanceRecords([]);
+      setSessions([]);
     } finally {
-      setIsLoadingAttendance(false);
+      setIsLoading(false);
     }
-  }, [selectedClassId, date]);
+  }, [date]);
 
   useEffect(() => {
-    loadAttendance();
-  }, [loadAttendance]);
+    loadSessions();
+  }, [loadSessions]);
 
-  // Summary counts
-  const summary = useMemo(() => {
-    const counts: Record<AttendanceStatus, number> = {
-      PRESENT: 0,
-      ABSENT: 0,
-      LATE: 0,
-      EXCUSED: 0,
-    };
-    attendanceRecords.forEach((r) => {
-      if (counts[r.status] !== undefined) counts[r.status] += 1;
-    });
-    return counts;
-  }, [attendanceRecords]);
+  const handlePrevDay = () => {
+    const d = new Date(date);
+    d.setDate(d.getDate() - 1);
+    setDate(d.toISOString().split("T")[0]);
+  };
 
-  const selectedClassName = useMemo(
-    () =>
-      classOptions.find((c) => c.classId === selectedClassId)?.className ?? "",
-    [classOptions, selectedClassId],
-  );
-
-  const isLoading = isLoadingSchedules || isLoadingAttendance;
+  const handleNextDay = () => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + 1);
+    setDate(d.toISOString().split("T")[0]);
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Điểm danh của tôi"
-        description="Xem lịch sử điểm danh của bạn"
+        description="Xem lịch học và trạng thái điểm danh trong ngày"
       />
 
       {error && <ErrorBanner message={error} />}
 
-      {/* Filters */}
       <Card>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Lớp học
-            </label>
-            <select
-              value={selectedClassId ?? ""}
-              onChange={(e) =>
-                setSelectedClassId(
-                  e.target.value ? Number(e.target.value) : null,
-                )
-              }
-              className="h-11 w-full rounded-input border border-surface-border bg-white px-3 text-sm text-gray-900 outline-none focus:border-primary"
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handlePrevDay}>
+              &lt; Ngày trước
+            </Button>
+            <div className="w-40">
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+            <Button variant="outline" onClick={handleNextDay}>
+              Ngày sau &gt;
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDate(new Date().toISOString().split("T")[0])}
             >
-              {classOptions.length === 0 && (
-                <option value="" disabled>
-                  Không có lớp nào
-                </option>
-              )}
-              {classOptions.map((c) => (
-                <option key={c.classId} value={c.classId}>
-                  {c.className}
-                </option>
-              ))}
-            </select>
+              Hôm nay
+            </Button>
           </div>
-
-          <Input
-            label="Ngày"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
         </div>
       </Card>
 
-      {/* Summary Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        {(["PRESENT", "ABSENT", "LATE", "EXCUSED"] as AttendanceStatus[]).map(
-          (status) => (
-            <StatCard
-              key={status}
-              label={STATUS_META[status].label}
-              value={summary[status]}
-            />
-          ),
-        )}
-      </div>
-
-      {/* Attendance Details */}
       {isLoading ? (
         <LoadingSkeleton count={3} />
-      ) : classOptions.length === 0 ? (
-        <EmptyState message="Bạn chưa được đăng ký vào lớp nào." icon={BookOpen} />
-      ) : attendanceRecords.length === 0 ? (
+      ) : sessions.length === 0 ? (
         <EmptyState
-          message={`Chưa có dữ liệu điểm danh cho ${selectedClassName} vào ngày ${date}.`}
-          icon={Inbox}
+          message="Bạn không có ca học nào trong ngày này."
+          icon={CalendarDays}
         />
       ) : (
-        <Card className="p-0 overflow-hidden">
-          <div className="border-b border-surface-border px-6 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {selectedClassName}
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {attendanceRecords.length} bản ghi · {date}
-            </p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((session) => (
+            <div
+              key={session.scheduleEventId}
+              className="group rounded-xl border border-surface-border bg-white p-5 transition-all hover:border-primary hover:shadow-md"
+            >
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                    {session.className}
+                  </h3>
+                  <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {session.startTime.slice(0, 5)} - {session.endTime.slice(0, 5)}
+                    </span>
+                  </div>
+                </div>
+                {session.attendanceStatus ? (
+                  <span
+                    className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
+                      STATUS_META[session.attendanceStatus]?.className ??
+                      "border-gray-300 bg-gray-50 text-gray-500"
+                    }`}
+                  >
+                    {STATUS_META[session.attendanceStatus]?.label ??
+                      session.attendanceStatus}
+                  </span>
+                ) : (
+                  <span className="inline-flex rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                    Chưa điểm danh
+                  </span>
+                )}
+              </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-surface-border bg-surface-page">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                    Ngày
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                    Trạng thái
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500">
-                    Ghi chú
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {attendanceRecords
-                  .sort(
-                    (a, b) =>
-                      new Date(b.date).getTime() - new Date(a.date).getTime(),
-                  )
-                  .map((record) => (
-                    <tr key={record.id} className="hover:bg-surface-hover">
-                      <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">
-                          {record.date}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${
-                            STATUS_META[record.status]?.className ??
-                            "border-gray-300 bg-gray-50 text-gray-500"
-                          }`}
-                        >
-                          {STATUS_META[record.status]?.label ?? record.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {record.note || "—"}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="h-4 w-4 text-gray-400" />
+                  <span>Giáo viên: {session.teacherName || "Chưa xếp"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <span>Phòng: {session.roomName || "Chưa xếp"}</span>
+                </div>
+              </div>
+
+              {session.note && (
+                <div className="mt-4 border-t border-gray-100 pt-3 text-sm">
+                  <span className="font-medium text-gray-700">Ghi chú: </span>
+                  <span className="text-gray-600">{session.note}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

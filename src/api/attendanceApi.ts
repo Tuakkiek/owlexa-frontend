@@ -3,6 +3,7 @@ import type {
   AttendanceResponse,
   AttendanceMarkRequest,
   ClassSessionResponse,
+  StudentClassSessionResponse,
 } from "../types/attendance";
 
 export const attendanceApi = {
@@ -148,13 +149,24 @@ export const attendanceApi = {
     return response.data;
   },
 
-  // ── Student self-view endpoint ──
+  // ── Student: own attendance ──
   findMyAttendances: async (
     classId?: number,
     date?: string,
   ): Promise<AttendanceResponse[]> => {
-    const response = await axiosClient.get("/student/attendance", {
-      params: { classId, date },
+    const params: Record<string, string | number> = {};
+    if (classId) params.classId = classId;
+    if (date) params.date = date;
+
+    const response = await axiosClient.get("/student/attendance", { params });
+    return response.data;
+  },
+
+  findStudentClassSessionsByDate: async (
+    date: string,
+  ): Promise<StudentClassSessionResponse[]> => {
+    const response = await axiosClient.get("/student/attendance/class-sessions", {
+      params: { date },
     });
     return response.data;
   },

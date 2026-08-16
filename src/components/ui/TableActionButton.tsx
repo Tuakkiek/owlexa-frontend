@@ -22,6 +22,7 @@ import {
   Receipt,
   Pause,
   RefreshCw,
+  Download,
 } from "lucide-react";
 
 export type TableActionVariant =
@@ -70,6 +71,7 @@ export const tableActionIcons = {
   history: () => <History className="h-3.5 w-3.5 shrink-0" />,
   receipt: () => <Receipt className="h-3.5 w-3.5 shrink-0" />,
   refund: () => <RefreshCw className="h-3.5 w-3.5 shrink-0" />,
+  download: () => <Download className="h-3.5 w-3.5 shrink-0" />,
 };
 
 export const TableActionButton = ({

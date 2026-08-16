@@ -26,7 +26,7 @@ const criterionTrackColors = [
 
 const formatScore = (value: number | null | undefined) => {
   if (value == null || Number.isNaN(value)) return "-";
-  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+  return Number.isInteger(value) ? value.toString() : String(Number(value.toFixed(2)));
 };
 
 const clampPercent = (value: number) => Math.min(100, Math.max(0, value));

@@ -402,11 +402,11 @@ const ListeningAudioPlayer = ({
 const CountdownTimer = ({
   expiresAt,
   onExpire,
-  paused = false,
+  isSubmitting = false,
 }: {
   expiresAt: string;
   onExpire: () => void;
-  paused?: boolean;
+  isSubmitting?: boolean;
 }) => {
   const [timeLeft, setTimeLeft] = useState<number>(() => {
     const diff = new Date(expiresAt).getTime() - Date.now();
@@ -417,7 +417,7 @@ const CountdownTimer = ({
   const hasExpiredRef = useRef(false);
 
   useEffect(() => {
-    if (paused) {
+    if (isSubmitting) {
       return;
     }
 
@@ -439,19 +439,19 @@ const CountdownTimer = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [expiresAt, paused]);
+  }, [expiresAt, isSubmitting]);
 
   const hours = Math.floor(timeLeft / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
   const isUrgent = timeLeft > 0 && timeLeft <= 300; // 5 minutes
-  const isExpired = !paused && timeLeft === 0;
+  const isExpired = !isSubmitting && timeLeft === 0;
 
   return (
     <div
       className={`sticky top-0 z-40 border-b px-4 py-2 text-center transition-colors sm:px-6 ${
-        paused
+        isSubmitting
           ? "border-amber-300 bg-amber-50"
           : isExpired
           ? "border-red-300 bg-red-100"
@@ -466,14 +466,16 @@ const CountdownTimer = ({
       <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
         <Clock
           className={`h-5 w-5 shrink-0 ${
-            isExpired
+            isSubmitting
+              ? "text-amber-600 animate-spin"
+              : isExpired
               ? "text-red-600"
               : isUrgent
                 ? "animate-pulse text-red-500"
                 : "text-blue-600"
           }`}
         />
-        {paused ? (
+        {isSubmitting ? (
           <span className="text-sm font-bold text-amber-700">
             Đang nộp bài và chờ AI chấm...
           </span>
@@ -1154,19 +1156,30 @@ const StudentSubmissionAttemptPage = () => {
       );
     }
 
+    const essayText = answer?.answerText ?? "";
+    const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+
     return (
-      <textarea
-        value={answer?.answerText ?? ""}
-        aria-labelledby={`question-heading-${item.assignmentItemId}`}
-        aria-describedby={`question-content-${item.assignmentItemId}`}
-        disabled={!isEditable || isSaving || isSubmitting}
-        onChange={(event) =>
-          updateEssayAnswer(item.assignmentItemId, event.target.value)
-        }
-        rows={22}
-        className="mt-5 w-full min-h-[260px] resize-y rounded-input border border-surface-border bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:bg-surface-page disabled:text-gray-500"
-        placeholder="Nhập câu trả lời của bạn..."
-      />
+      <div className="mt-5 space-y-2">
+        <textarea
+          value={essayText}
+          aria-labelledby={`question-heading-${item.assignmentItemId}`}
+          aria-describedby={`question-content-${item.assignmentItemId}`}
+          disabled={!isEditable || isSaving || isSubmitting}
+          onChange={(event) =>
+            updateEssayAnswer(item.assignmentItemId, event.target.value)
+          }
+          rows={22}
+          className="w-full min-h-[260px] resize-y rounded-input border border-surface-border bg-white px-4 py-3 text-sm leading-6 text-gray-900 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:bg-surface-page disabled:text-gray-500"
+          placeholder="Nhập câu trả lời của bạn..."
+        />
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span className="text-gray-400">Gõ câu trả lời tự luận của bạn ở ô trên</span>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-surface-border bg-surface-page px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm">
+            Số từ: <span className="font-semibold text-gray-900">{wordCount}</span> từ
+          </span>
+        </div>
+      </div>
     );
   };
 
@@ -1185,6 +1198,8 @@ const StudentSubmissionAttemptPage = () => {
         ? block.content.content
         : [];
       let lastSeenQuestionOnCurrentPage = false;
+      const pageStart = currentPage * ITEMS_PER_PAGE;
+      const pageEnd = (currentPage + 1) * ITEMS_PER_PAGE;
 
       contentNodes.forEach((node: any, nodeIndex: number) => {
         if (node.type !== "assessmentQuestion") {
@@ -1201,9 +1216,7 @@ const StudentSubmissionAttemptPage = () => {
             return;
           }
 
-          const isOnCurrentPage =
-            itemIdx >= currentPage * ITEMS_PER_PAGE &&
-            itemIdx < (currentPage + 1) * ITEMS_PER_PAGE;
+          const isOnCurrentPage = itemIdx >= pageStart && itemIdx < pageEnd;
 
           if (isOnCurrentPage) {
             if (buffer.length > 0) {
@@ -1229,7 +1242,9 @@ const StudentSubmissionAttemptPage = () => {
             );
             lastSeenQuestionOnCurrentPage = true;
           } else {
-            buffer = [];
+            if (itemIdx >= pageEnd) {
+              buffer = [];
+            }
             lastSeenQuestionOnCurrentPage = false;
           }
         }
@@ -1555,7 +1570,7 @@ const StudentSubmissionAttemptPage = () => {
         <CountdownTimer
           expiresAt={attempt.expiresAt}
           onExpire={forceSubmitOnExpire}
-          paused={isSubmitting || isSubmitConfirming}
+          isSubmitting={isSubmitting}
         />
       )}
 

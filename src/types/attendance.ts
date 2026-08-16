@@ -53,18 +53,29 @@ export interface ClassSessionResponse {
   scheduleEventId: number;
   classId: number;
   className: string;
-  teacherUserId: number | null;
-  teacherUserFullName: string | null;
-  roomId: number | null;
-  roomName: string | null;
+  roomId?: number;
+  roomName?: string;
+  teacherUserId?: number;
+  teacherUserFullName?: string;
   date: string;
   startTime: string;
   endTime: string;
-  
   attendanceStatus: "COMPLETED" | "PENDING";
   studentCount: number;
   presentCount: number;
   absentCount: number;
   lateCount: number;
   excusedCount: number;
+}
+
+export interface StudentClassSessionResponse {
+  scheduleEventId: number;
+  classId: number;
+  className: string;
+  roomName?: string;
+  teacherName?: string;
+  startTime: string;
+  endTime: string;
+  attendanceStatus: AttendanceStatus | null;
+  note?: string;
 }
