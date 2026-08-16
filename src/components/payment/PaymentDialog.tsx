@@ -14,6 +14,7 @@ import type {
 } from "../../types/fee";
 import { PAYMENT_METHOD_LABELS } from "../../types/fee";
 import { formatMoney, remainingBalance } from "../../utils/money";
+import { useAuthStore } from "../../store/authStore";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -69,6 +70,7 @@ export const PaymentDialog = ({
     null,
   );
   const [countdown, setCountdown] = useState("");
+  const roleName = useAuthStore((state) => state.user?.roleName);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStartRef = useRef<number>(0);
@@ -154,7 +156,7 @@ export const PaymentDialog = ({
             return;
           }
 
-          const qr = await feeApi.getPaymentQr(paymentId);
+          const qr = await feeApi.getPaymentQr(paymentId, roleName);
           setQrData(qr);
 
           if (qr.status === "PAID") {
@@ -175,7 +177,7 @@ export const PaymentDialog = ({
       poll();
       pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
     },
-    [stopPolling, stopCountdown, onPaymentComplete],
+    [stopPolling, stopCountdown, onPaymentComplete, roleName],
   );
 
   // Cleanup on unmount
@@ -215,7 +217,7 @@ export const PaymentDialog = ({
       setIsLoading(true);
 
       if (method === "CASH") {
-        await feeApi.collectCash(feeRecord.id, requestData);
+        await feeApi.collectCash(feeRecord.id, requestData, roleName);
         setStep("cash-success");
         onPaymentComplete();
         setTimeout(() => onClose(), 1500);
@@ -247,10 +249,11 @@ export const PaymentDialog = ({
       const payment = await feeApi.createBankTransfer(
         feeRecord.id,
         requestData,
+        roleName,
       );
       setPendingPayment(payment);
 
-      const qr = await feeApi.getPaymentQr(payment.id);
+      const qr = await feeApi.getPaymentQr(payment.id, roleName);
       setQrData(qr);
       setStep("qr-waiting");
 
