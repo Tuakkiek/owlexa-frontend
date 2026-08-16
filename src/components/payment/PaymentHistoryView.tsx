@@ -78,6 +78,7 @@ const paymentStatusVariants: Record<PaymentStatus, "default" | "success" | "warn
   ACTIVE: "success",
   VOIDED: "error",
   EXPIRED: "default",
+  DUPLICATE_PAYMENT: "error",
 };
 
 const selectClassName =

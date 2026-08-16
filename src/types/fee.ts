@@ -31,13 +31,19 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   SEPAY: "SePay",
 };
 
-export type PaymentStatus = "PENDING" | "ACTIVE" | "VOIDED" | "EXPIRED";
+export type PaymentStatus =
+  | "PENDING"
+  | "ACTIVE"
+  | "VOIDED"
+  | "EXPIRED"
+  | "DUPLICATE_PAYMENT";
 
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   PENDING: "Đang chờ",
   ACTIVE: "Thành công",
   VOIDED: "Đã hủy",
   EXPIRED: "Hết hạn",
+  DUPLICATE_PAYMENT: "Thanh toán trùng",
 };
 
 export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
@@ -45,6 +51,7 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
   ACTIVE: "text-emerald-600 bg-emerald-50",
   VOIDED: "text-red-600 bg-red-50",
   EXPIRED: "text-gray-500 bg-gray-100",
+  DUPLICATE_PAYMENT: "text-rose-700 bg-rose-50",
 };
 
 export interface FeeRecordResponse {
@@ -118,6 +125,23 @@ export interface BankTransferQrResponse {
 
 export interface PaymentPage {
   content: PaymentResponse[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export type PaymentHistorySource = "PAYMENT" | "SEPAY_EVENT";
+
+export interface PaymentHistoryResponse extends Omit<PaymentResponse, "id"> {
+  id: string;
+  paymentId?: number;
+  webhookEventId?: number;
+  source: PaymentHistorySource;
+}
+
+export interface PaymentHistoryPage {
+  content: PaymentHistoryResponse[];
   totalElements: number;
   totalPages: number;
   number: number;

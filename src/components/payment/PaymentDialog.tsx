@@ -416,7 +416,7 @@ export const PaymentDialog = ({
             </svg>
           </div>
           <p className="text-lg font-semibold text-amber-700">
-            QR Code Expired
+            Mã QR đã hết hạn
           </p>
           <p className="mt-1 text-sm text-gray-500">
             Vui lòng tạo giao dịch mới nếu học sinh chưa thanh toán.
@@ -431,102 +431,145 @@ export const PaymentDialog = ({
 
   // ── Render: QR Waiting (Bank Transfer) ──
   if (step === "qr-waiting" && qrData) {
+    const expiresAtStr = pendingPayment?.expiresAt || qrData.expiresAt;
+    const isUrgent = expiresAtStr ? getRemainingSeconds(expiresAtStr) < 60 : false;
+
     return (
       <Modal isOpen={isOpen} onClose={handleClose} title={getTitle()}>
         <div className="space-y-4">
+          {/* Top Auto Completion & Countdown Pill */}
+          <div className="flex items-center justify-between rounded-full border border-amber-200 bg-amber-50 px-3.5 py-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
+              </span>
+              <span className="text-xs font-medium text-amber-800">
+                Tự động hoàn thành sau khi chuyển
+              </span>
+            </div>
+            {countdown ? (
+              <span
+                className={`rounded-full border px-2.5 py-0.5 font-mono text-xs font-semibold ${
+                  isUrgent
+                    ? "animate-pulse border-red-200 bg-red-50 text-red-700"
+                    : "border-amber-200 bg-white text-amber-800"
+                }`}
+              >
+                {countdown}
+              </span>
+            ) : null}
+          </div>
+
           {/* QR Code — VietQR image from backend API */}
-          <div className="flex flex-col items-center">
-            <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <div className="flex flex-col items-center justify-center">
+            <div className="rounded-card border border-surface-border bg-white p-3 shadow-sm">
               {qrData.qrImage ? (
                 <img
                   src={qrData.qrImage}
                   alt={`VietQR ${qrData.paymentCode}`}
-                  width={200}
-                  height={200}
-                  className="block"
+                  className="h-48 w-48 object-contain block"
                 />
               ) : (
                 <QRCodeSVG
                   value={qrData.qrContent}
-                  size={200}
+                  size={192}
                   level="M"
                   includeMargin
                 />
               )}
             </div>
-            <p className="mt-2 text-xs font-mono text-gray-500">
-              {qrData.paymentCode}
+            <p className="mt-2 text-xs text-gray-500">
+              Quét mã bằng ứng dụng ngân hàng hỗ trợ VietQR
             </p>
           </div>
 
-          {/* Countdown */}
-          {countdown && (
-            <div className="text-center">
-              <p className="text-xs text-gray-500">Thời gian còn lại</p>
-              <p
-                className={`text-xl font-bold font-mono ${
-                  getRemainingSeconds(
-                    pendingPayment?.expiresAt || qrData.expiresAt,
-                  ) < 60
-                    ? "text-red-600 animate-pulse"
-                    : "text-gray-900"
-                }`}
-              >
-                {countdown}
-              </p>
-            </div>
-          )}
-
           {/* Bank Info */}
-          <div className="rounded-2xl border border-gray-200/80 bg-gray-50/80 p-4 space-y-3 text-sm shadow-2xs">
-            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-              <span className="text-gray-500 text-xs font-semibold">Ngân hàng</span>
-              <span className="font-bold text-gray-900 text-xs bg-white px-2.5 py-1 rounded-lg border border-gray-200">
+          <div className="space-y-3 rounded-[12px] border border-surface-border bg-surface-page p-3.5 text-xs">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-gray-500 font-medium">Ngân hàng</span>
+              <span className="text-right font-semibold text-gray-900 truncate">
                 {qrData.bankName}
               </span>
             </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-              <span className="text-gray-500 text-xs font-semibold">Số tài khoản</span>
-              <span className="font-mono font-bold text-gray-900 text-sm">
-                {qrData.accountNumber || "—"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-              <span className="text-gray-500 text-xs font-semibold">Chủ tài khoản</span>
-              <span className="font-bold text-gray-900 text-xs">
-                {qrData.accountHolder}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
-              <span className="text-gray-500 text-xs font-semibold">Số tiền</span>
-              <span className="font-black text-primary text-base">
+
+            {qrData.accountNumber && (
+              <div className="flex items-center justify-between gap-3 border-t border-surface-border/80 pt-2.5">
+                <span className="text-gray-500 font-medium">Số tài khoản</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-gray-900">
+                    {qrData.accountNumber}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigator.clipboard?.writeText(qrData.accountNumber!)}
+                    className="h-6 px-2 text-[10px]"
+                  >
+                    Sao chép
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {qrData.accountHolder && (
+              <div className="flex items-center justify-between gap-3 border-t border-surface-border/80 pt-2.5">
+                <span className="text-gray-500 font-medium">Chủ tài khoản</span>
+                <span className="font-semibold text-gray-900">
+                  {qrData.accountHolder}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 border-t border-surface-border/80 pt-2.5">
+              <span className="text-gray-500 font-medium">Số tiền chuyển</span>
+              <span className="font-bold text-primary text-sm">
                 {formatMoney(qrData.amount)}
               </span>
             </div>
-            <div className="pt-1">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-gray-600 text-xs font-bold">Nội dung chuyển khoản</span>
-                <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md">Bắt buộc chính xác</span>
+
+            {qrData.transferContent && (
+              <div className="pt-1 border-t border-surface-border/80">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-gray-500 font-medium">
+                    Nội dung ghi (bắt buộc chính xác)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 bg-white border border-surface-border rounded-lg p-2">
+                  <span className="font-mono font-bold text-gray-900 text-xs tracking-wide select-all break-all">
+                    {qrData.transferContent}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigator.clipboard?.writeText(qrData.transferContent!)}
+                    className="h-6 px-2 text-[10px] shrink-0"
+                  >
+                    Sao chép
+                  </Button>
+                </div>
               </div>
-              <div className="bg-white border-2 border-primary/40 rounded-xl p-2.5 shadow-2xs hover:border-primary transition-colors">
-                <p className="font-mono text-xs font-bold text-gray-900 tracking-wide select-all break-all leading-normal">
-                  {qrData.transferContent}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Status */}
-          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3.5 py-2 rounded-full shadow-2xs">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          <div className="flex items-center justify-center gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
             <span>Đang chờ chuyển khoản, hệ thống sẽ tự động gạch nợ...</span>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
-            <Button type="button" variant="secondary" onClick={handleClose} className="w-full py-2.5 font-semibold">
+          <div className="flex justify-end gap-2 border-t border-surface-border pt-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              className="w-full py-2.5 font-semibold"
+            >
               Đóng
             </Button>
           </div>
@@ -535,7 +578,7 @@ export const PaymentDialog = ({
     );
   }
 
-  // ── Render: Input form ──
+  // ── Render: Input step ──
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={getTitle()}>
       <form onSubmit={handleSubmit} className="space-y-4">

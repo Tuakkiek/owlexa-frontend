@@ -15,6 +15,7 @@ export const PaymentStatusTabs = ({
     { key: "PENDING", label: "Chờ xử lý" },
     { key: "VOIDED", label: "Đã hủy" },
     { key: "EXPIRED", label: "Hết hạn" },
+    { key: "DUPLICATE_PAYMENT", label: "Thanh toán trùng" },
   ];
 
   return (
