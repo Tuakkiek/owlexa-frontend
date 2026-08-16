@@ -31,6 +31,7 @@ import GradingCriteriaPage from "./pages/teacher/GradingCriteriaPage";
 import QuestionBankPage from "./pages/teacher/QuestionBankPage";
 import QuestionEditorPage from "./pages/teacher/QuestionEditorPage";
 import AssessmentBuilderPage from "./pages/teacher/AssessmentBuilderPage";
+import AssessmentEditorPage from "./pages/teacher/AssessmentEditorPage";
 import TeacherAssignmentsPage from "./pages/teacher/TeacherAssignmentsPage";
 import TeacherArchivedAssignmentsPage from "./pages/teacher/TeacherArchivedAssignmentsPage";
 import TeacherDocumentsPage from "./pages/teacher/TeacherDocumentsPage";
@@ -215,6 +216,10 @@ function App() {
                 <Route
                   path="/teacher/assessments"
                   element={<AssessmentBuilderPage />}
+                />
+                <Route
+                  path="/teacher/assessments/new"
+                  element={<AssessmentEditorPage />}
                 />
               </Route>
               <Route

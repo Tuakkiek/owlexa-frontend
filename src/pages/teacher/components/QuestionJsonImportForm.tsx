@@ -69,11 +69,17 @@ IMPORTANT FIELD DEFINITIONS
 content
 ------------------------------------
 
-The content is EVERYTHING shown to the student.
+The content is ONLY the question text/stem stored in the Question Bank.
 
 This field should contain:
 
 - question sentence
+- question prompt
+- blank reference, if the question is tied to a blank in a passage
+- plain text only, no HTML formatting
+
+This field must NOT contain:
+
 - reading passage
 - dialogue
 - announcement
@@ -82,8 +88,10 @@ This field should contain:
 - schedule
 - memo
 - email
-- image placeholder
-- any HTML formatting
+- article
+- review
+- invoice
+- any shared context used by multiple questions
 
 For listening questions:
 
@@ -91,7 +99,11 @@ Content may be empty.
 
 For reading questions:
 
-Content should contain the complete question exactly as shown in the source.
+Content should contain ONLY the question itself, never the reading passage.
+The reading passage will be created later in the Assessment Content Block when building the test.
+
+Always output content as plain text only.
+Do NOT include any HTML tags such as <p>, </p>, <div>, <span>, <br>, <table>, or <img> in question content.
 
 ------------------------------------
 options
@@ -138,13 +150,17 @@ RULES
 - MULTIPLE_CHOICE questions must contain EXACTLY ONE correct answer.
 - Content may be empty ONLY for listening questions.
 - Use the correct sectionCode such as PART_1, PART_2, PART_3, PART_4, PART_5, PART_6, PART_7.
-- If the source contains an image, convert it into:
+- Do NOT include any shared reading/listening material in question content.
+- If multiple questions share one passage/email/ad/table/article, import each question separately and omit the shared passage from every question.
+- Shared passages belong to Assessment Content Blocks, not Question Bank import JSON.
+- If the question itself references an image, convert it into a plain text placeholder:
 
-<img src="IMAGE_PLACEHOLDER" alt="">
+[IMAGE_PLACEHOLDER]
 
+- Do NOT use HTML formatting in question content. For example, use "content": "Question sentence here.", NOT "content": "<p>Question sentence here.</p>".
 - Do NOT invent missing information.
 - Do NOT rewrite the source.
-- Keep the wording identical unless HTML formatting is required.
+- Keep the wording identical, but convert any visual formatting into readable plain text.
 
 ====================================================
 SPECIAL TOEIC RULES
@@ -158,7 +174,7 @@ For TOEIC Part 5:
 Example:
 
 "content":
-"<p>Former Sendai Company CEO Ken Nakata spoke about ------- career experiences.</p>"
+"Former Sendai Company CEO Ken Nakata spoke about ------- career experiences."
 
 ----------------------------------------------------
 
@@ -174,7 +190,17 @@ For TOEIC Part 6-7:
 
 content:
 
-Contains the complete passage and question exactly as shown.
+Contains ONLY the individual question text/stem.
+
+Do NOT include the passage, email, advertisement, memo, schedule, table, article, review, invoice, or any shared document.
+
+Examples:
+
+Part 6:
+"content": "131. Which choice best completes the blank?"
+
+Part 7:
+"content": "194. What is a purpose of the e-mail?"
 
 ====================================================
 
