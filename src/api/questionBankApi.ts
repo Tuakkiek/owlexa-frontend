@@ -90,4 +90,9 @@ export const questionBankApi = {
     });
     return response.data;
   },
+
+  exportCollection: async (collectionId: number): Promise<any> => {
+    const response = await axiosClient.get(`${BASE_URL}/export/${collectionId}`);
+    return response.data;
+  },
 };

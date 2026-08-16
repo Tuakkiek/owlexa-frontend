@@ -251,6 +251,25 @@ const QuestionBankPage = () => {
     }
   };
 
+  const exportCollection = async (collection: QuestionCollectionResponse) => {
+    try {
+      const data = await questionBankApi.exportCollection(collection.id);
+      const jsonString = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${collection.code}_export.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Đã xuất bộ câu hỏi.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Không thể xuất bộ câu hỏi.");
+    }
+  };
+
   const deleteQuestion = async (question: QuestionResponse) => {
     const accepted = await confirm({
       title: "Xóa câu hỏi?",
@@ -361,7 +380,14 @@ const QuestionBankPage = () => {
                   <Badge>{collection.questionCount}</Badge>
                 </button>
                 {collectionId === collection.id && (
-                  <div className="flex gap-1.5 px-4 pb-3 text-xs">
+                  <div className="flex flex-wrap gap-1.5 px-4 pb-3 text-xs">
+                    <TableActionButton
+                      variant="secondary"
+                      icon={tableActionIcons.download()}
+                      onClick={() => void exportCollection(collection)}
+                    >
+                      Export JSON
+                    </TableActionButton>
                     <TableActionButton
                       variant="secondary"
                       icon={tableActionIcons.edit()}

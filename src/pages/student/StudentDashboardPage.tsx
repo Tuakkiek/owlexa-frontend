@@ -15,6 +15,42 @@ import type { ScheduleResponse } from "../../types/schedule";
 import type { StudentDocumentResponse } from "../../types/document";
 import { formatMoney, remainingBalance } from "../../utils/money";
 
+function parseLocalDate(value?: string | null) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfWeek(date: Date) {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  const day = result.getDay();
+  result.setDate(result.getDate() + (day === 0 ? -6 : 1 - day));
+  return result;
+}
+
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatDate(value?: string | null) {
+  const date = parseLocalDate(value);
+  if (!date) return "";
+  return `${String(date.getDate()).padStart(2, "0")}/${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}`;
+}
+
 const StudentDashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const [schedules, setSchedules] = useState<ScheduleResponse[]>([]);
@@ -59,18 +95,41 @@ const StudentDashboardPage = () => {
     [unpaidFees],
   );
 
-  const nextSessions = useMemo(
-    () =>
-      schedules
-        .slice()
-        .sort((a, b) =>
-          `${a.dayOfWeek}-${a.startTime}`.localeCompare(
-            `${b.dayOfWeek}-${b.startTime}`,
-          ),
-        )
-        .slice(0, 3),
-    [schedules],
-  );
+  const today = useMemo(() => {
+    const value = new Date();
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }, []);
+
+  const weekStart = useMemo(() => startOfWeek(today), [today]);
+  const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
+  const todayKey = useMemo(() => toDateKey(today), [today]);
+
+  const weeklySchedulesCount = useMemo(() => {
+    return schedules.filter((s) => {
+      if (s.type === "CANCELLED" || s.eventStatus === "CANCELLED") return false;
+      const d = parseLocalDate(s.eventDate);
+      return d && d >= weekStart && d <= weekEnd;
+    }).length;
+  }, [schedules, weekStart, weekEnd]);
+
+  const nextSessions = useMemo(() => {
+    const nowTime = new Date().toTimeString().slice(0, 5);
+    return schedules
+      .filter((s) => {
+        if (s.type === "CANCELLED" || s.eventStatus === "CANCELLED") return false;
+        if (!s.eventDate) return true;
+        if (s.eventDate < todayKey) return false;
+        if (s.eventDate === todayKey && s.startTime < nowTime) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const dateCmp = (a.eventDate ?? "").localeCompare(b.eventDate ?? "");
+        if (dateCmp !== 0) return dateCmp;
+        return a.startTime.localeCompare(b.startTime);
+      })
+      .slice(0, 3);
+  }, [schedules, todayKey]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -90,7 +149,7 @@ const StudentDashboardPage = () => {
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Buổi học"
-          value={isLoading ? "..." : schedules.length}
+          value={isLoading ? "..." : weeklySchedulesCount}
           helper="Trong tuần"
         />
         <StatCard
@@ -133,6 +192,9 @@ const StudentDashboardPage = () => {
                       </p>
                     </div>
                     <div className="text-right text-sm text-gray-500">
+                      <p className="font-medium text-gray-900 mb-0.5">
+                        {formatDate(session.eventDate) || `Thứ ${session.dayOfWeek + 1}`}
+                      </p>
                       <p>
                         {session.startTime.slice(0, 5)} -{" "}
                         {session.endTime.slice(0, 5)}
@@ -141,6 +203,7 @@ const StudentDashboardPage = () => {
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
                     Phòng: {session.roomName}
+                    {session.lessonNumber ? ` · Buổi #${session.lessonNumber}` : ""}
                   </p>
                 </div>
               ))}

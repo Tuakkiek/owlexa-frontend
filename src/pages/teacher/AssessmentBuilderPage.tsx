@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { assessmentBuilderApi } from "../../api/assessmentBuilderApi";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
@@ -43,6 +44,7 @@ const emptyPage: PageResponse<AssessmentListResponse> = {
 };
 
 const AssessmentBuilderPage = () => {
+  const navigate = useNavigate();
   const confirm = useConfirm();
   const { toast } = useToast();
 
@@ -111,8 +113,7 @@ const AssessmentBuilderPage = () => {
   };
 
   const openCreate = () => {
-    setEditingAssessment(null);
-    setIsModalOpen(true);
+    navigate("/teacher/assessments/new");
   };
 
   const openEdit = async (assessment: AssessmentListResponse) => {

@@ -231,7 +231,6 @@ const StudentAssignmentsPage = () => {
               <thead>
                 <tr className="border-b border-surface-border bg-surface-page text-left text-xs font-medium uppercase text-gray-500">
                   <th className="px-6 py-3">Bài tập</th>
-                  <th className="px-6 py-3">Loại</th>
                   <th className="px-6 py-3">Trạng thái</th>
                   <th className="px-6 py-3">Mở từ</th>
                   <th className="px-6 py-3">Hạn nộp</th>
@@ -244,7 +243,7 @@ const StudentAssignmentsPage = () => {
                   <tr key={assignment.recipientId} className="hover:bg-surface-hover">
                     <td className="max-w-xl px-6 py-4">
                       <div className="font-medium text-gray-900">
-                        <span className="line-clamp-1 break-words">
+                        <span className="break-words">
                           {assignment.title}
                         </span>
                       </div>
@@ -258,9 +257,6 @@ const StudentAssignmentsPage = () => {
                           <Lock className="h-3 w-3" /> Yêu cầu mật khẩu
                         </span>
                       )}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <Badge>{typeLabel[assignment.type]}</Badge>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <Badge>{statusLabel[assignment.status]}</Badge>

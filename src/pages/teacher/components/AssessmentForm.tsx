@@ -41,7 +41,7 @@ interface FormBlock {
   content: EditorDocument;
 }
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 20;
 
 const emptyQuestionPage: QuestionPageResponse<QuestionResponse> = {
   content: [],
@@ -88,6 +88,7 @@ export const AssessmentForm = ({
   const [questionDifficulty, setQuestionDifficulty] = useState<QuestionDifficulty | "">("");
   const [questionType, setQuestionType] = useState<QuestionType | "">("");
   const [pickerSelectedIds, setPickerSelectedIds] = useState<Set<number>>(new Set());
+  const [pickerSelectedQuestions, setPickerSelectedQuestions] = useState<Map<number, QuestionResponse>>(new Map());
   const [questionPickerPage, setQuestionPickerPage] = useState(0);
   const [questionPage, setQuestionPage] = useState<QuestionPageResponse<QuestionResponse>>(emptyQuestionPage);
   const [isQuestionLoading, setIsQuestionLoading] = useState(false);
@@ -243,9 +244,7 @@ export const AssessmentForm = ({
   // Insert embedded question into current active block's TipTap document
   const handleInsertSelectedQuestionsToBlock = () => {
     if (activeBlockIndexForPicker === null) return;
-    const selectedQuestions = questionPage.content.filter((q) =>
-      pickerSelectedIds.has(q.id),
-    );
+    const selectedQuestions = Array.from(pickerSelectedQuestions.values());
     if (selectedQuestions.length === 0) return;
 
     setBlocks((prev) =>
@@ -278,6 +277,7 @@ export const AssessmentForm = ({
 
     setActiveBlockIndexForPicker(null);
     setPickerSelectedIds(new Set());
+    setPickerSelectedQuestions(new Map());
   };
 
   const uploadAssessmentAudio = async (file: File) => {
@@ -320,6 +320,60 @@ export const AssessmentForm = ({
   const totalQuestionsEmbedded = useMemo(() => {
     return blocks.reduce((sum, b) => sum + countQuestionsInDoc(b.content), 0);
   }, [blocks]);
+
+  const currentPageQuestionIds = useMemo(
+    () => questionPage.content.map((question) => question.id),
+    [questionPage.content],
+  );
+
+  const allCurrentPageSelected =
+    currentPageQuestionIds.length > 0 &&
+    currentPageQuestionIds.every((id) => pickerSelectedIds.has(id));
+
+  const togglePickerQuestion = (question: QuestionResponse) => {
+    setPickerSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(question.id)) next.delete(question.id);
+      else next.add(question.id);
+      return next;
+    });
+    setPickerSelectedQuestions((prev) => {
+      const next = new Map(prev);
+      if (next.has(question.id)) next.delete(question.id);
+      else next.set(question.id, question);
+      return next;
+    });
+  };
+
+  const toggleAllCurrentPageQuestions = () => {
+    if (questionPage.content.length === 0) return;
+
+    setPickerSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allCurrentPageSelected) {
+        currentPageQuestionIds.forEach((id) => next.delete(id));
+      } else {
+        currentPageQuestionIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+
+    setPickerSelectedQuestions((prev) => {
+      const next = new Map(prev);
+      if (allCurrentPageSelected) {
+        currentPageQuestionIds.forEach((id) => next.delete(id));
+      } else {
+        questionPage.content.forEach((question) => next.set(question.id, question));
+      }
+      return next;
+    });
+  };
+
+  const closeQuestionPicker = () => {
+    setActiveBlockIndexForPicker(null);
+    setPickerSelectedIds(new Set());
+    setPickerSelectedQuestions(new Map());
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -506,6 +560,7 @@ export const AssessmentForm = ({
               onInsertQuestion={() => {
                 setActiveBlockIndexForPicker(index);
                 setPickerSelectedIds(new Set());
+                setPickerSelectedQuestions(new Map());
               }}
             />
           </div>
@@ -550,7 +605,7 @@ export const AssessmentForm = ({
               </h3>
               <button
                 type="button"
-                onClick={() => setActiveBlockIndexForPicker(null)}
+                onClick={closeQuestionPicker}
                 className="text-gray-400 hover:text-gray-600"
                 aria-label="Đóng"
               >
@@ -636,6 +691,21 @@ export const AssessmentForm = ({
                   </select>
                 </div>
 
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-card border border-surface-border bg-white px-3 py-2 text-xs text-gray-600">
+                  <label className="flex items-center gap-2 font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={allCurrentPageSelected}
+                      disabled={isQuestionLoading || questionPage.content.length === 0}
+                      onChange={toggleAllCurrentPageQuestions}
+                    />
+                    Chọn tất cả trang này
+                  </label>
+                  <span>
+                    Đã chọn {pickerSelectedIds.size} câu
+                  </span>
+                </div>
+
                 {/* Questions list */}
                 <div className="flex-1 overflow-y-auto rounded-card border border-surface-border bg-white p-3 space-y-2">
                   {isQuestionLoading ? (
@@ -650,14 +720,7 @@ export const AssessmentForm = ({
                       return (
                         <div
                           key={q.id}
-                          onClick={() => {
-                            setPickerSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(q.id)) next.delete(q.id);
-                              else next.add(q.id);
-                              return next;
-                            });
-                          }}
+                          onClick={() => togglePickerQuestion(q)}
                           className={`flex cursor-pointer items-start gap-3 rounded-card border p-3 transition-colors ${
                             isSelected
                               ? "border-primary bg-blue-50/50"
@@ -667,7 +730,10 @@ export const AssessmentForm = ({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => {}}
+                            onChange={(event) => {
+                              event.stopPropagation();
+                              togglePickerQuestion(q);
+                            }}
                             className="mt-1"
                           />
                           <div className="min-w-0 flex-1">
@@ -724,7 +790,7 @@ export const AssessmentForm = ({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setActiveBlockIndexForPicker(null)}
+                onClick={closeQuestionPicker}
               >
                 Hủy
               </Button>
