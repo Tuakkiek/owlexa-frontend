@@ -41,10 +41,8 @@ const CashierPaymentHistoryPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  const { hasPermission, hasAllPermissions } = usePermissions();
-  const canProcessRefund =
-    hasPermission("PAYMENT_REFUND") ||
-    hasAllPermissions(["REFUND_REQUEST", "REFUND_APPROVE", "REFUND_PAY"]);
+  const { hasPermission } = usePermissions();
+  const canProcessRefund = hasPermission("CASHIER_PAYMENT_HISTORY");
 
   const loadPayments = useCallback(
     async (pageNum: number, filters: AppliedPaymentFilters) => {

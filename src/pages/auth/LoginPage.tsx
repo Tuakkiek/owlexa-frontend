@@ -7,6 +7,51 @@ import { useAuthStore } from "../../store/authStore";
 import { detectDeviceInfo } from "../../utils/device";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import type { UserInfo } from "../../types/auth";
+
+const firstAllowedRoute = (
+  permissions: string[] | undefined,
+  routes: Array<{ permission: string; path: string }>,
+) => {
+  const granted = new Set(permissions ?? []);
+  return routes.find((route) => granted.has(route.permission))?.path;
+};
+
+const getDefaultRoute = (user: Pick<UserInfo, "roleName" | "permissions">) => {
+  if (user.roleName === "TEACHER") {
+    return (
+      firstAllowedRoute(user.permissions, [
+        { permission: "TEACHER_DASHBOARD", path: "/teacher/dashboard" },
+        { permission: "TEACHER_SCHEDULE", path: "/teacher/schedule" },
+        { permission: "TEACHER_ATTENDANCE", path: "/teacher/attendance" },
+        { permission: "TEACHER_GRADING_CRITERIA", path: "/teacher/grading-criteria" },
+        { permission: "TEACHER_QUESTION_BANK", path: "/teacher/questions" },
+        { permission: "TEACHER_ASSESSMENTS", path: "/teacher/assessments" },
+        { permission: "TEACHER_DOCUMENTS", path: "/teacher/documents" },
+        { permission: "TEACHER_ASSIGNMENTS", path: "/teacher/assignments" },
+      ]) ?? "/unauthorized"
+    );
+  }
+
+  if (user.roleName === "CASHIER") {
+    return (
+      firstAllowedRoute(user.permissions, [
+        { permission: "CASHIER_DASHBOARD", path: "/cashier/dashboard" },
+        { permission: "CASHIER_PAYMENTS", path: "/cashier/payments" },
+        { permission: "CASHIER_PAYMENT_HISTORY", path: "/cashier/payment-history" },
+      ]) ?? "/unauthorized"
+    );
+  }
+
+  const rolePath: Record<string, string> = {
+    ADMIN: "/admin/dashboard",
+    OWNER: "/owner/dashboard",
+    MANAGER: "/owner/dashboard",
+    ACADEMIC_STAFF: "/owner/students",
+    STUDENT: "/student/dashboard",
+  };
+  return rolePath[user.roleName] || "/";
+};
 
 const LoginPage = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -20,16 +65,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
 
   if (isAuthenticated && user) {
-    const rolePath: Record<string, string> = {
-      ADMIN: "/admin/dashboard",
-      OWNER: "/owner/dashboard",
-      MANAGER: "/owner/dashboard",
-      ACADEMIC_STAFF: "/owner/students",
-      TEACHER: "/teacher/dashboard",
-      STUDENT: "/student/dashboard",
-      CASHIER: "/cashier/dashboard",
-    };
-    return <Navigate to={rolePath[user.roleName] || "/"} replace />;
+    return <Navigate to={getDefaultRoute(user)} replace />;
   }
 
   const handleLogin = async (event: FormEvent) => {
@@ -53,16 +89,7 @@ const LoginPage = () => {
 
       applyAuthFromResponse(response);
 
-      const rolePath: Record<string, string> = {
-        ADMIN: "/admin/dashboard",
-        OWNER: "/owner/dashboard",
-        MANAGER: "/owner/dashboard",
-        ACADEMIC_STAFF: "/owner/students",
-        TEACHER: "/teacher/dashboard",
-        STUDENT: "/student/dashboard",
-        CASHIER: "/cashier/dashboard",
-      };
-      navigate(rolePath[response.roleName] || "/");
+      navigate(getDefaultRoute(response));
     } catch (err: any) {
       const message =
         err.response?.data?.message ||
