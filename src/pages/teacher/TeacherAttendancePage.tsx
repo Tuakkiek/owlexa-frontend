@@ -106,19 +106,6 @@ export default function TeacherAttendancePage() {
     [classes, selectedSession?.classId]
   );
 
-  const summary = useMemo(() => {
-    const counts: Record<AttendanceStatus, number> = {
-      PRESENT: 0,
-      ABSENT: 0,
-      LATE: 0,
-      EXCUSED: 0,
-    };
-    attendanceRecords.forEach((r) => {
-      if (counts[r.status] !== undefined) counts[r.status] += 1;
-    });
-    return counts;
-  }, [attendanceRecords]);
-
   const studentRows = useMemo(() => {
     if (!selectedClass) return [];
     const recordMap = new Map<number, AttendanceResponse>();

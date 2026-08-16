@@ -135,14 +135,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    anyOf={[
-                      "SCHEDULE_VIEW",
-                      "CLASS_VIEW",
-                      "ATTENDANCE_MARK",
-                      "TEST_VIEW",
-                      "TEST_GRADE",
-                      "ESSAY_GRADE",
-                    ]}
+                    permission="TEACHER_DASHBOARD"
                   />
                 }
               >
@@ -155,7 +148,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="SCHEDULE_VIEW"
+                    permission="TEACHER_SCHEDULE"
                   />
                 }
               >
@@ -168,7 +161,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="ATTENDANCE_MARK"
+                    permission="TEACHER_ATTENDANCE"
                   />
                 }
               >
@@ -181,7 +174,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="ESSAY_GRADE"
+                    permission="TEACHER_GRADING_CRITERIA"
                   />
                 }
               >
@@ -194,7 +187,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="TEST_VIEW"
+                    permission="TEACHER_QUESTION_BANK"
                   />
                 }
               >
@@ -215,7 +208,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="TEST_VIEW"
+                    permission="TEACHER_ASSESSMENTS"
                   />
                 }
               >
@@ -228,7 +221,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="ESSAY_GRADE"
+                    permission="TEACHER_ASSIGNMENTS"
                   />
                 }
               >
@@ -245,7 +238,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["TEACHER"]}
-                    permission="DOCUMENT_VIEW"
+                    permission="TEACHER_DOCUMENTS"
                   />
                 }
               >
@@ -285,7 +278,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["CASHIER"]}
-                    permission="DASHBOARD_FINANCE"
+                    permission="CASHIER_DASHBOARD"
                   />
                 }
               >
@@ -298,7 +291,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["CASHIER"]}
-                    permission="PAYMENT_COLLECT"
+                    permission="CASHIER_PAYMENTS"
                   />
                 }
               >
@@ -311,7 +304,7 @@ function App() {
                 element={
                   <ProtectedRoute
                     allowedRoles={["CASHIER"]}
-                    permission="PAYMENT_VIEW"
+                    permission="CASHIER_PAYMENT_HISTORY"
                   />
                 }
               >

@@ -57,9 +57,11 @@ export const feeApi = {
   collectCash: async (
     feeRecordId: number,
     request: CashPaymentRequest,
+    roleName?: string,
   ): Promise<PaymentResponse> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.post(
-      `/cashier/fee-record/${feeRecordId}/payments/cash`,
+      `${prefix}/fee-record/${feeRecordId}/payments/cash`,
       request,
     );
     return response.data;
@@ -68,16 +70,19 @@ export const feeApi = {
   createBankTransfer: async (
     feeRecordId: number,
     request: CashPaymentRequest,
+    roleName?: string,
   ): Promise<PaymentResponse> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
     const response = await axiosClient.post(
-      `/cashier/fee-record/${feeRecordId}/payments/bank-transfer`,
+      `${prefix}/fee-record/${feeRecordId}/payments/bank-transfer`,
       request,
     );
     return response.data;
   },
 
-  getPaymentQr: async (paymentId: number): Promise<BankTransferQrResponse> => {
-    const response = await axiosClient.get(`/cashier/payments/${paymentId}/qr`);
+  getPaymentQr: async (paymentId: number, roleName?: string): Promise<BankTransferQrResponse> => {
+    const prefix = roleName === "CASHIER" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments/${paymentId}/qr`);
     return response.data;
   },
 
