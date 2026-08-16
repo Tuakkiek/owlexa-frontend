@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock, MapPin, Trash2, CheckCircle, Clock3 } from "lucide-react";
+import { Calendar, CalendarDays, Clock, MapPin, Trash2, CheckCircle, Clock3 } from "lucide-react";
 import { teacherAttendanceApi } from "../../api/teacherAttendanceApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -200,6 +200,14 @@ export default function OwnerTeacherAttendancePage() {
     setDate(d.toISOString().split("T")[0]);
   };
 
+  const handleToday = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setDate(`${year}-${month}-${day}`);
+  };
+
   return (
     <div className="space-y-6 pb-24">
       <PageHeader
@@ -217,9 +225,9 @@ export default function OwnerTeacherAttendancePage() {
       {/* Date Picker Toolbar */}
       <Card>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <Button variant="outline" onClick={handlePrevDay}>&lt; Ngày trước</Button>
-            <div className="w-48">
+            <div className="w-44 sm:w-48">
               <Input
                 type="date"
                 value={date}
@@ -227,6 +235,10 @@ export default function OwnerTeacherAttendancePage() {
               />
             </div>
             <Button variant="outline" onClick={handleNextDay}>Ngày sau &gt;</Button>
+            <Button variant="outline" onClick={handleToday}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Hôm nay
+            </Button>
           </div>
           <div className="text-sm font-medium text-gray-500">
             {rows.length} ca dạy · Ngày {formatDateDisplay(date)}
