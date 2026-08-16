@@ -1,40 +1,40 @@
 import { useCallback, useEffect, useState } from "react";
-import { PaymentHistoryView } from "../../components/payment/PaymentHistoryView";
+import { useSearchParams } from "react-router-dom";
 import { feeApi, type PaymentFilterParams } from "../../api/feeApi";
 import { refundApi } from "../../api/refundApi";
 import { usePermissions } from "../../hooks/usePermissions";
-import type { PaymentMethod, PaymentPage, PaymentResponse } from "../../types/fee";
+import type { PaymentHistoryPage, PaymentHistoryResponse, PaymentMethod } from "../../types/fee";
+import { PageHeader, ErrorBanner } from "../../components/ui/SharedComponents";
+import { Button } from "../../components/ui/Button";
+import { PaymentSummaryCards } from "../owner/components/payments/PaymentSummaryCards";
+import { PaymentStatusTabs } from "../owner/components/payments/PaymentStatusTabs";
+import { PaymentFilterToolbar } from "../owner/components/payments/PaymentFilterToolbar";
+import { PaymentTable } from "../owner/components/payments/PaymentTable";
+import { PaymentDetailDrawer } from "../owner/components/payments/PaymentDetailDrawer";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 15;
-
-interface AppliedPaymentFilters {
-  query: string;
-  method: string;
-  startDate: string;
-  endDate: string;
-}
-
 const refundMethods: PaymentMethod[] = ["CASH", "BANK_TRANSFER"];
 
-const CashierPaymentHistoryPage = () => {
-  const [page, setPage] = useState<PaymentPage | null>(null);
+export const CashierPaymentHistoryPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // URL state
+  const query = searchParams.get("query") || "";
+  const method = searchParams.get("method") || "";
+  const status = searchParams.get("status") || "";
+  const startDate = searchParams.get("startDate") || "";
+  const endDate = searchParams.get("endDate") || "";
+  const currentPage = parseInt(searchParams.get("page") || "0", 10);
+
+  // Data state
+  const [page, setPage] = useState<PaymentHistoryPage | null>(null);
+  const [summary, setSummary] = useState({ totalTransactions: 0, totalRevenue: 0, pendingCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(0);
-  const [filterMethod, setFilterMethod] = useState("");
-  const [filterStartDate, setFilterStartDate] = useState("");
-  const [filterEndDate, setFilterEndDate] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState<AppliedPaymentFilters>({
-    query: "",
-    method: "",
-    startDate: "",
-    endDate: "",
-  });
 
-  const [refundPayment, setRefundPayment] = useState<PaymentResponse | null>(
-    null,
-  );
+  // Drawer state
+  const [selectedPayment, setSelectedPayment] = useState<PaymentHistoryResponse | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundMethod, setRefundMethod] = useState<PaymentMethod>("CASH");
@@ -44,90 +44,67 @@ const CashierPaymentHistoryPage = () => {
   const { hasPermission } = usePermissions();
   const canProcessRefund = hasPermission("CASHIER_PAYMENT_HISTORY");
 
-  const loadPayments = useCallback(
-    async (pageNum: number, filters: AppliedPaymentFilters) => {
-      try {
-        setIsLoading(true);
-        setError("");
-        const params: PaymentFilterParams = {
-          page: pageNum,
-          size: PAGE_SIZE,
-          sort: "createdAt,desc",
-        };
-        if (filters.query) params.student = filters.query;
-        if (filters.method) params.method = filters.method;
-        if (filters.startDate) {
-          params.startDate = new Date(filters.startDate).toISOString();
-        }
-        if (filters.endDate) {
-          params.endDate = new Date(filters.endDate).toISOString();
-        }
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError("");
 
-        const result = await feeApi.getPaymentsPaginated("cashier", params);
-        setPage(result);
-      } catch (err: any) {
-        setError(
-          err?.response?.data?.message ??
-            "Không thể tải lịch sử thanh toán.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+      const params: PaymentFilterParams = {
+        page: currentPage,
+        size: PAGE_SIZE,
+        sort: "createdAt,desc",
+      };
+      if (query) params.student = query;
+      if (method) params.method = method;
+      if (status) params.status = status;
+      if (startDate) params.startDate = new Date(startDate).toISOString();
+      if (endDate) params.endDate = new Date(endDate).toISOString();
+
+      const [pageResult, summaryResult] = await Promise.all([
+        feeApi.getPaymentHistoryPaginated("cashier", params),
+        feeApi.getPaymentHistorySummary("cashier", params),
+      ]);
+
+      setPage(pageResult);
+      setSummary(summaryResult);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Không thể tải lịch sử thanh toán.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, query, method, status, startDate, endDate]);
 
   useEffect(() => {
-    loadPayments(currentPage, appliedFilters);
-  }, [appliedFilters, currentPage, loadPayments]);
+    loadData();
+  }, [loadData]);
 
-  const handleSearch = () => {
-    setCurrentPage(0);
-    setAppliedFilters({
-      query,
-      method: filterMethod,
-      startDate: filterStartDate,
-      endDate: filterEndDate,
+  // Handlers for updating URL state
+  const updateParams = (newParams: Record<string, string>) => {
+    const current = Object.fromEntries(searchParams.entries());
+    const updated = { ...current, ...newParams };
+
+    // Reset page to 0 if filters change (other than page itself)
+    if (Object.keys(newParams).some((k) => k !== "page")) {
+      updated.page = "0";
+    }
+
+    // Remove empty params
+    Object.keys(updated).forEach((k) => {
+      if (!updated[k]) delete updated[k];
     });
-  };
 
-  const handleClearFilters = () => {
-    setQuery("");
-    setFilterMethod("");
-    setFilterStartDate("");
-    setFilterEndDate("");
-    setCurrentPage(0);
-    setAppliedFilters({
-      query: "",
-      method: "",
-      startDate: "",
-      endDate: "",
-    });
-  };
-
-  const openRefundModal = (payment: PaymentResponse) => {
-    setRefundPayment(payment);
-    setActionError("");
-    setRefundAmount("");
-    setRefundReason("");
-    setRefundMethod("CASH");
-  };
-
-  const closeRefundModal = () => {
-    if (actionLoading) return;
-    setRefundPayment(null);
-    setActionError("");
+    setSearchParams(updated);
   };
 
   const handleRefund = async () => {
-    if (!refundPayment || !refundAmount || !refundReason.trim()) return;
+    if (!selectedPayment?.paymentId || !refundAmount || !refundReason.trim()) return;
 
     try {
       setActionLoading(true);
       setActionError("");
       const refund = await refundApi.requestRefund(
         {
-          paymentId: refundPayment.id,
+          paymentId: selectedPayment.paymentId,
           amount: refundAmount,
           reason: refundReason.trim(),
         },
@@ -143,54 +120,115 @@ const CashierPaymentHistoryPage = () => {
         { refundMethod },
         "cashier",
       );
-      setRefundPayment(null);
+
+      // Reset refund form & selected payment
       setRefundAmount("");
       setRefundReason("");
-      loadPayments(currentPage, appliedFilters);
+      setRefundMethod("CASH");
+      setSelectedPayment(null);
+      // Reload
+      loadData();
     } catch (err: any) {
-      setActionError(
-        err?.response?.data?.message ?? "Không thể hoàn tiền giao dịch.",
-      );
+      setActionError(err?.response?.data?.message ?? "Không thể hoàn tiền giao dịch.");
     } finally {
       setActionLoading(false);
     }
   };
 
+  const totalPages = Math.max(page?.totalPages ?? 0, 1);
+  const canRefundPayment = (p: PaymentHistoryResponse) =>
+    canProcessRefund && p.source === "PAYMENT" && p.status === "ACTIVE";
+
   return (
-    <PaymentHistoryView
-      title="Lịch sử thanh toán"
-      description="Tra cứu giao dịch đã thu, xem biên lai và xử lý hoàn tiền khi được cấp quyền."
-      page={page}
-      isLoading={isLoading}
-      error={error}
-      query={query}
-      filterMethod={filterMethod}
-      filterStartDate={filterStartDate}
-      filterEndDate={filterEndDate}
-      currentPage={currentPage}
-      refundPayment={refundPayment}
-      refundAmount={refundAmount}
-      refundReason={refundReason}
-      actionLoading={actionLoading}
-      actionError={actionError}
-      receiptPath={(paymentId) => `/cashier/payments/${paymentId}/receipt`}
-      canRefundPayment={(payment) => canProcessRefund && payment.status === "ACTIVE"}
-      onQueryChange={setQuery}
-      onFilterMethodChange={setFilterMethod}
-      onFilterStartDateChange={setFilterStartDate}
-      onFilterEndDateChange={setFilterEndDate}
-      onSearch={handleSearch}
-      onClearFilters={handleClearFilters}
-      onPageChange={setCurrentPage}
-      onOpenRefund={openRefundModal}
-      onCloseRefund={closeRefundModal}
-      onRefundAmountChange={setRefundAmount}
-      onRefundReasonChange={setRefundReason}
-      onConfirmRefund={handleRefund}
-      refundMethod={refundMethod}
-      refundMethods={refundMethods}
-      onRefundMethodChange={setRefundMethod}
-    />
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        title="Lịch sử thanh toán"
+        description="Tra cứu giao dịch đã thu, xem biên lai và xử lý hoàn tiền khi được cấp quyền."
+      />
+
+      {error && <ErrorBanner message={error} />}
+
+      <PaymentSummaryCards
+        totalTransactions={summary.totalTransactions}
+        totalRevenue={summary.totalRevenue}
+        pendingCount={summary.pendingCount}
+        isLoading={isLoading}
+      />
+
+      <div className="space-y-4">
+        <PaymentStatusTabs
+          activeStatus={status}
+          onChange={(newStatus) => updateParams({ status: newStatus })}
+        />
+
+        <PaymentFilterToolbar
+          query={query}
+          method={method}
+          startDate={startDate}
+          endDate={endDate}
+          onQueryChange={(q) => updateParams({ query: q })}
+          onMethodChange={(m) => updateParams({ method: m })}
+          onDateRangeChange={(start, end) => updateParams({ startDate: start, endDate: end })}
+        />
+
+        <PaymentTable
+          payments={page?.content || []}
+          isLoading={isLoading}
+          onRowClick={setSelectedPayment}
+        />
+
+        {/* Pagination */}
+        {page && page.content.length > 0 && (
+          <div className="flex items-center justify-between border-t border-surface-border pt-4">
+            <span className="text-sm text-gray-500">
+              Trang {currentPage + 1} / {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage === 0}
+                onClick={() => updateParams({ page: (currentPage - 1).toString() })}
+              >
+                <ChevronLeft className="h-4 w-4" /> Trước
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage >= totalPages - 1}
+                onClick={() => updateParams({ page: (currentPage + 1).toString() })}
+              >
+                Sau <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <PaymentDetailDrawer
+        payment={selectedPayment}
+        isOpen={!!selectedPayment}
+        onClose={() => {
+          setSelectedPayment(null);
+          setActionError("");
+          setRefundAmount("");
+          setRefundReason("");
+          setRefundMethod("CASH");
+        }}
+        refundAmount={refundAmount}
+        refundReason={refundReason}
+        refundMethod={refundMethod}
+        refundMethods={refundMethods}
+        onRefundMethodChange={setRefundMethod}
+        actionLoading={actionLoading}
+        actionError={actionError}
+        onRefundAmountChange={setRefundAmount}
+        onRefundReasonChange={setRefundReason}
+        onConfirmRefund={handleRefund}
+        canRefundPayment={canRefundPayment}
+        receiptPath={(id) => `/cashier/payments/${id}/receipt`}
+      />
+    </div>
   );
 };
 

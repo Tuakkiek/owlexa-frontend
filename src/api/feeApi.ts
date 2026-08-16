@@ -4,6 +4,8 @@ import type {
   CashPaymentRequest,
   PaymentResponse,
   PaymentPage,
+  PaymentHistoryPage,
+  PaymentHistoryResponse,
   RevenueSummary,
   BankTransferQrResponse,
 } from "../types/fee";
@@ -142,6 +144,11 @@ export const feeApi = {
     return response.data;
   },
 
+  getMyPaymentHistory: async (): Promise<PaymentHistoryResponse[]> => {
+    const response = await axiosClient.get("/student/payments/history");
+    return response.data;
+  },
+
   getPaymentsPaginated: async (
     role: "owner" | "cashier",
     params: PaymentFilterParams = {},
@@ -151,12 +158,30 @@ export const feeApi = {
     return response.data;
   },
 
+  getPaymentHistoryPaginated: async (
+    role: "owner" | "cashier",
+    params: PaymentFilterParams = {},
+  ): Promise<PaymentHistoryPage> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments/history`, { params });
+    return response.data;
+  },
+
   getPaymentSummary: async (
     role: "owner" | "cashier",
     params: PaymentFilterParams = {},
   ): Promise<{ totalTransactions: number; totalRevenue: number; pendingCount: number }> => {
     const prefix = role === "cashier" ? "/cashier" : "/owner";
     const response = await axiosClient.get(`${prefix}/payments/summary`, { params });
+    return response.data;
+  },
+
+  getPaymentHistorySummary: async (
+    role: "owner" | "cashier",
+    params: PaymentFilterParams = {},
+  ): Promise<{ totalTransactions: number; totalRevenue: number; pendingCount: number }> => {
+    const prefix = role === "cashier" ? "/cashier" : "/owner";
+    const response = await axiosClient.get(`${prefix}/payments/history/summary`, { params });
     return response.data;
   },
 

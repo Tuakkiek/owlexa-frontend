@@ -1,7 +1,7 @@
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
-  type PaymentResponse,
+  type PaymentHistoryResponse,
   type PaymentStatus,
 } from "../../../../types/fee";
 import { formatMoney } from "../../../../utils/money";
@@ -9,9 +9,9 @@ import { Badge, EmptyState, LoadingSkeleton } from "../../../../components/ui/Sh
 import { ClipboardList, ExternalLink } from "lucide-react";
 
 interface PaymentTableProps {
-  payments: PaymentResponse[];
+  payments: PaymentHistoryResponse[];
   isLoading: boolean;
-  onRowClick: (payment: PaymentResponse) => void;
+  onRowClick: (payment: PaymentHistoryResponse) => void;
 }
 
 const paymentStatusVariants: Record<
@@ -22,6 +22,7 @@ const paymentStatusVariants: Record<
   ACTIVE: "success",
   VOIDED: "error",
   EXPIRED: "default",
+  DUPLICATE_PAYMENT: "error",
 };
 
 export const PaymentTable = ({

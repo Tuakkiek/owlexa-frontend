@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { TriangleAlert, PartyPopper, Check } from "lucide-react";
+import { TriangleAlert, PartyPopper, Check, Receipt, Printer } from "lucide-react";
 import { feeApi } from "../../api/feeApi";
 import type {
   FeeRecordResponse,
+  PaymentHistoryResponse,
+  PaymentStatus,
   PaymentResponse,
   BankTransferQrResponse,
 } from "../../types/fee";
@@ -17,6 +19,7 @@ import {
   Card,
   Badge,
   EmptyState,
+  FilterTabs,
   LoadingSkeleton,
   ErrorBanner,
 } from "../../components/ui/SharedComponents";
@@ -72,6 +75,8 @@ const mapStatusBadgeVariant = (
     case "EXPIRED":
     case "VOIDED":
       return "error";
+    case "DUPLICATE_PAYMENT":
+      return "error";
     default:
       return "default";
   }
@@ -80,16 +85,29 @@ const mapStatusBadgeVariant = (
 // ── Constants ──────────────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 5000;
+const PAYMENT_HISTORY_FILTERS: Array<{ key: "" | PaymentStatus; label: string }> = [
+  { key: "", label: "Tất cả" },
+  { key: "ACTIVE", label: "Thành công" },
+  { key: "PENDING", label: "Chờ xử lý" },
+  { key: "VOIDED", label: "Đã hủy" },
+  { key: "EXPIRED", label: "Hết hạn" },
+  { key: "DUPLICATE_PAYMENT", label: "Thanh toán trùng" },
+];
 
 // ── Component ──────────────────────────────────────────────────────────
 
 const StudentFeesPage = () => {
   // Core data
   const [fees, setFees] = useState<FeeRecordResponse[]>([]);
-  const [payments, setPayments] = useState<PaymentResponse[]>([]);
+  const [payments, setPayments] = useState<PaymentHistoryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [paymentPage, setPaymentPage] = useState(1);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<"" | PaymentStatus>("");
   const PAYMENT_PAGE_SIZE = 5;
+
+  // Selected receipt modal state
+  const [selectedReceiptPayment, setSelectedReceiptPayment] =
+    useState<PaymentHistoryResponse | null>(null);
 
   // Payment flow state
   const [activeFeeId, setActiveFeeId] = useState<number | null>(null);
@@ -126,7 +144,7 @@ const StudentFeesPage = () => {
       setIsLoading(true);
       const [feesData, paymentsData] = await Promise.all([
         feeApi.getMyFees(),
-        feeApi.getMyPayments(),
+        feeApi.getMyPaymentHistory(),
       ]);
       setFees(feesData);
       setPayments(paymentsData);
@@ -356,7 +374,7 @@ const StudentFeesPage = () => {
         }
 
         // Refresh payment list
-        const updatedPayments = await feeApi.getMyPayments();
+        const updatedPayments = await feeApi.getMyPaymentHistory();
         setPayments(updatedPayments);
       } catch (err: any) {
         setError(
@@ -434,7 +452,7 @@ const StudentFeesPage = () => {
 
   // Find pending payment for each unpaid fee (for banners)
   const pendingPaymentMap = useMemo(() => {
-    const map: Record<number, PaymentResponse> = {};
+    const map: Record<number, PaymentHistoryResponse> = {};
     payments.forEach((p) => {
       if (
         p.status === "PENDING" &&
@@ -454,15 +472,38 @@ const StudentFeesPage = () => {
     return map;
   }, [payments]);
 
+  const filteredPayments = useMemo(
+    () =>
+      paymentStatusFilter
+        ? payments.filter((payment) => payment.status === paymentStatusFilter)
+        : payments,
+    [payments, paymentStatusFilter],
+  );
+
+  const paymentHistoryTabs = useMemo(
+    () =>
+      PAYMENT_HISTORY_FILTERS.map((filter) => ({
+        ...filter,
+        count: filter.key
+          ? payments.filter((payment) => payment.status === filter.key).length
+          : payments.length,
+      })),
+    [payments],
+  );
+
   const totalPaymentPages = useMemo(
-    () => Math.max(1, Math.ceil(payments.length / PAYMENT_PAGE_SIZE)),
-    [payments.length],
+    () => Math.max(1, Math.ceil(filteredPayments.length / PAYMENT_PAGE_SIZE)),
+    [filteredPayments.length],
   );
 
   const paginatedPayments = useMemo(() => {
-    const start = (paymentPage - 1) * PAYMENT_PAGE_SIZE;
-    return payments.slice(start, start + PAYMENT_PAGE_SIZE);
-  }, [payments, paymentPage]);
+    const start = (Math.min(paymentPage, totalPaymentPages) - 1) * PAYMENT_PAGE_SIZE;
+    return filteredPayments.slice(start, start + PAYMENT_PAGE_SIZE);
+  }, [filteredPayments, paymentPage, totalPaymentPages]);
+
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [paymentStatusFilter]);
 
   const activeFeeRecord = useMemo(
     () => fees.find((f) => f.id === activeFeeId) ?? null,
@@ -712,40 +753,67 @@ const StudentFeesPage = () => {
             Hóa đơn đã thanh toán ({paidFees.length})
           </h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {paidFees.map((record) => (
-              <Card key={record.id} className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                      {record.className}
+            {paidFees.map((record) => {
+              const matchedPayment =
+                payments.find(
+                  (p) =>
+                    p.source === "PAYMENT" &&
+                    p.feeRecordId === record.id &&
+                    p.status === "ACTIVE",
+                ) ||
+                payments.find(
+                  (p) => p.source === "PAYMENT" && p.feeRecordId === record.id,
+                );
+
+              return (
+                <Card key={record.id} className="flex flex-col justify-between space-y-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          {record.className}
+                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900 mt-0.5">
+                          {record.month}
+                        </h3>
+                      </div>
+                      <Badge variant="success">Đã trả</Badge>
+                    </div>
+
+                    <div className="space-y-2 border-t border-surface-border pt-4 text-sm">
+                      <div className="flex justify-between text-gray-500">
+                        <span>Tổng học phí:</span>
+                        <span className="font-medium text-gray-900">
+                          {formatMoney(record.amount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-gray-500">
+                        <span>Đã thanh toán:</span>
+                        <span className="font-medium text-gray-900">
+                          {formatMoney(record.paidAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-surface-border pt-3 space-y-3">
+                    <p className="text-xs text-gray-400">
+                      Hạn chót: {record.dueDate}
                     </p>
-                    <h3 className="text-lg font-semibold text-gray-900 mt-0.5">
-                      {record.month}
-                    </h3>
+                    {matchedPayment && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setSelectedReceiptPayment(matchedPayment)}
+                      >
+                        <Receipt className="mr-1.5 h-4 w-4" /> Xem biên lai chi tiết
+                      </Button>
+                    )}
                   </div>
-                  <Badge variant="success">Đã trả</Badge>
-                </div>
-
-                <div className="space-y-2 border-t border-surface-border pt-4 text-sm">
-                  <div className="flex justify-between text-gray-500">
-                    <span>Tổng học phí:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatMoney(record.amount)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-gray-500">
-                    <span>Đã thanh toán:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatMoney(record.paidAmount)}
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-400 border-t border-surface-border pt-2">
-                  Hạn chót: {record.dueDate}
-                </p>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
@@ -762,11 +830,23 @@ const StudentFeesPage = () => {
             </span>
           </div>
 
-          <div className="divide-y divide-surface-border">
+          <FilterTabs
+            tabs={paymentHistoryTabs}
+            activeKey={paymentStatusFilter}
+            onChange={(key) => setPaymentStatusFilter(key as "" | PaymentStatus)}
+          />
+
+          {filteredPayments.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-surface-border p-6 text-center text-sm text-gray-500">
+              Không có giao dịch nào trong bộ lọc này.
+            </div>
+          ) : (
+            <div className="divide-y divide-surface-border">
             {paginatedPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="py-3 first:pt-0 last:pb-0 flex justify-between items-center"
+                onClick={() => setSelectedReceiptPayment(payment)}
+                className="py-3 px-2 -mx-2 rounded-lg hover:bg-surface-page transition-colors cursor-pointer flex justify-between items-center group"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -785,25 +865,32 @@ const StudentFeesPage = () => {
                     {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
                     {payment.note && ` — ${payment.note}`}
                   </p>
-                  {payment.sepayRef && (
+                  {payment.receiptNumber && (
                     <p className="text-xs font-mono text-gray-400">
-                      Mã: {payment.sepayRef}
+                      Mã BL: {payment.receiptNumber}
                     </p>
                   )}
                 </div>
-                <span className="font-semibold text-sm text-gray-900">
-                  {formatMoney(payment.amount)}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-sm text-gray-900">
+                    {formatMoney(payment.amount)}
+                  </span>
+                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-primary">
+                    <Receipt className="h-4 w-4 mr-1" />
+                    {payment.status === "DUPLICATE_PAYMENT" ? "Đối soát" : "Biên lai"}
+                  </Button>
+                </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* Pagination Controls */}
-          {payments.length > PAYMENT_PAGE_SIZE && (
+          {filteredPayments.length > PAYMENT_PAGE_SIZE && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-border pt-4 text-xs text-gray-500">
               <span>
-                Hiển thị {Math.min((paymentPage - 1) * PAYMENT_PAGE_SIZE + 1, payments.length)} -{" "}
-                {Math.min(paymentPage * PAYMENT_PAGE_SIZE, payments.length)} trên tổng {payments.length} giao dịch
+                Hiển thị {Math.min((Math.min(paymentPage, totalPaymentPages) - 1) * PAYMENT_PAGE_SIZE + 1, filteredPayments.length)} -{" "}
+                {Math.min(Math.min(paymentPage, totalPaymentPages) * PAYMENT_PAGE_SIZE, filteredPayments.length)} trên tổng {filteredPayments.length} giao dịch
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -816,13 +903,13 @@ const StudentFeesPage = () => {
                   Trang trước
                 </Button>
                 <span className="px-2 font-medium text-gray-700">
-                  Trang {paymentPage} / {totalPaymentPages}
+                  Trang {Math.min(paymentPage, totalPaymentPages)} / {totalPaymentPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPaymentPage((p) => Math.min(totalPaymentPages, p + 1))}
-                  disabled={paymentPage === totalPaymentPages}
+                  disabled={paymentPage >= totalPaymentPages}
                   className="px-3 py-1 text-xs"
                 >
                   Trang sau
@@ -897,7 +984,7 @@ const StudentFeesPage = () => {
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                     </span>
                     <span className="text-xs font-medium text-amber-800">
-                      Tự động gạch nợ sau khi chuyển
+                      Tự động hoàn thành sau khi chuyển
                     </span>
                   </div>
                   {countdown && (
@@ -1166,6 +1253,133 @@ const StudentFeesPage = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal Xem Biên Lai Chi Tiết Hóa Đơn ──────────────────────── */}
+      <Modal
+        isOpen={selectedReceiptPayment !== null}
+        onClose={() => setSelectedReceiptPayment(null)}
+        title={
+          selectedReceiptPayment?.status === "DUPLICATE_PAYMENT"
+            ? "Chi tiết đối soát"
+            : "Biên Lai Thu Học Phí"
+        }
+        maxWidth="max-w-lg"
+      >
+        {selectedReceiptPayment && (
+          <div className="space-y-6">
+            {/* Header / Center Info */}
+            <div className="text-center border-b border-surface-border pb-4">
+              <h3 className="text-base font-bold text-gray-900">
+                {selectedReceiptPayment.centerName || "Trung tâm Đào tạo"}
+              </h3>
+              <p className="mt-1 text-2xl font-extrabold text-primary tracking-wide font-mono">
+                {selectedReceiptPayment.receiptNumber || `PAY-#${selectedReceiptPayment.id}`}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Ngày thu: {new Date(selectedReceiptPayment.createdAt).toLocaleDateString("vi-VN")}{" "}
+                {new Date(selectedReceiptPayment.createdAt).toLocaleTimeString("vi-VN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+              <div className="mt-2 flex justify-center gap-2">
+                <Badge variant={mapStatusBadgeVariant(selectedReceiptPayment.status)}>
+                  {PAYMENT_STATUS_LABELS[selectedReceiptPayment.status]}
+                </Badge>
+                <Badge variant="default">
+                  {PAYMENT_METHOD_LABELS[selectedReceiptPayment.method] ?? selectedReceiptPayment.method}
+                </Badge>
+              </div>
+            </div>
+
+            {/* General Info */}
+            <div className="space-y-2.5 text-xs">
+              <div className="flex justify-between py-1 border-b border-surface-border">
+                <span className="text-gray-500">Học sinh</span>
+                <span className="font-semibold text-gray-900">{selectedReceiptPayment.studentFullName}</span>
+              </div>
+              {selectedReceiptPayment.studentPhoneNumber && (
+                <div className="flex justify-between py-1 border-b border-surface-border">
+                  <span className="text-gray-500">Số điện thoại</span>
+                  <span className="text-gray-700">{selectedReceiptPayment.studentPhoneNumber}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-1 border-b border-surface-border">
+                <span className="text-gray-500">Lớp học</span>
+                <span className="font-semibold text-gray-900">{selectedReceiptPayment.className || "-"}</span>
+              </div>
+              {selectedReceiptPayment.courseName && (
+                <div className="flex justify-between py-1 border-b border-surface-border">
+                  <span className="text-gray-500">Khóa học</span>
+                  <span className="text-gray-700">{selectedReceiptPayment.courseName}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-1 border-b border-surface-border">
+                <span className="text-gray-500">Người thu</span>
+                <span className="text-gray-700">{selectedReceiptPayment.collectedByUserName || "Tự động / Chuyển khoản"}</span>
+              </div>
+              {selectedReceiptPayment.sepayRef && (
+                <div className="flex justify-between py-1 border-b border-surface-border">
+                  <span className="text-gray-500">Mã giao dịch ngân hàng</span>
+                  <span className="font-mono font-medium text-gray-900">{selectedReceiptPayment.sepayRef}</span>
+                </div>
+              )}
+              {selectedReceiptPayment.note && (
+                <div className="py-1 border-b border-surface-border">
+                  <span className="text-gray-500 block mb-0.5">Ghi chú</span>
+                  <span className="text-gray-700 italic">{selectedReceiptPayment.note}</span>
+                </div>
+              )}
+            </div>
+
+            {selectedReceiptPayment.status === "DUPLICATE_PAYMENT" && (
+              <div className="rounded-card border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">
+                <div className="mb-1 flex items-center gap-2 font-medium text-rose-800">
+                  <TriangleAlert className="h-4 w-4" />
+                  <span>Thanh toán trùng</span>
+                </div>
+                Khoản tiền này được ghi nhận để đối soát và hoàn trả nếu cần, không cộng thêm vào học phí.
+              </div>
+            )}
+
+            {/* Financial Summary */}
+            <div className="bg-surface-page p-4 rounded-card border border-surface-border space-y-2 text-xs">
+              <div className="flex justify-between text-gray-500">
+                <span>Tổng học phí hóa đơn:</span>
+                <span className="font-medium text-gray-900">{formatMoney(selectedReceiptPayment.feeRecordAmount)}</span>
+              </div>
+              <div className="flex justify-between text-gray-500">
+                <span>Tổng đã đóng trước đó:</span>
+                <span className="text-emerald-600">{formatMoney(selectedReceiptPayment.feeRecordPaidAmount)}</span>
+              </div>
+              <div className="flex justify-between border-t border-surface-border pt-2 text-sm font-bold">
+                <span className="text-gray-900">Số tiền giao dịch này:</span>
+                <span className="text-primary text-base">{formatMoney(selectedReceiptPayment.amount)}</span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-2 pt-2">
+              {selectedReceiptPayment.source === "PAYMENT" && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.print()}
+                >
+                  <Printer className="mr-1.5 h-4 w-4" /> In biên lai
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setSelectedReceiptPayment(null)}
+              >
+                Đóng
+              </Button>
+            </div>
           </div>
         )}
       </Modal>
