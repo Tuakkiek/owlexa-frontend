@@ -3,7 +3,8 @@ import { X, Receipt, AlertCircle, ArrowRightLeft, User, BookOpen, Clock } from "
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
-  type PaymentResponse,
+  type PaymentHistoryResponse,
+  type PaymentMethod,
   type PaymentStatus,
 } from "../../../../types/fee";
 import { formatMoney } from "../../../../utils/money";
@@ -12,7 +13,7 @@ import { Button } from "../../../../components/ui/Button";
 import { Input } from "../../../../components/ui/Input";
 
 interface PaymentDetailDrawerProps {
-  payment: PaymentResponse | null;
+  payment: PaymentHistoryResponse | null;
   isOpen: boolean;
   onClose: () => void;
   // Refund state
@@ -23,8 +24,11 @@ interface PaymentDetailDrawerProps {
   onRefundAmountChange: (val: string) => void;
   onRefundReasonChange: (val: string) => void;
   onConfirmRefund: () => void;
-  canRefundPayment: (payment: PaymentResponse) => boolean;
+  canRefundPayment: (payment: PaymentHistoryResponse) => boolean;
   receiptPath: (paymentId: number) => string;
+  refundMethod?: PaymentMethod;
+  refundMethods?: PaymentMethod[];
+  onRefundMethodChange?: (method: PaymentMethod) => void;
 }
 
 const paymentStatusVariants: Record<
@@ -35,6 +39,7 @@ const paymentStatusVariants: Record<
   ACTIVE: "success",
   VOIDED: "error",
   EXPIRED: "default",
+  DUPLICATE_PAYMENT: "error",
 };
 
 export const PaymentDetailDrawer = ({
@@ -50,8 +55,12 @@ export const PaymentDetailDrawer = ({
   onConfirmRefund,
   canRefundPayment,
   receiptPath,
+  refundMethod,
+  refundMethods,
+  onRefundMethodChange,
 }: PaymentDetailDrawerProps) => {
   if (!payment) return null;
+  const canOpenReceipt = payment.source === "PAYMENT" && payment.paymentId != null;
 
   return (
     <>
@@ -151,6 +160,18 @@ export const PaymentDetailDrawer = ({
             </div>
           )}
 
+          {payment.status === "DUPLICATE_PAYMENT" && (
+            <div className="p-4 bg-rose-50 rounded-card border border-rose-100">
+              <div className="flex items-center gap-2 text-rose-800 mb-1">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">Thanh toán trùng</span>
+              </div>
+              <div className="text-sm text-rose-700">
+                Khoản tiền này được ghi nhận từ webhook ngân hàng để đối soát, không cộng thêm vào học phí.
+              </div>
+            </div>
+          )}
+
           {/* Note */}
           {payment.note && (
             <div className="p-4 bg-yellow-50 rounded-card border border-yellow-100">
@@ -192,6 +213,23 @@ export const PaymentDetailDrawer = ({
                 />
               </div>
 
+              {refundMethod && refundMethods && onRefundMethodChange && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Phương thức hoàn tiền</label>
+                  <select
+                    className="w-full rounded-input border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-primary cursor-pointer"
+                    value={refundMethod}
+                    onChange={(e) => onRefundMethodChange(e.target.value as PaymentMethod)}
+                  >
+                    {refundMethods.map((m) => (
+                      <option key={m} value={m}>
+                        {PAYMENT_METHOD_LABELS[m]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <Button
                 variant="danger"
                 className="w-full"
@@ -207,11 +245,13 @@ export const PaymentDetailDrawer = ({
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-surface-border bg-surface-page flex gap-3">
-          <Link to={receiptPath(payment.id)} className="flex-1">
-            <Button variant="secondary" className="w-full">
-              <Receipt className="mr-2 h-4 w-4" /> Xem biên lai
-            </Button>
-          </Link>
+          {canOpenReceipt && (
+            <Link to={receiptPath(payment.paymentId!)} className="flex-1">
+              <Button variant="secondary" className="w-full">
+                <Receipt className="mr-2 h-4 w-4" /> Xem biên lai
+              </Button>
+            </Link>
+          )}
           <Button variant="secondary" onClick={onClose} className="flex-1">
             Đóng
           </Button>

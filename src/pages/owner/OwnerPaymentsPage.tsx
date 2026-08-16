@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { feeApi, type PaymentFilterParams } from "../../api/feeApi";
 import { refundApi } from "../../api/refundApi";
-import type { PaymentPage, PaymentResponse } from "../../types/fee";
+import type { PaymentHistoryPage, PaymentHistoryResponse } from "../../types/fee";
 import { PageHeader, ErrorBanner } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import { PaymentSummaryCards } from "./components/payments/PaymentSummaryCards";
@@ -26,13 +26,13 @@ export const OwnerPaymentsPage = () => {
   const currentPage = parseInt(searchParams.get("page") || "0", 10);
 
   // Data state
-  const [page, setPage] = useState<PaymentPage | null>(null);
+  const [page, setPage] = useState<PaymentHistoryPage | null>(null);
   const [summary, setSummary] = useState({ totalTransactions: 0, totalRevenue: 0, pendingCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   // Drawer state
-  const [selectedPayment, setSelectedPayment] = useState<PaymentResponse | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentHistoryResponse | null>(null);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -55,8 +55,8 @@ export const OwnerPaymentsPage = () => {
       if (endDate) params.endDate = new Date(endDate).toISOString();
 
       const [pageResult, summaryResult] = await Promise.all([
-        feeApi.getPaymentsPaginated("owner", params),
-        feeApi.getPaymentSummary("owner", params)
+        feeApi.getPaymentHistoryPaginated("owner", params),
+        feeApi.getPaymentHistorySummary("owner", params)
       ]);
 
       setPage(pageResult);
@@ -91,13 +91,13 @@ export const OwnerPaymentsPage = () => {
   };
 
   const handleRefund = async () => {
-    if (!selectedPayment || !refundAmount || !refundReason.trim()) return;
+    if (!selectedPayment?.paymentId || !refundAmount || !refundReason.trim()) return;
 
     try {
       setActionLoading(true);
       setActionError("");
       await refundApi.requestRefund({
-        paymentId: selectedPayment.id,
+        paymentId: selectedPayment.paymentId,
         amount: refundAmount,
         reason: refundReason.trim(),
       });
@@ -115,7 +115,7 @@ export const OwnerPaymentsPage = () => {
   };
 
   const totalPages = Math.max(page?.totalPages ?? 0, 1);
-  const canRefundPayment = (p: PaymentResponse) => p.status === "ACTIVE";
+  const canRefundPayment = (p: PaymentHistoryResponse) => p.source === "PAYMENT" && p.status === "ACTIVE";
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">

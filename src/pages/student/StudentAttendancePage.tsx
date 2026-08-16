@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { BookOpen, CalendarDays, Clock, MapPin, User as UserIcon } from "lucide-react";
+import { CalendarDays, Clock, MapPin, User as UserIcon } from "lucide-react";
 import { attendanceApi } from "../../api/attendanceApi";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
