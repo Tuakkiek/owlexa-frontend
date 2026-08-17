@@ -269,6 +269,10 @@ function App() {
                 />
                 <Route path="/student/fees" element={<StudentFeesPage />} />
                 <Route
+                  path="/student/payments/:paymentId/receipt"
+                  element={<ReceiptPage />}
+                />
+                <Route
                   path="/student/documents"
                   element={<StudentDocumentsPage />}
                 />
