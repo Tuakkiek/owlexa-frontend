@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { TriangleAlert, PartyPopper, Check, Receipt, Printer } from "lucide-react";
+import { TriangleAlert, PartyPopper, Check, Receipt } from "lucide-react";
 import { feeApi } from "../../api/feeApi";
 import type {
   FeeRecordResponse,
@@ -25,6 +25,7 @@ import {
 } from "../../components/ui/SharedComponents";
 import { Button } from "../../components/ui/Button";
 import { Modal } from "../../components/ui/Modal";
+import { TuitionReceipt } from "../../components/payment/TuitionReceipt";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -1266,121 +1267,14 @@ const StudentFeesPage = () => {
             ? "Chi tiết đối soát"
             : "Biên Lai Thu Học Phí"
         }
-        maxWidth="max-w-lg"
+        maxWidth="max-w-xl"
       >
         {selectedReceiptPayment && (
-          <div className="space-y-6">
-            {/* Header / Center Info */}
-            <div className="text-center border-b border-surface-border pb-4">
-              <h3 className="text-base font-bold text-gray-900">
-                {selectedReceiptPayment.centerName || "Trung tâm Đào tạo"}
-              </h3>
-              <p className="mt-1 text-2xl font-extrabold text-primary tracking-wide font-mono">
-                {selectedReceiptPayment.receiptNumber || `PAY-#${selectedReceiptPayment.id}`}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Ngày thu: {new Date(selectedReceiptPayment.createdAt).toLocaleDateString("vi-VN")}{" "}
-                {new Date(selectedReceiptPayment.createdAt).toLocaleTimeString("vi-VN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-              <div className="mt-2 flex justify-center gap-2">
-                <Badge variant={mapStatusBadgeVariant(selectedReceiptPayment.status)}>
-                  {PAYMENT_STATUS_LABELS[selectedReceiptPayment.status]}
-                </Badge>
-                <Badge variant="default">
-                  {PAYMENT_METHOD_LABELS[selectedReceiptPayment.method] ?? selectedReceiptPayment.method}
-                </Badge>
-              </div>
-            </div>
-
-            {/* General Info */}
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-surface-border">
-                <span className="text-gray-500">Học sinh</span>
-                <span className="font-semibold text-gray-900">{selectedReceiptPayment.studentFullName}</span>
-              </div>
-              {selectedReceiptPayment.studentPhoneNumber && (
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-gray-500">Số điện thoại</span>
-                  <span className="text-gray-700">{selectedReceiptPayment.studentPhoneNumber}</span>
-                </div>
-              )}
-              <div className="flex justify-between py-1 border-b border-surface-border">
-                <span className="text-gray-500">Lớp học</span>
-                <span className="font-semibold text-gray-900">{selectedReceiptPayment.className || "-"}</span>
-              </div>
-              {selectedReceiptPayment.courseName && (
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-gray-500">Khóa học</span>
-                  <span className="text-gray-700">{selectedReceiptPayment.courseName}</span>
-                </div>
-              )}
-              <div className="flex justify-between py-1 border-b border-surface-border">
-                <span className="text-gray-500">Người thu</span>
-                <span className="text-gray-700">{selectedReceiptPayment.collectedByUserName || "Tự động / Chuyển khoản"}</span>
-              </div>
-              {selectedReceiptPayment.sepayRef && (
-                <div className="flex justify-between py-1 border-b border-surface-border">
-                  <span className="text-gray-500">Mã giao dịch ngân hàng</span>
-                  <span className="font-mono font-medium text-gray-900">{selectedReceiptPayment.sepayRef}</span>
-                </div>
-              )}
-              {selectedReceiptPayment.note && (
-                <div className="py-1 border-b border-surface-border">
-                  <span className="text-gray-500 block mb-0.5">Ghi chú</span>
-                  <span className="text-gray-700 italic">{selectedReceiptPayment.note}</span>
-                </div>
-              )}
-            </div>
-
-            {selectedReceiptPayment.status === "DUPLICATE_PAYMENT" && (
-              <div className="rounded-card border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">
-                <div className="mb-1 flex items-center gap-2 font-medium text-rose-800">
-                  <TriangleAlert className="h-4 w-4" />
-                  <span>Thanh toán trùng</span>
-                </div>
-                Khoản tiền này được ghi nhận để đối soát và hoàn trả nếu cần, không cộng thêm vào học phí.
-              </div>
-            )}
-
-            {/* Financial Summary */}
-            <div className="bg-surface-page p-4 rounded-card border border-surface-border space-y-2 text-xs">
-              <div className="flex justify-between text-gray-500">
-                <span>Tổng học phí hóa đơn:</span>
-                <span className="font-medium text-gray-900">{formatMoney(selectedReceiptPayment.feeRecordAmount)}</span>
-              </div>
-              <div className="flex justify-between text-gray-500">
-                <span>Tổng đã đóng trước đó:</span>
-                <span className="text-emerald-600">{formatMoney(selectedReceiptPayment.feeRecordPaidAmount)}</span>
-              </div>
-              <div className="flex justify-between border-t border-surface-border pt-2 text-sm font-bold">
-                <span className="text-gray-900">Số tiền giao dịch này:</span>
-                <span className="text-primary text-base">{formatMoney(selectedReceiptPayment.amount)}</span>
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-2 pt-2">
-              {selectedReceiptPayment.source === "PAYMENT" && (
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="mr-1.5 h-4 w-4" /> In biên lai
-                </Button>
-              )}
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setSelectedReceiptPayment(null)}
-              >
-                Đóng
-              </Button>
-            </div>
-          </div>
+          <TuitionReceipt
+            payment={selectedReceiptPayment}
+            isModal={true}
+            onClose={() => setSelectedReceiptPayment(null)}
+          />
         )}
       </Modal>
     </div>

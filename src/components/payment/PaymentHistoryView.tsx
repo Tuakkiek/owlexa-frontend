@@ -38,7 +38,7 @@ interface PaymentHistoryViewProps {
   refundReason: string;
   actionLoading: boolean;
   actionError: string;
-  receiptPath: (paymentId: number) => string;
+  receiptPath: (paymentId: number | string) => string;
   canRefundPayment: (payment: PaymentResponse) => boolean;
   onQueryChange: (value: string) => void;
   onFilterMethodChange: (value: string) => void;
@@ -178,7 +178,7 @@ const PaymentActions = ({
   payment: PaymentResponse;
 }) => (
   <div className="flex items-center justify-end gap-1.5">
-    <Link to={receiptPath(payment.id)}>
+    <Link to={receiptPath(('paymentId' in payment && (payment as any).paymentId) || payment.id)}>
       <TableActionButton variant="secondary" icon={tableActionIcons.receipt()}>
         Biên lai
       </TableActionButton>
