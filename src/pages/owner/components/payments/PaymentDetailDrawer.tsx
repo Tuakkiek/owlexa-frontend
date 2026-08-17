@@ -25,7 +25,7 @@ interface PaymentDetailDrawerProps {
   onRefundReasonChange: (val: string) => void;
   onConfirmRefund: () => void;
   canRefundPayment: (payment: PaymentHistoryResponse) => boolean;
-  receiptPath: (paymentId: number) => string;
+  receiptPath: (paymentId: number | string) => string;
   refundMethod?: PaymentMethod;
   refundMethods?: PaymentMethod[];
   onRefundMethodChange?: (method: PaymentMethod) => void;
@@ -60,7 +60,7 @@ export const PaymentDetailDrawer = ({
   onRefundMethodChange,
 }: PaymentDetailDrawerProps) => {
   if (!payment) return null;
-  const canOpenReceipt = payment.source === "PAYMENT" && payment.paymentId != null;
+  const canOpenReceipt = payment.paymentId != null || payment.id != null;
 
   return (
     <>
@@ -246,7 +246,7 @@ export const PaymentDetailDrawer = ({
         {/* Footer Actions */}
         <div className="p-4 border-t border-surface-border bg-surface-page flex gap-3">
           {canOpenReceipt && (
-            <Link to={receiptPath(payment.paymentId!)} className="flex-1">
+            <Link to={receiptPath(payment.paymentId || payment.id)} className="flex-1">
               <Button variant="secondary" className="w-full">
                 <Receipt className="mr-2 h-4 w-4" /> Xem biên lai
               </Button>
